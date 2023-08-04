@@ -90,7 +90,7 @@ class FluroPage extends StatelessWidget {
       } else {
         message = '未知类型按钮';
         Application.router.navigateTo(
-            context, "/path3?message=${Uri.encodeComponent(message)}");
+            context, "/path1?message=${Uri.encodeComponent(message)}");
       }
     }
 

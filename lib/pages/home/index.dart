@@ -1,6 +1,10 @@
 import 'package:fluro/fluro.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_redux/flutter_redux.dart';
 import 'package:flutter_template_start/router/config.dart';
+import 'package:flutter_template_start/store/index.dart';
+import 'package:flutter_template_start/store/todolist/type.dart';
+import 'package:flutter_template_start/store/user/type.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -46,6 +50,57 @@ class HomePage extends StatelessWidget {
               children: menuWidgets,
             ),
           ),
+          StoreConnector<AppState, VoidCallback>(
+            builder: (context, callback) {
+              return ElevatedButton(
+                onPressed: () {
+                  callback();
+                },
+                child: const Text('Add'),
+              );
+            },
+            converter: (store) {
+              return () {
+                store.dispatch(ITodolistAdd('controller!.text'));
+              };
+            },
+          ),
+          StoreConnector<AppState, VoidCallback>(
+            builder: (context, callback) {
+              return ElevatedButton(
+                onPressed: () {
+                  callback();
+                },
+                child: const Text('Update'),
+              );
+            },
+            converter: (store) {
+              return () {
+                store.dispatch(IUserUpdate(fields: {'age': 2}));
+              };
+            },
+          ),
+          Stack(
+            children: [
+              StoreConnector<AppState, List<String>>(
+                builder: (context, state) {
+                  return Text(
+                    "当前todolist的长度为：${state.toString()}",
+                  );
+                },
+                converter: (store) => store.state.todos,
+              ),
+              StoreConnector<AppState, IUserinfo>(
+                builder: (context, state) {
+                  // 打印state
+                  return Text(
+                    state.age.toString(),
+                  );
+                },
+                converter: (store) => store.state.userinfo,
+              ),
+            ],
+          )
         ],
       ),
     );

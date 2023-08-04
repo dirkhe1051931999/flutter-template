@@ -1,4 +1,4 @@
-import 'package:flutter_template_start/model/area/tianqi.dart';
+import 'package:flutter_template_start/model/area/index.dart';
 import 'package:flutter_template_start/utils/helper.dart';
 import 'package:flutter_template_start/utils/request.dart';
 

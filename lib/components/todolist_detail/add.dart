@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_redux/flutter_redux.dart';
-import 'package:flutter_template_start/store/todolist/model.dart';
+import 'package:flutter_template_start/store/todolist/type.dart';
 
 class AddWidget extends StatelessWidget {
   const AddWidget({Key? key, required this.controller}) : super(key: key);
@@ -56,7 +56,7 @@ class AddWidget extends StatelessWidget {
             );
             return;
           }
-          store.dispatch(IAdd(controller!.text));
+          store.dispatch(ITodolistAdd(controller!.text));
           controller!.clear();
           ScaffoldMessenger.of(context).clearSnackBars();
           ScaffoldMessenger.of(context).showSnackBar(

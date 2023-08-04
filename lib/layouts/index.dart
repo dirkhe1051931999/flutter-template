@@ -1,12 +1,12 @@
 import 'package:fluro/fluro.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_template_start/store/index.dart';
 import 'package:redux/redux.dart';
 import 'package:flutter_redux/flutter_redux.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_template_start/layouts/app_theme.dart';
 import 'package:flutter_template_start/router/config.dart';
 import 'package:flutter_template_start/router/routes.dart';
-import 'package:flutter_template_start/store/todolist/reducer.dart';
 import 'package:flutter_template_start/utils/helper.dart';
 
 class Layout extends StatelessWidget {
@@ -38,8 +38,7 @@ class Layout extends StatelessWidget {
     customLogger.log(deviceDetails);
   }
 
-  final store =
-      Store<List<String>>(todoListReducer, initialState: ['initial item']);
+  final store = Store<AppState>(appReducer, initialState: AppState.initial());
 
   @override
   Widget build(BuildContext context) {

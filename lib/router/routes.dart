@@ -1,5 +1,6 @@
 import 'package:fluro/fluro.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_template_start/pages/404/index.dart';
 import 'package:flutter_template_start/router/handler.dart';
 
 class Routes {
@@ -15,31 +16,23 @@ class Routes {
       BuildContext? context,
       Map<String, List<String>> params,
     ) {
-      return MaterialApp(
-        title: 'Fluro',
-        home: Scaffold(
-          body: const Center(
-            child: Text('ROUTE WAS NOT FOUND !!!'),
-          ),
-          // 返回按钮
-          floatingActionButton: FloatingActionButton(
-            onPressed: () {
-              Navigator.pop(context!);
-            },
-            child: const Icon(Icons.arrow_back),
-          ),
-        ),
-      );
+      return const NotFoundPage();
     });
+    // 首页
     router.define(root, handler: rootHandler);
+    // 落地页
     router.define(path1, handler: path1RouteHandler);
+    // 落地页
     router.define(
       path2,
       handler: path1RouteHandler,
       transitionType: TransitionType.inFromLeft,
     );
+    // dialog 弹窗
     router.define(path3, handler: path3RouteHandler);
+    // todolist
     router.define(todolist, handler: todolistRouteHandler);
+    // fluro
     router.define(fluro, handler: fluroRouteHandler);
   }
 }

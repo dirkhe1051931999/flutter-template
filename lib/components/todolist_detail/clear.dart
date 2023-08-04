@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_redux/flutter_redux.dart';
-import 'package:flutter_template_start/store/todolist/model.dart';
+import 'package:flutter_template_start/store/todolist/type.dart';
 
 class ClearWidget extends StatelessWidget {
   const ClearWidget({super.key});
@@ -15,7 +15,7 @@ class ClearWidget extends StatelessWidget {
         );
       },
       converter: (store) => () {
-        store.dispatch(IClear);
+        store.dispatch(ITodolistClear);
       },
     );
   }

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_redux/flutter_redux.dart';
 import 'package:flutter_template_start/components/todolist_detail/list_empty.dart';
-import 'package:flutter_template_start/store/todolist/model.dart';
+import 'package:flutter_template_start/store/todolist/type.dart';
 
 class ListWidget extends StatelessWidget {
   const ListWidget({super.key});
@@ -23,7 +23,7 @@ class ListWidget extends StatelessWidget {
                         Text(item),
                         IconButton(
                           onPressed: () {
-                            store.dispatch(IRemove(item));
+                            store.dispatch(ITodolistRemove(item));
                           },
                           icon: const Icon(Icons.delete),
                         ),

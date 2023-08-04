@@ -120,3 +120,19 @@ class MyAppCookieManager {
     cookieJar.saveFromResponse(Uri.parse(baseUrl), updatedCookies);
   }
 }
+
+/// 递归更新 Map
+Map<String, dynamic> recursiveMerge(
+    Map<String, dynamic> original, Map<String, dynamic> changes) {
+  Map<String, dynamic> result = Map.from(original);
+
+  for (String key in changes.keys) {
+    if (changes[key] is Map && original[key] is Map) {
+      result[key] = recursiveMerge(original[key], changes[key]);
+    } else {
+      result[key] = changes[key];
+    }
+  }
+
+  return result;
+}
