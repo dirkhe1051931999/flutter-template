@@ -15,7 +15,7 @@ class MaterialAppWrapWidget extends StatelessWidget {
     return MaterialApp(
       title: 'Header',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.light,
+      theme: AppTheme().light,
       home: Scaffold(
         appBar: AppBar(
           title: Text(title),

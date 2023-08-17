@@ -7,14 +7,17 @@ import 'dart:collection';
 
 import 'package:dio/dio.dart';
 import 'package:dio_cookie_manager/dio_cookie_manager.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_template_start/app.config.dart';
 import 'package:flutter_template_start/utils/helper.dart';
 import 'package:logger/logger.dart';
 
 class DioClient {
-  DioClient() {
+  DioClient({required this.baseUrl}) {
     _init();
   }
+  final String baseUrl;
+  late final Dio _dio;
 
   /// Token 是否正在刷新
   bool isTokenBeingRefreshed = false;
@@ -33,114 +36,117 @@ class DioClient {
   /// cancel token
   /// cancelToken.cancel("Request was cancelled by user!");
   final cancelToken = CancelToken();
-  final Dio _dio = Dio(BaseOptions(
-    baseUrl: APP_CONFIG.BASE_URL,
-    connectTimeout: const Duration(seconds: APP_CONFIG.CONNECT_TIMEOUT),
-    receiveTimeout: const Duration(seconds: APP_CONFIG.RECEIVE_TIMEOUT),
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  ));
 
   /// 初始化函数
   Future<void> _init() async {
-    /// 初始化自己的cookie管理器，并设置cookie 持久化
-    final myAppCookieManager =
-        await MyAppCookieManager.create(APP_CONFIG.BASE_URL);
-
-    /// 拦截器
-    _dio.interceptors.addAll(
-      [
-        CookieManager(myAppCookieManager.cookieJar),
-        InterceptorsWrapper(
-          onError: (error, handler) async {
-            if (error.response?.statusCode == 401) {
-              logger.d("401错误");
-              if (!isTokenBeingRefreshed) {
-                isTokenBeingRefreshed = true;
-                requestLock.lock();
-                try {
-                  final response = await _dio.post(
-                    APP_CONFIG.APP_REFRESH_TOKEN_PATH,
-                    data: {'refreshToken': APP_CONFIG.APP_REFRESH_TOKEN},
-                  );
-                  final newToken = response.data['token'];
-                  RequestOptions requestOptions =
-                      error.response?.requestOptions ??
-                          RequestOptions(path: "");
-                  requestOptions.headers['Authorization'] = 'Bearer $newToken';
-                  Options options = Options(
-                    method: requestOptions.method,
-                    headers: requestOptions.headers,
-                  );
-                  return _dio
-                      .request(requestOptions.path, options: options)
-                      .then((_) {
-                    isTokenBeingRefreshed = false;
-                    requestLock.unlock();
-                    return handler.resolve(_);
-                  });
-                } catch (e) {
+    _dio = Dio(BaseOptions(
+      baseUrl: baseUrl,
+      connectTimeout: const Duration(seconds: APP_CONFIG.CONNECT_TIMEOUT),
+      receiveTimeout: const Duration(seconds: APP_CONFIG.RECEIVE_TIMEOUT),
+      headers: {
+        'Content-Type': 'application/json',
+        'User-Agent':
+            'Mozilla/5.0 (Linux; Android 10; Redmi K30 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.101 Mobile Safari/537.36',
+      },
+    ));
+    Iterable<Interceptor> interceptors = [
+      InterceptorsWrapper(
+        onError: (error, handler) async {
+          if (error.response?.statusCode == 401) {
+            logger.d("401错误");
+            if (!isTokenBeingRefreshed) {
+              isTokenBeingRefreshed = true;
+              requestLock.lock();
+              try {
+                final response = await _dio.post(
+                  APP_CONFIG.APP_REFRESH_TOKEN_PATH,
+                  data: {'refreshToken': APP_CONFIG.APP_REFRESH_TOKEN},
+                );
+                final newToken = response.data['token'];
+                RequestOptions requestOptions =
+                    error.response?.requestOptions ?? RequestOptions(path: "");
+                requestOptions.headers['Authorization'] = 'Bearer $newToken';
+                Options options = Options(
+                  method: requestOptions.method,
+                  headers: requestOptions.headers,
+                );
+                return _dio
+                    .request(requestOptions.path, options: options)
+                    .then((_) {
                   isTokenBeingRefreshed = false;
                   requestLock.unlock();
-                  logger.d("刷新token失败 $e");
-                  return handler.next(error);
-                }
-              }
-            }
-            if (error.type == DioExceptionType.unknown) {
-              logger.d("可能是一个无效的URL或其他网络问题");
-            } else if (error.type == DioExceptionType.connectionTimeout) {
-              logger.d("连接超时");
-            } else if (error.type == DioExceptionType.sendTimeout) {
-              logger.d("请求超时");
-            } else if (error.type == DioExceptionType.receiveTimeout) {
-              logger.d("响应超时");
-            } else if (error.type == DioExceptionType.cancel) {
-              logger.d("请求取消");
-            } else {
-              logger.d("其他错误: ${error.message}");
-            }
-            return handler.next(error);
-          },
-          onRequest: (RequestOptions options,
-              RequestInterceptorHandler handler) async {
-            if (isTokenBeingRefreshed) {
-              await requestLock.ensureUnlocked();
-            }
-            final completer = Completer<void>();
-            _pendingRequests.add(completer);
-            completer.future.whenComplete(() {
-              _pendingRequests.remove(completer);
-              if (!isTokenBeingRefreshed && _pendingRequests.isEmpty) {
+                  return handler.resolve(_);
+                });
+              } catch (e) {
+                isTokenBeingRefreshed = false;
                 requestLock.unlock();
+                logger.d("刷新token失败 $e");
+                return handler.next(error);
               }
-            });
-            options.headers['Authorization'] =
-                'Bearer Authorization test uhhhhh';
-            return handler.next(options);
-          },
-          onResponse: (Response response, ResponseInterceptorHandler handler) {
-            //  _pendingRequests列表中找到第一个未完成的Completer。如果没有找到任何未完成的Completer，它会返回Completer
-            _pendingRequests.firstWhere(
-              (element) => !element.isCompleted,
-              orElse: () => Completer(),
-            );
-            return handler.next(response);
-          },
-        ),
+            }
+          }
+          if (error.type == DioExceptionType.unknown) {
+            logger.d("可能是一个无效的URL或其他网络问题");
+          } else if (error.type == DioExceptionType.connectionTimeout) {
+            logger.d("连接超时");
+          } else if (error.type == DioExceptionType.sendTimeout) {
+            logger.d("请求超时");
+          } else if (error.type == DioExceptionType.receiveTimeout) {
+            logger.d("响应超时");
+          } else if (error.type == DioExceptionType.cancel) {
+            logger.d("请求取消");
+          } else {
+            logger.d("其他错误: ${error.message}");
+          }
+          return handler.next(error);
+        },
+        onRequest:
+            (RequestOptions options, RequestInterceptorHandler handler) async {
+          if (isTokenBeingRefreshed) {
+            await requestLock.ensureUnlocked();
+          }
+          final completer = Completer<void>();
+          _pendingRequests.add(completer);
+          completer.future.whenComplete(() {
+            _pendingRequests.remove(completer);
+            if (!isTokenBeingRefreshed && _pendingRequests.isEmpty) {
+              requestLock.unlock();
+            }
+          });
+          // options.headers['Authorization'] = 'Bearer Authorization test uhhhhh';
+          return handler.next(options);
+        },
+        onResponse: (Response response, ResponseInterceptorHandler handler) {
+          //  _pendingRequests列表中找到第一个未完成的Completer。如果没有找到任何未完成的Completer，它会返回Completer
+          _pendingRequests.firstWhere(
+            (element) => !element.isCompleted,
+            orElse: () => Completer(),
+          );
+          return handler.next(response);
+        },
+      ),
 
-        // 拦截哪些日志
-        LogInterceptor(
-          request: false,
-          requestHeader: true,
-          requestBody: false,
-          responseBody: false,
-          responseHeader: false,
-          error: true,
-        ),
-      ],
-    );
+      // 拦截哪些日志
+      LogInterceptor(
+        request: false,
+        requestHeader: true,
+        requestBody: false,
+        responseBody: false,
+        responseHeader: false,
+        error: true,
+      ),
+    ];
+    if (!kIsWeb) {
+      /// 初始化自己的cookie管理器，并设置cookie 持久化
+      final myAppCookieManager = await MyAppCookieManager.create(baseUrl);
+      interceptors = [
+        CookieManager(myAppCookieManager.cookieJar),
+        ...interceptors
+      ];
+    }
+
+    /// 拦截器
+    _dio.interceptors.addAll(interceptors);
   }
 
   /// get 请求
@@ -160,6 +166,17 @@ class DioClient {
     return _dio.post(
       path,
       data: data,
+      cancelToken: cancelToken,
+      options: options,
+    );
+  }
+
+  /// post 请求 formdata 格式
+  Future<Response> postFormData(String path,
+      {Map<String, dynamic>? data, Options? options}) {
+    return _dio.post(
+      path,
+      data: FormData.fromMap(data ?? {}),
       cancelToken: cancelToken,
       options: options,
     );

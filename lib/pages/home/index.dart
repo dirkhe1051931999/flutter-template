@@ -1,10 +1,6 @@
 import 'package:fluro/fluro.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_redux/flutter_redux.dart';
 import 'package:flutter_template_start/router/config.dart';
-import 'package:flutter_template_start/store/index.dart';
-import 'package:flutter_template_start/store/todolist/type.dart';
-import 'package:flutter_template_start/store/user/type.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -37,6 +33,9 @@ class HomePage extends StatelessWidget {
     var menuWidgets = <Widget>[
       menuButton(context, title: "redux 做的 todolist", key: "todolist"),
       menuButton(context, title: "fluro 的使用", key: "fluro"),
+      menuButton(context, title: "dio 的使用", key: "request"),
+      menuButton(context, title: "profile", key: "profile"),
+      menuButton(context, title: "可滑动选项卡", key: "scrollable-tabs"),
     ];
     return Material(
       child: Column(
@@ -50,57 +49,6 @@ class HomePage extends StatelessWidget {
               children: menuWidgets,
             ),
           ),
-          StoreConnector<AppState, VoidCallback>(
-            builder: (context, callback) {
-              return ElevatedButton(
-                onPressed: () {
-                  callback();
-                },
-                child: const Text('Add'),
-              );
-            },
-            converter: (store) {
-              return () {
-                store.dispatch(ITodolistAdd('controller!.text'));
-              };
-            },
-          ),
-          StoreConnector<AppState, VoidCallback>(
-            builder: (context, callback) {
-              return ElevatedButton(
-                onPressed: () {
-                  callback();
-                },
-                child: const Text('Update'),
-              );
-            },
-            converter: (store) {
-              return () {
-                store.dispatch(IUserUpdate(fields: {'age': 2}));
-              };
-            },
-          ),
-          Stack(
-            children: [
-              StoreConnector<AppState, List<String>>(
-                builder: (context, state) {
-                  return Text(
-                    "当前todolist的长度为：${state.toString()}",
-                  );
-                },
-                converter: (store) => store.state.todos,
-              ),
-              StoreConnector<AppState, IUserinfo>(
-                builder: (context, state) {
-                  // 打印state
-                  return Text(
-                    state.age.toString(),
-                  );
-                },
-                converter: (store) => store.state.userinfo,
-              ),
-            ],
-          )
         ],
       ),
     );

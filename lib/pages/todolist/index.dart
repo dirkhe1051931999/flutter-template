@@ -29,12 +29,10 @@ class _TodoListPageState extends State<TodoListPage> {
   Widget build(BuildContext context) {
     return Column(
       children: <Widget>[
-        /// 列表
+        // 列表
         const ListWidget(),
-
-        /// 输入框
+        // 输入框
         InputWidget(controller: _controller!),
-
         // 按钮-添加和清空
         Row(
           mainAxisAlignment: MainAxisAlignment.center,

@@ -1,5 +1,6 @@
 import 'package:fluro/fluro.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_template_start/store/index.dart';
 import 'package:redux/redux.dart';
 import 'package:flutter_redux/flutter_redux.dart';
@@ -38,18 +39,37 @@ class Layout extends StatelessWidget {
     customLogger.log(deviceDetails);
   }
 
+  void initFlutterEasyLoadingInstance() {
+    EasyLoading.instance
+      ..displayDuration = const Duration(milliseconds: 2000)
+      ..indicatorType = EasyLoadingIndicatorType.fadingCircle
+      ..loadingStyle = EasyLoadingStyle.dark
+      ..indicatorSize = 45.0
+      ..toastPosition = EasyLoadingToastPosition.bottom
+      ..radius = 10.0
+      ..progressColor = Colors.yellow
+      ..backgroundColor = Colors.green
+      ..indicatorColor = Colors.yellow
+      ..textColor = Colors.yellow
+      ..maskColor = Colors.blue.withOpacity(0.5)
+      ..userInteractions = true
+      ..dismissOnTap = false;
+  }
+
   final store = Store<AppState>(appReducer, initialState: AppState.initial());
 
   @override
   Widget build(BuildContext context) {
     ScreenUtil.init(context);
+    initFlutterEasyLoadingInstance();
     return StoreProvider(
       store: store,
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
         title: 'Flutter Template Start',
-        theme: AppTheme.light,
+        theme: AppTheme().light,
         onGenerateRoute: Application.router.generator,
+        builder: EasyLoading.init(),
       ),
     );
   }

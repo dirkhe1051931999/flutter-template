@@ -6,8 +6,6 @@ class ITodolistAdd {
 class ITodolistRemove {
   final String name;
   ITodolistRemove(this.name);
-
-  get index => null;
 }
 
 class ITodolistClear {

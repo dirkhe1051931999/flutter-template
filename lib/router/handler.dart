@@ -1,9 +1,13 @@
 import 'package:fluro/fluro.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_template_start/components/fluro_detail/index.dart';
-import 'package:flutter_template_start/components/app_wrap/index.dart';
+import 'package:flutter_template_start/layouts/app_wrap/index.dart';
 import 'package:flutter_template_start/pages/fluro/index.dart';
 import 'package:flutter_template_start/pages/home/index.dart';
+import 'package:flutter_template_start/pages/profile/index.dart';
+import 'package:flutter_template_start/pages/request/index.dart';
+import 'package:flutter_template_start/pages/scrollable_tabs/detail.dart';
+import 'package:flutter_template_start/pages/scrollable_tabs/index.dart';
 import 'package:flutter_template_start/pages/todolist/index.dart';
 import 'package:flutter_template_start/utils/helper.dart';
 
@@ -88,6 +92,51 @@ var fluroRouteHandler = Handler(
     return const MaterialAppWrapWidget(
       title: 'Fluro',
       widget: FluroPage(),
+    );
+  },
+);
+
+var requestRouteHandler = Handler(
+  handlerFunc: (
+    BuildContext? context,
+    Map<String, List<String>> params,
+  ) {
+    return const MaterialAppWrapWidget(
+      title: 'Request',
+      widget: RequestPage(),
+    );
+  },
+);
+
+var profileRouteHandler = Handler(
+  handlerFunc: (
+    BuildContext? context,
+    Map<String, List<String>> params,
+  ) {
+    return const MaterialAppWrapWidget(
+      title: 'Profile',
+      widget: ProfilePage(),
+    );
+  },
+);
+var scrollableTabsRouteHandler = Handler(
+  handlerFunc: (
+    BuildContext? context,
+    Map<String, List<String>> params,
+  ) {
+    return const ScrollableTabsPage();
+  },
+);
+var scrollableTabsDetailRouteHandler = Handler(
+  handlerFunc: (
+    BuildContext? context,
+    Map<String, List<String>> params,
+  ) {
+    String? title = params["title"]?.first;
+    int? id = int.tryParse(params["id"]?.first ?? '');
+    return ScrollableTabsDetailPage(
+      id: id!,
+      title: title ?? 'Testing',
     );
   },
 );

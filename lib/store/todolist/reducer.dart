@@ -13,7 +13,7 @@ AppState todoListReducer(AppState state, dynamic action) {
     );
   }
   if (action == ITodolistClear) {
-    return state.update({'todos': []});
+    return state.update({'todos': <String>[]});
   }
   return state;
 }

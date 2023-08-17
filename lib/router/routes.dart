@@ -10,6 +10,10 @@ class Routes {
   static String path3 = "/path3";
   static String todolist = "/todolist";
   static String fluro = "/fluro";
+  static String request = "/request";
+  static String profile = "/profile";
+  static String scrollableTabs = "/scrollable-tabs";
+  static String scrollableTabsDetail = "/scrollable-tabs-detail";
 
   static void configureRoutes(FluroRouter router) {
     router.notFoundHandler = Handler(handlerFunc: (
@@ -34,5 +38,14 @@ class Routes {
     router.define(todolist, handler: todolistRouteHandler);
     // fluro
     router.define(fluro, handler: fluroRouteHandler);
+    // request
+    router.define(request, handler: requestRouteHandler);
+    // profile
+    router.define(profile, handler: profileRouteHandler);
+    // scrollable-tabs
+    router.define(scrollableTabs, handler: scrollableTabsRouteHandler);
+    // scrollable-tabs-detail
+    router.define(scrollableTabsDetail,
+        handler: scrollableTabsDetailRouteHandler);
   }
 }

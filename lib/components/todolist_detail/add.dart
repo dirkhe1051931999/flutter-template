@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_redux/flutter_redux.dart';
+import 'package:flutter_template_start/store/index.dart';
 import 'package:flutter_template_start/store/todolist/type.dart';
 
 class AddWidget extends StatelessWidget {
@@ -8,7 +9,7 @@ class AddWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return StoreConnector<List<String>, VoidCallback>(
+    return StoreConnector<AppState, VoidCallback>(
       builder: (context, callback) {
         return ElevatedButton(
           onPressed: callback,
@@ -38,7 +39,7 @@ class AddWidget extends StatelessWidget {
             return;
           }
           // 不添加重复项
-          if (store.state.contains(controller!.text)) {
+          if (store.state.todos.contains(controller!.text)) {
             ScaffoldMessenger.of(context).clearSnackBars();
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(

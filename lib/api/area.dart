@@ -1,8 +1,7 @@
-import 'package:flutter_template_start/model/area/index.dart';
 import 'package:flutter_template_start/utils/helper.dart';
 import 'package:flutter_template_start/utils/request.dart';
 
-var client = DioClient();
+var client = DioClient(baseUrl: 'https://api.help.bj.cn/');
 void commonGetRequest() async {
   try {
     var response =
@@ -13,12 +12,11 @@ void commonGetRequest() async {
   }
 }
 
-void commonPostRequest() async {
+dynamic commonPostRequest() async {
   try {
     var response = await client.post('/apis/CityCode/', data: {'code': 15});
     if (response.statusCode == 200 && response.data != null) {
-      IAreaCodes iAreaCodes = IAreaCodes.fromJson(response.data);
-      customLogger.log(iAreaCodes.data[0].merger);
+      return response.data;
     } else {
       customLogger.log('Failed to load data from the server');
     }

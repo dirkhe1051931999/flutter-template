@@ -50,4 +50,10 @@ flutter pub get
 flutter run
 # build
 flutter build [platform]  # e.g., flutter build ios or flutter build apk
+# change app launcher icon
+flutter pub run flutter_launcher_icons:main
+# change app bunldId or appname
+flutter pub global activate rename
+flutter pub global run rename --bundleId com.flutter.template
+flutter pub global run rename --appname "Flutter Template"
 ```
