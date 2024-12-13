@@ -8,8 +8,11 @@ class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // helpers
-    Widget menuButton(BuildContext context,
-        {required String title, required String key}) {
+    Widget menuButton(
+      BuildContext context, {
+      required String title,
+      required String key,
+    }) {
       return Padding(
         padding: const EdgeInsets.all(4.0),
         child: ElevatedButton(

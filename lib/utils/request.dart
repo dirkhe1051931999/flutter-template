@@ -16,6 +16,7 @@ class DioClient {
   DioClient({required this.baseUrl}) {
     _init();
   }
+
   final String baseUrl;
   late final Dio _dio;
 
@@ -184,8 +185,8 @@ class DioClient {
 
   /// 上传文件
   /**
-    dioClient.uploadFiles("/uploadEndpoint", filePaths: ["/path/to/file1.jpg", "/path/to/file2.jpg"], data: {"key": "value"});
-  */
+      dioClient.uploadFiles("/uploadEndpoint", filePaths: ["/path/to/file1.jpg", "/path/to/file2.jpg"], data: {"key": "value"});
+   */
 
   Future<Response> uploadFiles(String path,
       {List<String>? filePaths,
@@ -209,15 +210,15 @@ class DioClient {
 
   /// 下载文件
   /**
-    downloadFile(
+      downloadFile(
       "your_path_here",
       "your_save_path_here",
       onProgress: (int receivedBytes, int totalBytes) {
-        double progressPercent = (receivedBytes / totalBytes) * 100;
-        print("下载进度: $progressPercent %");
-        // 你也可以在此处进行其他操作，如更新 UI
+      double progressPercent = (receivedBytes / totalBytes) * 100;
+      print("下载进度: $progressPercent %");
+      // 你也可以在此处进行其他操作，如更新 UI
       },
-    );
+      );
    */
   Future<Response> downloadFile(
     String path,

@@ -12,6 +12,5 @@ AppState userReducer(AppState state, dynamic action) {
     });
     return state.update({'userinfo': userinfo});
   }
-
   return state;
 }

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_template_start/api/area.dart';
-import 'package:flutter_template_start/model/area/index.dart';
+import 'package:flutter_template_start/api/banner.dart';
+import 'package:flutter_template_start/model/banner/index.dart';
 
 class RequestPage extends StatefulWidget {
   const RequestPage({super.key});
@@ -10,7 +10,7 @@ class RequestPage extends StatefulWidget {
 }
 
 class _RequestPageState extends State<RequestPage> {
-  IAreaCodes? iAreaCodes;
+  IBanner? banner;
   dynamic dataList;
   int total = 0;
   bool isLoading = false;
@@ -39,8 +39,8 @@ class _RequestPageState extends State<RequestPage> {
             itemCount: total,
             itemBuilder: (context, index) {
               return ListTile(
-                title: Text(iAreaCodes!.data[index].merger),
-                subtitle: Text(iAreaCodes!.data[index].code.toString()),
+                title: Text(banner!.banners![index].typeTitle!),
+                subtitle: Text(banner!.banners![index].imageUrl!),
               );
             },
           ),
@@ -52,12 +52,12 @@ class _RequestPageState extends State<RequestPage> {
                 setState(() {
                   isLoading = true;
                 });
-                dynamic result = await commonPostRequest();
-                IAreaCodes iAreaCodes = IAreaCodes.fromJson(result);
+                dynamic result = await commonGetRequest();
+                IBanner banner = IBanner.fromJson(result);
                 setState(() {
-                  this.iAreaCodes = iAreaCodes;
-                  dataList = iAreaCodes.data;
-                  total = iAreaCodes.data.length;
+                  this.banner = banner;
+                  dataList = banner.banners;
+                  total = banner.banners!.length;
                   isLoading = false;
                 });
               },
@@ -70,7 +70,7 @@ class _RequestPageState extends State<RequestPage> {
             child: ElevatedButton(
               onPressed: () {
                 setState(() {
-                  iAreaCodes = null;
+                  banner = null;
                   dataList = null;
                   total = 0;
                 });

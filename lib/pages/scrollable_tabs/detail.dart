@@ -4,7 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_template_start/api/news/index.dart';
 import 'package:flutter_template_start/components/network_img/index.dart';
 import 'package:flutter_template_start/layouts/app_theme.dart';
-import 'package:flutter_template_start/model/news/inews_detail_ad.dart';
+import 'package:flutter_template_start/model/news/index.dart';
 import 'package:flutter_template_start/utils/helper.dart';
 import 'package:html/parser.dart' as html_parser;
 import 'package:marquee/marquee.dart';
@@ -23,7 +23,7 @@ class ScrollableTabsDetailPage extends StatefulWidget {
 
 class _ScrollableTabsDetailPageState extends State<ScrollableTabsDetailPage>
     with TickerProviderStateMixin {
-  Future<INewsDetailAd>? detailsFuture;
+  Future<DetailModel?>? detailsFuture;
   TabController? _tabController;
   final grid = List.generate(3, (index) => index);
   final list = List.generate(3, (index) => index);
@@ -64,7 +64,7 @@ class _ScrollableTabsDetailPageState extends State<ScrollableTabsDetailPage>
         if (snapshot.hasError) {
           return Text('Error: ${snapshot.error}'); // 错误处理
         }
-        NewsVO? newsvo = snapshot.data?.respData?.newsvo;
+        dynamic newsvo = snapshot.data?.respData?.newsvo;
         String content = newsvo?.content ?? '';
         if (newsvo == null) {
           return const Center(
@@ -147,7 +147,7 @@ class _ScrollableTabsDetailPageState extends State<ScrollableTabsDetailPage>
                             children: [
                               ClipOval(
                                 child: CustomNetworkImage(
-                                  newsvo.sourceImage ?? '',
+                                  newsvo.sourceImg ?? '',
                                   width: 20.sp,
                                   height: 20.sp,
                                 ),

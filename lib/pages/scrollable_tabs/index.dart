@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_template_start/api/news/index.dart';
 import 'package:flutter_template_start/layouts/app_theme.dart';
-import 'package:flutter_template_start/model/news/news_column_add.dart';
-import 'package:flutter_template_start/model/news/news_list_ad.dart';
+import 'package:flutter_template_start/model/news/index.dart';
 import 'package:flutter_template_start/pages/scrollable_tabs/children/common_page.dart';
 import 'package:flutter_template_start/router/config.dart';
 
@@ -13,23 +12,22 @@ class ScrollableTabsPage extends StatefulWidget {
   State<ScrollableTabsPage> createState() => _ScrollableTabsPageState();
 }
 
-class _ScrollableTabsPageState extends State<ScrollableTabsPage>
-    with TickerProviderStateMixin {
-  Future<INewsColumnAdd>? tabsFuture;
+class _ScrollableTabsPageState extends State<ScrollableTabsPage> with TickerProviderStateMixin {
+  Future<TabsModel?>? tabsFuture;
   TabController? _tabController;
   Map<int, Map<String, dynamic>> _newsPagination = {};
-  INewsColumnAdd? allTbas;
-  final Map<int, List<INewsListAd>> _newsIdMap = {};
+  TabsModel? allTabs;
+  final Map<int, List<ListModel?>> _newsIdMap = {};
 
   @override
   void initState() {
     super.initState();
     tabsFuture = getNewsColumnAdd();
     tabsFuture!.then((value) async {
-      allTbas = value;
+      allTabs = value;
       // 遍历value.respData?.columnTypeList，然后给map加唯一key的value
       Map<int, Map<String, dynamic>> pagination = {};
-      value.respData?.columnTypeList?.forEach((item) {
+      value?.respData?.columnTypeList?.forEach((item) {
         pagination[item.id!] = {
           "pageNum": 1,
           "pageSize": 10,
@@ -37,21 +35,20 @@ class _ScrollableTabsPageState extends State<ScrollableTabsPage>
         };
       });
       _tabController = TabController(
-        length: value.respData?.columnTypeList?.length ?? 0,
+        length: value?.respData?.columnTypeList?.length ?? 0,
         vsync: this,
       );
       _tabController!.addListener(_tabBarListener);
-      INewsListAd newsListAd = await getNewsListAd(
+      ListModel? newsListAd = await getNewsListAd(
         {
-          "column_id": value.respData?.columnTypeList?[0].id,
-          "pageNum": pagination[value.respData?.columnTypeList?[0].id!]
-              ?['pageNum'],
+          "column_id": value?.respData?.columnTypeList?[0].id,
+          "pageNum": pagination[value?.respData?.columnTypeList?[0].id!]?['pageNum'],
           "flag": false,
           "channelCode": "tt",
         },
       );
       setState(() {
-        _newsIdMap[value.respData?.columnTypeList?[0].id ?? 0] = [newsListAd];
+        _newsIdMap[value?.respData?.columnTypeList?[0].id ?? 0] = [newsListAd];
         _newsPagination = pagination;
       });
     });
@@ -66,9 +63,9 @@ class _ScrollableTabsPageState extends State<ScrollableTabsPage>
 
   void _tabBarListener() async {
     int index = _tabController!.index;
-    int tabId = allTbas?.respData?.columnTypeList?[index].id ?? 0;
+    int tabId = allTabs?.respData?.columnTypeList?[index].id ?? 0;
     if (_newsIdMap[tabId] == null) {
-      INewsListAd newsListAd = await getNewsListAd(
+      ListModel? newsListAd = await getNewsListAd(
         {
           "column_id": tabId,
           "pageNum": _newsPagination[tabId]?['pageNum'],
@@ -89,7 +86,7 @@ class _ScrollableTabsPageState extends State<ScrollableTabsPage>
         if (snapshot.hasError) {
           return Text('Error: ${snapshot.error}'); // 错误处理
         }
-        var columnTypeList = snapshot.data?.respData?.columnTypeList;
+        var columnTypeList = snapshot.data?.respData.columnTypeList;
         if (columnTypeList != null && _tabController != null) {
           return MaterialApp(
             title: 'News',
@@ -100,7 +97,7 @@ class _ScrollableTabsPageState extends State<ScrollableTabsPage>
                 bottom: TabBar(
                   controller: _tabController,
                   isScrollable: true,
-                  tabs: columnTypeList.map((item) {
+                  tabs: columnTypeList.map<Widget>((item) {
                     return Tab(
                       text: item.name,
                     );
@@ -116,18 +113,18 @@ class _ScrollableTabsPageState extends State<ScrollableTabsPage>
               ),
               body: TabBarView(
                 controller: _tabController,
-                children: columnTypeList.map((item) {
+                children: columnTypeList.map<Widget>((item) {
                   return TabContent(
                     tabId: item.id!,
                     newsIdMap: _newsIdMap,
-                    itemTap: (NewsItem news) {
+                    itemTap: (news) {
                       Application.router.navigateTo(
                         context,
                         "/scrollable-tabs-detail?title=${Uri.encodeComponent(news.title!)}&id=${news.id}",
                       );
                     },
                     pullToRefresh: (tabId, refreshController) async {
-                      INewsListAd newsListAd = await getNewsListAd(
+                      ListModel? newsListAd = await getNewsListAd(
                         {
                           "column_id": tabId,
                           "pageNum": 1,
@@ -145,7 +142,7 @@ class _ScrollableTabsPageState extends State<ScrollableTabsPage>
                     moreLoad: (tabId, refreshController) async {
                       int pageNum = _newsPagination[tabId]?['pageNum'] ?? 1;
                       pageNum++;
-                      INewsListAd newsListAd = await getNewsListAd(
+                      ListModel? newsListAd = await getNewsListAd(
                         {
                           "column_id": tabId,
                           "pageNum": pageNum,
@@ -162,7 +159,7 @@ class _ScrollableTabsPageState extends State<ScrollableTabsPage>
                       refreshController.loadComplete();
                     },
                   );
-                }).toList(),
+                }).toList() as List<Widget>,
               ),
             ),
           );

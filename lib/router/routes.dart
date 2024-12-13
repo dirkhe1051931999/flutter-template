@@ -41,11 +41,19 @@ class Routes {
     // request
     router.define(request, handler: requestRouteHandler);
     // profile
-    router.define(profile, handler: profileRouteHandler);
+    router.define(
+      profile,
+      handler: profileRouteHandler,
+    );
     // scrollable-tabs
-    router.define(scrollableTabs, handler: scrollableTabsRouteHandler);
+    router.define(
+      scrollableTabs,
+      handler: scrollableTabsRouteHandler,
+    );
     // scrollable-tabs-detail
-    router.define(scrollableTabsDetail,
-        handler: scrollableTabsDetailRouteHandler);
+    router.define(
+      scrollableTabsDetail,
+      handler: scrollableTabsDetailRouteHandler,
+    );
   }
 }

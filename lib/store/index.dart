@@ -23,12 +23,15 @@ class AppState {
 
   // Getters for each state piece
   List<String> get todos => _data['todos'] as List<String>;
+
   IUserinfo get userinfo =>
       IUserinfo.fromMap(_data['userinfo'] as Map<String, dynamic>);
 
   // Getter for initial state
   static Map<String, dynamic> get initialState => _initialState;
+
   AppState._(this._data);
+
   // copyWith-like method that works with map
   AppState update(dynamic changes) {
     return AppState._(recursiveMerge(_data, changes));

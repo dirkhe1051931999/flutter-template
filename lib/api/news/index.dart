@@ -1,45 +1,42 @@
 import 'package:dio/dio.dart';
-import 'package:flutter_template_start/model/news/inews_detail_ad.dart';
-import 'package:flutter_template_start/model/news/news_column_add.dart';
-import 'package:flutter_template_start/model/news/news_list_ad.dart';
+import 'package:flutter_template_start/model/news/index.dart';
 import 'package:flutter_template_start/utils/helper.dart';
 import 'package:flutter_template_start/utils/request.dart';
 
-var client = DioClient(baseUrl: 'https://h5news.ttlaosiji.cn:8080');
-Future<INewsColumnAdd> getNewsColumnAdd() async {
+var client = DioClient(baseUrl: 'https://www.oolaf.top');
+
+Future<TabsModel?> getNewsColumnAdd() async {
   try {
-    Response response = await client.postFormData('/newsColumnAdd', data: {
-      "channelCode": 'tt',
-    });
+    Response response = await client.get('/flutter-mock/news/tabs.json', queryParameters: {});
     if (response.statusCode == 200 && response.data != null) {
-      return INewsColumnAdd.fromJson(response.data);
+      return TabsModel.fromJson(response.data);
     }
   } catch (e) {
     customLogger.log('Error: $e');
   }
-  return INewsColumnAdd();
+  return null;
 }
 
-Future<INewsListAd> getNewsListAd(Map<String, dynamic> data) async {
+Future<ListModel?> getNewsListAd(Map<String, dynamic> data) async {
   try {
-    Response response = await client.postFormData('/newsListAd', data: data);
+    Response response = await client.get('/flutter-mock/news/list.json', queryParameters: data);
     if (response.statusCode == 200 && response.data != null) {
-      return INewsListAd.fromJson(response.data);
+      return ListModel.fromJson(response.data);
     }
   } catch (e) {
     customLogger.log('Error: $e');
   }
-  return INewsListAd();
+  return null;
 }
 
-Future<INewsDetailAd> getNewsDetailAd(Map<String, dynamic> data) async {
+Future<DetailModel?> getNewsDetailAd(Map<String, dynamic> data) async {
   try {
-    Response response = await client.postFormData('/newsDetailAd', data: data);
+    Response response = await client.get('/flutter-mock/news/detail.json', queryParameters: data);
     if (response.statusCode == 200 && response.data != null) {
-      return INewsDetailAd.fromJson(response.data);
+      return DetailModel.fromJson(response.data);
     }
   } catch (e) {
     customLogger.log('Error: $e');
   }
-  return INewsDetailAd();
+  return null;
 }
