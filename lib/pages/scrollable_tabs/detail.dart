@@ -313,5 +313,18 @@ List<Widget> parseHtmlString(String htmlString) {
     }
   }
 
+  if (widgets.isEmpty && htmlString.isNotEmpty) {
+    widgets.add(Text(
+      htmlString,
+      style: TextStyle(
+        color: Color(
+          ColorHelpers.fromHexString('#323232'),
+        ),
+        fontWeight: FontWeight.w400,
+        fontSize: 14.sp,
+      ),
+    ));
+  }
+
   return widgets;
 }

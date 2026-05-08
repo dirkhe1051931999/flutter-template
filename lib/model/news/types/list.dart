@@ -9,13 +9,13 @@ class ListModel extends INewsCommon {
   }) : super(respData: respData);
 
   factory ListModel.fromJson(Map<String, dynamic> json) => ListModel(
-        respStatus: json["resp_status"],
-        respInfo: json["resp_info"],
-        errorCode: json["errorCode"],
-        respData: json["resp_data"] == null
+        respStatus: json["success"] == true ? "success" : "fail",
+        respInfo: json["message"],
+        errorCode: json["code"]?.toString(),
+        respData: json["data"]?["list"] == null
             ? []
             : List<ListItem>.from(
-                json["resp_data"].map((x) => ListItem.fromJson(x))),
+                json["data"]["list"].map((x) => ListItem.fromJson(x))),
       );
 
   @override
@@ -45,6 +45,10 @@ class ListItem {
   bool? isPush;
   int? nextId;
   String? jumpAddr;
+  String? author;
+  String? avatar;
+  int? createdAt;
+  int? likes;
 
   ListItem({
     this.id,
@@ -62,24 +66,32 @@ class ListItem {
     this.isPush,
     this.nextId,
     this.jumpAddr,
+    this.author,
+    this.avatar,
+    this.createdAt,
+    this.likes,
   });
 
   factory ListItem.fromJson(Map<String, dynamic> json) => ListItem(
         id: json["id"],
         columnId: json["columnId"],
-        title: json["title"],
+        title: json["author"],
         subhead: json["subhead"],
-        source: json["source"],
-        sourceImg: json["sourceImg"],
-        date: json["date"],
-        smallImgs: json["smallImgs"],
+        source: json["author"],
+        sourceImg: json["avatar"],
+        date: json["createdAt"]?.toString(),
+        smallImgs: json["avatar"],
         readCnt: json["readCnt"],
-        heatCnt: json["heatCnt"],
+        heatCnt: json["likes"],
         content: json["content"],
         commentCnt: json["commentCnt"],
         isPush: json["isPush"],
         nextId: json["nextId"],
         jumpAddr: json["jumpAddr"],
+        author: json["author"],
+        avatar: json["avatar"],
+        createdAt: json["createdAt"],
+        likes: json["likes"],
       );
 
   Map<String, dynamic> toJson() => {
@@ -98,5 +110,9 @@ class ListItem {
         "isPush": isPush,
         "nextId": nextId,
         "jumpAddr": jumpAddr,
+        "author": author,
+        "avatar": avatar,
+        "createdAt": createdAt,
+        "likes": likes,
       };
 }

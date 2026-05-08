@@ -3,23 +3,30 @@ import 'package:flutter_template_start/model/news/index.dart';
 import 'package:flutter_template_start/utils/helper.dart';
 import 'package:flutter_template_start/utils/request.dart';
 
-var client = DioClient(baseUrl: 'https://www.oolaf.top');
+var client = DioClient(baseUrl: 'https://aphelios-api.oolaf.top');
 
 Future<TabsModel?> getNewsColumnAdd() async {
-  try {
-    Response response = await client.get('/flutter-mock/news/tabs.json', queryParameters: {});
-    if (response.statusCode == 200 && response.data != null) {
-      return TabsModel.fromJson(response.data);
-    }
-  } catch (e) {
-    customLogger.log('Error: $e');
-  }
-  return null;
+  return TabsModel.fromJson({
+    'data': {
+      'columnTypeList': [
+        {'id': 1, 'name': '最早', 'sort': 'earliest'},
+        {'id': 2, 'name': '最晚', 'sort': 'latest'},
+        {'id': 3, 'name': '最热', 'sort': 'popular'},
+      ],
+    },
+    'code': 200,
+    'success': true,
+    'message': 'SUCCESS',
+  });
 }
 
 Future<ListModel?> getNewsListAd(Map<String, dynamic> data) async {
   try {
-    Response response = await client.get('/flutter-mock/news/list.json', queryParameters: data);
+    Response response = await client.get('/guestbook/list', queryParameters: {
+      'page': data['pageNum'] ?? data['page'] ?? 1,
+      'pageSize': data['pageSize'] ?? 10,
+      'sort': data['sort'] ?? _sortByColumnId(data['column_id']),
+    });
     if (response.statusCode == 200 && response.data != null) {
       return ListModel.fromJson(response.data);
     }
@@ -31,12 +38,26 @@ Future<ListModel?> getNewsListAd(Map<String, dynamic> data) async {
 
 Future<DetailModel?> getNewsDetailAd(Map<String, dynamic> data) async {
   try {
-    Response response = await client.get('/flutter-mock/news/detail.json', queryParameters: data);
+    Response response = await client.get('/guestbook/list', queryParameters: {
+      'page': 1,
+      'pageSize': 10,
+      'sort': data['sort'] ?? 'earliest',
+    });
     if (response.statusCode == 200 && response.data != null) {
-      return DetailModel.fromJson(response.data);
+      return DetailModel.fromJson(response.data, data['news_id']);
     }
   } catch (e) {
     customLogger.log('Error: $e');
   }
   return null;
+}
+
+String _sortByColumnId(dynamic columnId) {
+  if (columnId == 2) {
+    return 'latest';
+  }
+  if (columnId == 3) {
+    return 'popular';
+  }
+  return 'earliest';
 }

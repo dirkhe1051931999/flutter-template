@@ -9,142 +9,147 @@ IBanner iBannerFromJson(String str) => IBanner.fromJson(json.decode(str));
 String iBannerToJson(IBanner data) => json.encode(data.toJson());
 
 class IBanner {
-  List<Banner>? banners;
+  GuestbookData? data;
   int? code;
+  bool? success;
+  String? message;
 
   IBanner({
-    this.banners,
+    this.data,
     this.code,
+    this.success,
+    this.message,
   });
 
   factory IBanner.fromJson(Map<String, dynamic> json) => IBanner(
-        banners: json["banners"] == null
-            ? []
-            : List<Banner>.from(
-                json["banners"]!.map((x) => Banner.fromJson(x))),
+        data: json["data"] == null ? null : GuestbookData.fromJson(json["data"]),
         code: json["code"],
+        success: json["success"],
+        message: json["message"],
       );
 
   Map<String, dynamic> toJson() => {
-        "banners": banners == null
-            ? []
-            : List<dynamic>.from(banners!.map((x) => x.toJson())),
+        "data": data?.toJson(),
         "code": code,
+        "success": success,
+        "message": message,
       };
 }
 
-class Banner {
-  String? imageUrl;
-  int? targetId;
-  dynamic adid;
-  int? targetType;
-  String? titleColor;
-  String? typeTitle;
-  String? url;
-  bool? exclusive;
-  dynamic monitorImpress;
-  dynamic monitorClick;
-  dynamic monitorType;
-  dynamic monitorImpressList;
-  dynamic monitorClickList;
-  dynamic monitorBlackList;
-  dynamic extMonitor;
-  dynamic extMonitorInfo;
-  dynamic adSource;
-  dynamic adLocation;
-  dynamic adDispatchJson;
-  String? encodeId;
-  dynamic program;
-  dynamic event;
-  dynamic video;
-  dynamic song;
-  String? scm;
-  String? bannerBizType;
+class GuestbookData {
+  int? total;
+  int? page;
+  int? pageSize;
+  List<GuestbookItem>? list;
 
-  Banner({
-    this.imageUrl,
-    this.targetId,
-    this.adid,
-    this.targetType,
-    this.titleColor,
-    this.typeTitle,
-    this.url,
-    this.exclusive,
-    this.monitorImpress,
-    this.monitorClick,
-    this.monitorType,
-    this.monitorImpressList,
-    this.monitorClickList,
-    this.monitorBlackList,
-    this.extMonitor,
-    this.extMonitorInfo,
-    this.adSource,
-    this.adLocation,
-    this.adDispatchJson,
-    this.encodeId,
-    this.program,
-    this.event,
-    this.video,
-    this.song,
-    this.scm,
-    this.bannerBizType,
+  GuestbookData({
+    this.total,
+    this.page,
+    this.pageSize,
+    this.list,
   });
 
-  factory Banner.fromJson(Map<String, dynamic> json) => Banner(
-        imageUrl: json["imageUrl"],
-        targetId: json["targetId"],
-        adid: json["adid"],
-        targetType: json["targetType"],
-        titleColor: json["titleColor"],
-        typeTitle: json["typeTitle"],
-        url: json["url"],
-        exclusive: json["exclusive"],
-        monitorImpress: json["monitorImpress"],
-        monitorClick: json["monitorClick"],
-        monitorType: json["monitorType"],
-        monitorImpressList: json["monitorImpressList"],
-        monitorClickList: json["monitorClickList"],
-        monitorBlackList: json["monitorBlackList"],
-        extMonitor: json["extMonitor"],
-        extMonitorInfo: json["extMonitorInfo"],
-        adSource: json["adSource"],
-        adLocation: json["adLocation"],
-        adDispatchJson: json["adDispatchJson"],
-        encodeId: json["encodeId"],
-        program: json["program"],
-        event: json["event"],
-        video: json["video"],
-        song: json["song"],
-        scm: json["scm"],
-        bannerBizType: json["bannerBizType"],
+  factory GuestbookData.fromJson(Map<String, dynamic> json) => GuestbookData(
+        total: json["total"],
+        page: json["page"],
+        pageSize: json["pageSize"],
+        list: json["list"] == null
+            ? []
+            : List<GuestbookItem>.from(
+                json["list"].map((x) => GuestbookItem.fromJson(x))),
       );
 
   Map<String, dynamic> toJson() => {
-        "imageUrl": imageUrl,
-        "targetId": targetId,
-        "adid": adid,
-        "targetType": targetType,
-        "titleColor": titleColor,
-        "typeTitle": typeTitle,
-        "url": url,
-        "exclusive": exclusive,
-        "monitorImpress": monitorImpress,
-        "monitorClick": monitorClick,
-        "monitorType": monitorType,
-        "monitorImpressList": monitorImpressList,
-        "monitorClickList": monitorClickList,
-        "monitorBlackList": monitorBlackList,
-        "extMonitor": extMonitor,
-        "extMonitorInfo": extMonitorInfo,
-        "adSource": adSource,
-        "adLocation": adLocation,
-        "adDispatchJson": adDispatchJson,
-        "encodeId": encodeId,
-        "program": program,
-        "event": event,
-        "video": video,
-        "song": song,
-        "scm": scm,
-        "bannerBizType": bannerBizType,
+        "total": total,
+        "page": page,
+        "pageSize": pageSize,
+        "list": list == null
+            ? []
+            : List<dynamic>.from(list!.map((x) => x.toJson())),
+      };
+}
+
+class GuestbookItem {
+  int? id;
+  String? author;
+  String? avatar;
+  String? content;
+  int? createdAt;
+  int? likes;
+  List<GuestbookReply>? replies;
+
+  GuestbookItem({
+    this.id,
+    this.author,
+    this.avatar,
+    this.content,
+    this.createdAt,
+    this.likes,
+    this.replies,
+  });
+
+  factory GuestbookItem.fromJson(Map<String, dynamic> json) => GuestbookItem(
+        id: json["id"],
+        author: json["author"],
+        avatar: json["avatar"],
+        content: json["content"],
+        createdAt: json["createdAt"],
+        likes: json["likes"],
+        replies: json["replies"] == null
+            ? []
+            : List<GuestbookReply>.from(
+                json["replies"].map((x) => GuestbookReply.fromJson(x))),
+      );
+
+  Map<String, dynamic> toJson() => {
+        "id": id,
+        "author": author,
+        "avatar": avatar,
+        "content": content,
+        "createdAt": createdAt,
+        "likes": likes,
+        "replies": replies == null
+            ? []
+            : List<dynamic>.from(replies!.map((x) => x.toJson())),
+      };
+}
+
+class GuestbookReply {
+  int? id;
+  String? from;
+  String? avatar;
+  String? to;
+  String? content;
+  int? createdAt;
+  int? likes;
+
+  GuestbookReply({
+    this.id,
+    this.from,
+    this.avatar,
+    this.to,
+    this.content,
+    this.createdAt,
+    this.likes,
+  });
+
+  factory GuestbookReply.fromJson(Map<String, dynamic> json) => GuestbookReply(
+        id: json["id"],
+        from: json["from"],
+        avatar: json["avatar"],
+        to: json["to"],
+        content: json["content"],
+        createdAt: json["createdAt"],
+        likes: json["likes"],
+      );
+
+  Map<String, dynamic> toJson() => {
+        "id": id,
+        "from": from,
+        "avatar": avatar,
+        "to": to,
+        "content": content,
+        "createdAt": createdAt,
+        "likes": likes,
       };
 }

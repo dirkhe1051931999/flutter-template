@@ -9,10 +9,10 @@ class TabsModel extends INewsCommon {
   }) : super(respData: respData);
 
   factory TabsModel.fromJson(Map<String, dynamic> json) => TabsModel(
-        respStatus: json["resp_status"],
-        respInfo: json["resp_info"],
-        errorCode: json["errorCode"],
-        respData: json["resp_data"] == null ? null : TabsRespData.fromJson(json["resp_data"]),
+        respStatus: json["success"] == true ? "success" : "fail",
+        respInfo: json["message"],
+        errorCode: json["code"]?.toString(),
+        respData: json["data"] == null ? null : TabsRespData.fromJson(json["data"]),
       );
 
   @override
@@ -50,6 +50,7 @@ class TabsItem {
   int? type;
   int? clickType;
   dynamic clickUrl;
+  String? sort;
 
   TabsItem({
     this.id,
@@ -57,6 +58,7 @@ class TabsItem {
     this.type,
     this.clickType,
     this.clickUrl,
+    this.sort,
   });
 
   factory TabsItem.fromJson(Map<String, dynamic> json) => TabsItem(
@@ -65,6 +67,7 @@ class TabsItem {
         type: json["type"],
         clickType: json["clickType"],
         clickUrl: json["clickUrl"],
+        sort: json["sort"],
       );
 
   Map<String, dynamic> toJson() => {
@@ -73,5 +76,6 @@ class TabsItem {
         "type": type,
         "clickType": clickType,
         "clickUrl": clickUrl,
+        "sort": sort,
       };
 }

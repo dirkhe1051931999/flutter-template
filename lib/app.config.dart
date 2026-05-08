@@ -6,7 +6,7 @@ class APP_CONFIG {
   static const String APP_DESCRIPTION = 'FlutterTemplate';
   static const String APP_REFRESH_TOKEN = 'refresh_token';
   static const String APP_REFRESH_TOKEN_PATH = '/refresh_token';
-  static const String BASE_URL = 'https://h5news.ttlaosiji.cn:8080';
+  static const String BASE_URL = 'https://aphelios-api.oolaf.top';
   static const int CONNECT_TIMEOUT = 10;
   static const int RECEIVE_TIMEOUT = 30;
   static const String COOKIE_PATH = '/$APP_NAME/.cookies/';

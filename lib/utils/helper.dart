@@ -33,9 +33,10 @@ class ColorHelpers {
   static Color blackOrWhiteContrastColor(Color sourceColor,
       {ContrastPreference prefer = ContrastPreference.none}) {
     // Will return a value between 0.0 (black) and 1.0 (white)
-    double value = (((sourceColor.red * 299.0) +
-                (sourceColor.green * 587.0) +
-                (sourceColor.blue * 114.0)) /
+    final red = (sourceColor.r * 255.0).round().clamp(0, 255);
+    final green = (sourceColor.g * 255.0).round().clamp(0, 255);
+    final blue = (sourceColor.b * 255.0).round().clamp(0, 255);
+    double value = (((red * 299.0) + (green * 587.0) + (blue * 114.0)) /
             1000.0) /
         255.0;
     if (prefer != ContrastPreference.none) {

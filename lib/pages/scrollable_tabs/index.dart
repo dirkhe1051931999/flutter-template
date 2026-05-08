@@ -120,7 +120,7 @@ class _ScrollableTabsPageState extends State<ScrollableTabsPage> with TickerProv
                     itemTap: (news) {
                       Application.router.navigateTo(
                         context,
-                        "/scrollable-tabs-detail?title=${Uri.encodeComponent(news.title!)}&id=${news.id}",
+                        "/scrollable-tabs-detail?title=${Uri.encodeComponent(news.author ?? '')}&id=${news.id}",
                       );
                     },
                     pullToRefresh: (tabId, refreshController) async {

@@ -16,6 +16,10 @@ class HomePage extends StatelessWidget {
       return Padding(
         padding: const EdgeInsets.all(4.0),
         child: ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.white,
+            foregroundColor: Colors.black87,
+          ),
           onPressed: () {
             var transition = TransitionType.inFromRight;
             Application.router.navigateTo(
@@ -26,7 +30,9 @@ class HomePage extends StatelessWidget {
           },
           child: Text(
             title,
-            style: Theme.of(context).textTheme.bodyMedium,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Colors.black87,
+                ),
           ),
         ),
       );

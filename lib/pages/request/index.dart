@@ -30,60 +30,67 @@ class _RequestPageState extends State<RequestPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scrollbar(
-      controller: _scrollController,
-      child: Stack(
-        children: [
-          ListView.builder(
-            controller: _scrollController,
-            itemCount: total,
-            itemBuilder: (context, index) {
-              return ListTile(
-                title: Text(banner!.banners![index].typeTitle!),
-                subtitle: Text(banner!.banners![index].imageUrl!),
-              );
-            },
+    return Column(
+      children: [
+        Expanded(
+          child: Stack(
+            children: [
+              Scrollbar(
+                controller: _scrollController,
+                child: ListView.builder(
+                  controller: _scrollController,
+                  itemCount: total,
+                  itemBuilder: (context, index) {
+                    final item = banner!.data!.list![index];
+                    return ListTile(
+                      title: Text(item.author ?? ''),
+                      subtitle: Text(item.content ?? ''),
+                    );
+                  },
+                ),
+              ),
+              if (isLoading)
+                const Center(
+                  child: CircularProgressIndicator(),
+                ),
+            ],
           ),
-          Positioned(
-            bottom: 10,
-            right: 10,
-            child: ElevatedButton(
-              onPressed: () async {
-                setState(() {
-                  isLoading = true;
-                });
-                dynamic result = await commonGetRequest();
-                IBanner banner = IBanner.fromJson(result);
-                setState(() {
-                  this.banner = banner;
-                  dataList = banner.banners;
-                  total = banner.banners!.length;
-                  isLoading = false;
-                });
-              },
-              child: const Text('请求数据'),
-            ),
+        ),
+        Padding(
+          padding: const EdgeInsets.all(10),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              ElevatedButton(
+                onPressed: () {
+                  setState(() {
+                    banner = null;
+                    dataList = null;
+                    total = 0;
+                  });
+                },
+                child: const Text('清除数据'),
+              ),
+              ElevatedButton(
+                onPressed: () async {
+                  setState(() {
+                    isLoading = true;
+                  });
+                  dynamic result = await commonGetRequest();
+                  IBanner banner = IBanner.fromJson(result);
+                  setState(() {
+                    this.banner = banner;
+                    dataList = banner.data?.list;
+                    total = banner.data?.list?.length ?? 0;
+                    isLoading = false;
+                  });
+                },
+                child: const Text('请求数据'),
+              ),
+            ],
           ),
-          Positioned(
-            left: 10,
-            bottom: 10,
-            child: ElevatedButton(
-              onPressed: () {
-                setState(() {
-                  banner = null;
-                  dataList = null;
-                  total = 0;
-                });
-              },
-              child: const Text('清除数据'),
-            ),
-          ),
-          if (isLoading)
-            const Center(
-              child: CircularProgressIndicator(),
-            ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

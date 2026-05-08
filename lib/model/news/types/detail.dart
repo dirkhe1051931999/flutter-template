@@ -9,11 +9,11 @@ class DetailModel extends INewsCommon {
     DetailRespData? respData,
   }) : super(respData: respData);
 
-  factory DetailModel.fromJson(Map<String, dynamic> json) => DetailModel(
-        respStatus: json["resp_status"],
-        respInfo: json["resp_info"],
-        errorCode: json["errorCode"],
-        respData: json["resp_data"] == null ? null : DetailRespData.fromJson(json["resp_data"]),
+  factory DetailModel.fromJson(Map<String, dynamic> json, [int? id]) => DetailModel(
+        respStatus: json["success"] == true ? "success" : "fail",
+        respInfo: json["message"],
+        errorCode: json["code"]?.toString(),
+        respData: json["data"] == null ? null : DetailRespData.fromJson(json["data"], id),
       );
 
   @override
@@ -32,9 +32,16 @@ class DetailRespData {
     this.newsvo,
   });
 
-  factory DetailRespData.fromJson(Map<String, dynamic> json) => DetailRespData(
-        newsvo: json["newsvo"] == null ? null : NewsVo.fromJson(json["newsvo"]),
-      );
+  factory DetailRespData.fromJson(Map<String, dynamic> json, [int? id]) {
+    final List<dynamic> list = json["list"] ?? [];
+    final matched = list.cast<Map<String, dynamic>?>().firstWhere(
+          (item) => item?["id"] == id,
+          orElse: () => list.isEmpty ? null : list.first,
+        );
+    return DetailRespData(
+      newsvo: matched == null ? null : NewsVo.fromJson(matched),
+    );
+  }
 
   Map<String, dynamic> toJson() => {
         "newsvo": newsvo?.toJson(),
@@ -57,6 +64,10 @@ class NewsVo {
   String? isPush;
   int? nextId;
   String? jumpAddr;
+  String? author;
+  String? avatar;
+  int? createdAt;
+  int? likes;
 
   NewsVo({
     this.id,
@@ -74,24 +85,32 @@ class NewsVo {
     this.isPush,
     this.nextId,
     this.jumpAddr,
+    this.author,
+    this.avatar,
+    this.createdAt,
+    this.likes,
   });
 
   factory NewsVo.fromJson(Map<String, dynamic> json) => NewsVo(
         id: json["id"],
         columnId: json["columnId"],
-        title: json["title"],
+        title: json["author"],
         subhead: json["subhead"],
-        source: json["source"],
-        sourceImg: json["sourceImg"],
-        date: json["date"],
-        smallImgs: json["smallImgs"],
+        source: json["author"],
+        sourceImg: json["avatar"],
+        date: json["createdAt"]?.toString(),
+        smallImgs: json["avatar"],
         readCnt: json["readCnt"],
-        heatCnt: json["heatCnt"],
+        heatCnt: json["likes"],
         content: json["content"],
         commentCnt: json["commentCnt"],
         isPush: json["isPush"],
         nextId: json["nextId"],
         jumpAddr: json["jumpAddr"],
+        author: json["author"],
+        avatar: json["avatar"],
+        createdAt: json["createdAt"],
+        likes: json["likes"],
       );
 
   Map<String, dynamic> toJson() => {
@@ -110,5 +129,9 @@ class NewsVo {
         "isPush": isPush,
         "nextId": nextId,
         "jumpAddr": jumpAddr,
+        "author": author,
+        "avatar": avatar,
+        "createdAt": createdAt,
+        "likes": likes,
       };
 }

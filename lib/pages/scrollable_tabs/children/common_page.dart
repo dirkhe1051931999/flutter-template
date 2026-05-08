@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -103,7 +101,7 @@ class CommonPage extends StatelessWidget {
         itemCount: newsItem.length,
         itemBuilder: (context, index) {
           List<dynamic> images =
-              newsItem[index].smallImgs != null ? [newsItem[index].smallImgs] : [];
+              newsItem[index].avatar != null ? [newsItem[index].avatar] : [];
           return GestureDetector(
             onTap: () {
               itemTap(newsItem[index]);
@@ -111,7 +109,8 @@ class CommonPage extends StatelessWidget {
             child: Column(
               children: [
                 ListTile(
-                  title: Text(newsItem[index].title ?? ''),
+                  title: Text(newsItem[index].author ?? ''),
+                  subtitle: Text(newsItem[index].content ?? ''),
                 ),
                 images.isNotEmpty
                     ? Padding(

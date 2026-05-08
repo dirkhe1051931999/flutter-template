@@ -41,6 +41,9 @@ class FluroPage extends StatelessWidget {
         Application.router
             .navigateTo(context, route, transition: transitionType)
             .then((value) {
+          if (!context.mounted) {
+            return;
+          }
           if (key == "pop-result") {
             Application.router.navigateTo(
                 context, "/path3?message=${Uri.encodeComponent(value)}");
