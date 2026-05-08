@@ -1,0 +1,266 @@
+# Flutter/Dart Coding Rules for Vue/TypeScript Developers
+
+本项目的代码风格应尽量贴近高级前端开发者熟悉的 Vue + TypeScript 工程化思维：模块职责清晰、类型显式、单例集中、API 层薄封装、状态不可变、命名语义化。
+
+## 总原则
+
+- 写 Dart/Flutter 代码时，优先类比 Vue/TS 项目中的 `request.ts`、`api/*.ts`、`store/*.ts`、`types.ts`、`constants.ts` 分层方式。
+- 避免把初始化、副作用、业务逻辑、UI 构建混在同一个 Widget 中。
+- 避免使用 `dynamic`、裸 `Map<String, dynamic>` 作为核心业务模型；优先使用强类型 class/model。
+- 公共实例应集中导出，不要在多个业务文件里重复 `new`。
+- 命名必须有业务语义，不允许长期保留 demo 命名，例如 `path1`、`testPage`、`data1`。
+
+## 网络层规则
+
+### 错误写法
+
+```dart
+var client = DioClient(baseUrl: 'https://example.com');
+```
+
+在每个 API 文件中重复创建 client，等价于在多个 Vue API 文件里重复 `axios.create()`，会导致拦截器、baseURL、token、cookie 行为不一致。
+
+### 正确写法
+
+```dart
+import 'package:flutter_template_start/utils/request.dart';
+
+final response = await httpClient.get('/guestbook/list');
+```
+
+统一从 `utils/request.dart` 导入 `httpClient`，类似 Vue/TS 项目中的统一 `request.ts` 实例。
+
+### 规则
+
+- `DioClient` 只能在网络基础设施层创建。
+- API 文件只负责声明业务接口，不负责创建 HTTP client。
+- token 注入、refresh token、错误日志、cookie 管理必须放在 `DioClient` 拦截器中。
+- 不允许在页面 Widget 中直接调用 `Dio()` 或 `DioClient()`。
+
+## API 层规则
+
+### 错误写法
+
+```dart
+dynamic commonGetRequest() async {
+  final response = await httpClient.get('/guestbook/list');
+  return response.data;
+}
+```
+
+问题：返回类型不明确，调用方不知道数据结构。
+
+### 正确写法
+
+```dart
+Future<ListModel?> getNewsList(Map<String, dynamic> params) async {
+  final response = await httpClient.get('/guestbook/list', queryParameters: params);
+  return ListModel.fromJson(response.data);
+}
+```
+
+### 规则
+
+- API 方法必须使用明确返回类型，例如 `Future<UserModel?>`、`Future<List<NewsItem>>`。
+- API 方法名要表达业务含义，例如 `getNewsList`，不要使用 `commonGetRequest` 这类泛化命名。
+- API 层负责把 response 转成 model，不把裸 `response.data` 随意透传到 UI 层。
+
+## 类型和 Model 规则
+
+### 错误写法
+
+```dart
+Map<String, dynamic> user = {
+  'name': 'Tom',
+  'age': 18,
+};
+```
+
+核心业务数据长期使用 Map，类似 TS 里全部写 `any`。
+
+### 正确写法
+
+```dart
+class UserInfo {
+  const UserInfo({
+    required this.name,
+    required this.age,
+  });
+
+  final String name;
+  final int age;
+}
+```
+
+### 规则
+
+- 业务实体必须建 model class。
+- 能不用 `dynamic` 就不用 `dynamic`。
+- `fromJson` / `toJson` 统一放在 model 内。
+- 命名不要使用 TypeScript 接口风格的 `IUserInfo`，Dart 中使用 `UserInfo`。
+
+## 状态管理规则
+
+### 错误写法
+
+```dart
+AppState update(dynamic changes) {
+  return AppState._(recursiveMerge(_data, changes));
+}
+```
+
+问题：类似 TS 中用 `any` 改 store，类型不可控。
+
+### 正确写法
+
+```dart
+class AppState {
+  const AppState({
+    required this.todos,
+    required this.userInfo,
+  });
+
+  final List<String> todos;
+  final UserInfo userInfo;
+
+  AppState copyWith({
+    List<String>? todos,
+    UserInfo? userInfo,
+  }) {
+    return AppState(
+      todos: todos ?? this.todos,
+      userInfo: userInfo ?? this.userInfo,
+    );
+  }
+}
+```
+
+### 规则
+
+- Store state 应使用强类型不可变对象。
+- 修改 state 时使用 `copyWith` 思路，类似前端 immutable update。
+- Reducer/action 必须有明确类型，不要用无约束 `dynamic action`。
+
+## Widget 组件规则
+
+### 错误写法
+
+```dart
+class Layout extends StatelessWidget {
+  Layout() {
+    initRouter();
+    initStore();
+    initLoading();
+  }
+}
+```
+
+问题：Widget 构造函数里做过多副作用，类似在 Vue render 阶段做应用初始化。
+
+### 正确写法
+
+```dart
+void main() {
+  final router = createRouter();
+  final store = createStore();
+
+  runApp(App(router: router, store: store));
+}
+```
+
+### 规则
+
+- Widget 主要负责 UI composition。
+- 应用启动初始化放在 `main()` 或 bootstrap 文件中。
+- 页面 Widget 不直接承担网络 client、router、store 初始化职责。
+- 可复用 UI 抽成 components，业务页面放 pages。
+
+## 命名规则
+
+### 错误写法
+
+```dart
+static String path1 = '/path1';
+static String path2 = '/path2';
+var data1 = {};
+class IUserinfo {}
+```
+
+### 正确写法
+
+```dart
+static const newsDetail = '/news/detail';
+static const todoList = '/todolist';
+final newsQuery = NewsQuery(...);
+class UserInfo {}
+```
+
+### 规则
+
+- 类名使用 `UpperCamelCase`。
+- 变量、方法、字段使用 `lowerCamelCase`。
+- 路由名、API 方法名、model 名必须表达业务语义。
+- 不使用 `I` 前缀模拟 TypeScript interface。
+
+## 配置规则
+
+### 错误写法
+
+```dart
+class APP_CONFIG {
+  static const String BASE_URL = 'https://example.com';
+}
+```
+
+### 正确写法
+
+```dart
+class AppConfig {
+  static const baseUrl = String.fromEnvironment(
+    'BASE_URL',
+    defaultValue: 'https://example.com',
+  );
+}
+```
+
+### 规则
+
+- 配置类使用 Dart 风格命名，例如 `AppConfig`。
+- 环境配置优先考虑 `--dart-define`。
+- 不要为了保留错误命名而添加 lint ignore。
+
+## 错误处理规则
+
+### 错误写法
+
+```dart
+try {
+  await request();
+} catch (e) {
+  print(e);
+}
+```
+
+### 正确写法
+
+```dart
+try {
+  await request();
+} catch (error, stackTrace) {
+  customLogger.log('request failed: $error');
+}
+```
+
+### 规则
+
+- 不使用 `print` 做业务日志。
+- catch 中优先保留错误上下文。
+- 网络错误统一在 `DioClient` 中做基础日志和转换。
+- UI 层只处理用户可见反馈。
+
+## 后续改代码时必须遵守
+
+- 如果要新增 API，先放到 `lib/api/**`，使用统一 `httpClient`。
+- 如果要新增接口返回数据，先建 model，再写 API 方法。
+- 如果发现重复 client、重复 baseURL、重复 token 处理，应优先收敛到基础设施层。
+- 如果 Dart 写法和 Vue/TS 思路冲突，优先选择 Dart 生态推荐写法，但解释时使用 Vue/TS 类比说明。

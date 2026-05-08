@@ -1,11 +1,9 @@
 import 'package:flutter_template_start/utils/helper.dart';
 import 'package:flutter_template_start/utils/request.dart';
 
-var client = DioClient(baseUrl: 'https://aphelios-api.oolaf.top');
-
 dynamic commonGetRequest() async {
   try {
-    var response = await client.get('/guestbook/list', queryParameters: {
+    var response = await httpClient.get('/guestbook/list', queryParameters: {
       'page': 1,
       'pageSize': 10,
       'sort': 'earliest',
@@ -22,7 +20,7 @@ dynamic commonGetRequest() async {
 
 dynamic commonPostRequest() async {
   try {
-    var response = await client.post('/guestbook/list', data: {'code': 15});
+    var response = await httpClient.post('/guestbook/list', data: {'code': 15});
     if (response.statusCode == 200 && response.data != null) {
       return response.data;
     } else {

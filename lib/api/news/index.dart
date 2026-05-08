@@ -3,8 +3,6 @@ import 'package:flutter_template_start/model/news/index.dart';
 import 'package:flutter_template_start/utils/helper.dart';
 import 'package:flutter_template_start/utils/request.dart';
 
-var client = DioClient(baseUrl: 'https://aphelios-api.oolaf.top');
-
 Future<TabsModel?> getNewsColumnAdd() async {
   return TabsModel.fromJson({
     'data': {
@@ -22,7 +20,8 @@ Future<TabsModel?> getNewsColumnAdd() async {
 
 Future<ListModel?> getNewsListAd(Map<String, dynamic> data) async {
   try {
-    Response response = await client.get('/guestbook/list', queryParameters: {
+    Response response =
+        await httpClient.get('/guestbook/list', queryParameters: {
       'page': data['pageNum'] ?? data['page'] ?? 1,
       'pageSize': data['pageSize'] ?? 10,
       'sort': data['sort'] ?? _sortByColumnId(data['column_id']),
@@ -38,7 +37,8 @@ Future<ListModel?> getNewsListAd(Map<String, dynamic> data) async {
 
 Future<DetailModel?> getNewsDetailAd(Map<String, dynamic> data) async {
   try {
-    Response response = await client.get('/guestbook/list', queryParameters: {
+    Response response =
+        await httpClient.get('/guestbook/list', queryParameters: {
       'page': 1,
       'pageSize': 10,
       'sort': data['sort'] ?? 'earliest',

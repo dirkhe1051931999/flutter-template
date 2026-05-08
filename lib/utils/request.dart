@@ -1,9 +1,4 @@
-// ignore_for_file: slash_for_doc_comments, constant_identifier_names, camel_case_types
-
-/// 一个包含错误处理，日志，取消请求，动态 Headers，响应数据处理，文件上传和下载，持久化 Cookie，刷新令牌和请求队列和并发控制的Dio封装
-
 import 'dart:async';
-import 'dart:collection';
 
 import 'package:dio/dio.dart';
 import 'package:dio_cookie_manager/dio_cookie_manager.dart';
@@ -12,122 +7,38 @@ import 'package:flutter_template_start/app.config.dart';
 import 'package:flutter_template_start/utils/helper.dart';
 import 'package:logger/logger.dart';
 
+typedef TokenGetter = FutureOr<String?> Function();
+typedef TokenSetter = FutureOr<void> Function(String token);
+typedef RefreshTokenGetter = FutureOr<String?> Function();
+
+final httpClient = DioClient(baseUrl: AppConfig.baseUrl);
+
 class DioClient {
-  DioClient({required this.baseUrl}) {
-    _init();
-  }
-
-  final String baseUrl;
-  late final Dio _dio;
-
-  /// Token 是否正在刷新
-  bool isTokenBeingRefreshed = false;
-
-  /// lock 用于锁定dio，防止重复请求
-  final requestLock = RequestLock();
-
-  /// 请求队列
-  final List<Completer<void>> _pendingRequests = [];
-
-  /// log日志打印
-  final logger = Logger(
-    printer: PrettyPrinter(),
-  );
-
-  /// cancel token
-  /// cancelToken.cancel("Request was cancelled by user!");
-  final cancelToken = CancelToken();
-
-  /// 初始化函数
-  Future<void> _init() async {
-    _dio = Dio(BaseOptions(
-      baseUrl: baseUrl,
-      connectTimeout: const Duration(seconds: APP_CONFIG.CONNECT_TIMEOUT),
-      receiveTimeout: const Duration(seconds: APP_CONFIG.RECEIVE_TIMEOUT),
-      headers: {
-        'Content-Type': 'application/json',
-        'User-Agent':
-            'Mozilla/5.0 (Linux; Android 10; Redmi K30 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.101 Mobile Safari/537.36',
-      },
-    ));
-    Iterable<Interceptor> interceptors = [
+  DioClient({
+    required this.baseUrl,
+    TokenGetter? getAccessToken,
+    RefreshTokenGetter? getRefreshToken,
+    TokenSetter? saveAccessToken,
+  })  : _getAccessToken = getAccessToken,
+        _getRefreshToken = getRefreshToken,
+        _saveAccessToken = saveAccessToken,
+        _dio = Dio(
+          BaseOptions(
+            baseUrl: baseUrl,
+            connectTimeout: const Duration(seconds: AppConfig.connectTimeout),
+            receiveTimeout: const Duration(seconds: AppConfig.receiveTimeout),
+            headers: const {
+              'Content-Type': 'application/json',
+              'User-Agent':
+                  'Mozilla/5.0 (Linux; Android 10; Redmi K30 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.101 Mobile Safari/537.36',
+            },
+          ),
+        ) {
+    _dio.interceptors.addAll([
       InterceptorsWrapper(
-        onError: (error, handler) async {
-          if (error.response?.statusCode == 401) {
-            logger.d("401错误");
-            if (!isTokenBeingRefreshed) {
-              isTokenBeingRefreshed = true;
-              requestLock.lock();
-              try {
-                final response = await _dio.post(
-                  APP_CONFIG.APP_REFRESH_TOKEN_PATH,
-                  data: {'refreshToken': APP_CONFIG.APP_REFRESH_TOKEN},
-                );
-                final newToken = response.data['token'];
-                RequestOptions requestOptions =
-                    error.response?.requestOptions ?? RequestOptions(path: "");
-                requestOptions.headers['Authorization'] = 'Bearer $newToken';
-                Options options = Options(
-                  method: requestOptions.method,
-                  headers: requestOptions.headers,
-                );
-                return _dio
-                    .request(requestOptions.path, options: options)
-                    .then((_) {
-                  isTokenBeingRefreshed = false;
-                  requestLock.unlock();
-                  return handler.resolve(_);
-                });
-              } catch (e) {
-                isTokenBeingRefreshed = false;
-                requestLock.unlock();
-                logger.d("刷新token失败 $e");
-                return handler.next(error);
-              }
-            }
-          }
-          if (error.type == DioExceptionType.unknown) {
-            logger.d("可能是一个无效的URL或其他网络问题");
-          } else if (error.type == DioExceptionType.connectionTimeout) {
-            logger.d("连接超时");
-          } else if (error.type == DioExceptionType.sendTimeout) {
-            logger.d("请求超时");
-          } else if (error.type == DioExceptionType.receiveTimeout) {
-            logger.d("响应超时");
-          } else if (error.type == DioExceptionType.cancel) {
-            logger.d("请求取消");
-          } else {
-            logger.d("其他错误: ${error.message}");
-          }
-          return handler.next(error);
-        },
-        onRequest:
-            (RequestOptions options, RequestInterceptorHandler handler) async {
-          if (isTokenBeingRefreshed) {
-            await requestLock.ensureUnlocked();
-          }
-          final completer = Completer<void>();
-          _pendingRequests.add(completer);
-          completer.future.whenComplete(() {
-            _pendingRequests.remove(completer);
-            if (!isTokenBeingRefreshed && _pendingRequests.isEmpty) {
-              requestLock.unlock();
-            }
-          });
-          // options.headers['Authorization'] = 'Bearer Authorization test uhhhhh';
-          return handler.next(options);
-        },
-        onResponse: (Response response, ResponseInterceptorHandler handler) {
-          //  _pendingRequests列表中找到第一个未完成的Completer。如果没有找到任何未完成的Completer，它会返回Completer
-          _pendingRequests.firstWhere(
-            (element) => !element.isCompleted,
-            orElse: () => Completer(),
-          );
-          return handler.next(response);
-        },
+        onRequest: _handleRequest,
+        onError: _handleError,
       ),
-
-      // 拦截哪些日志
       LogInterceptor(
         request: false,
         requestHeader: true,
@@ -136,23 +47,181 @@ class DioClient {
         responseHeader: false,
         error: true,
       ),
-    ];
-    if (!kIsWeb) {
-      /// 初始化自己的cookie管理器，并设置cookie 持久化
-      final myAppCookieManager = await MyAppCookieManager.create(baseUrl);
-      interceptors = [
-        CookieManager(myAppCookieManager.cookieJar),
-        ...interceptors
-      ];
-    }
-
-    /// 拦截器
-    _dio.interceptors.addAll(interceptors);
+    ]);
+    _cookieReady = _setupCookieManager();
   }
 
-  /// get 请求
-  Future<Response> get(String path,
-      {Map<String, dynamic>? queryParameters, Options? options}) {
+  final String baseUrl;
+  final Dio _dio;
+  final TokenGetter? _getAccessToken;
+  final RefreshTokenGetter? _getRefreshToken;
+  final TokenSetter? _saveAccessToken;
+
+  final logger = Logger(
+    printer: PrettyPrinter(),
+  );
+
+  Future<void>? _refreshingToken;
+  Future<void>? _cookieReady;
+
+  Future<void> get ready async {
+    await _cookieReady;
+  }
+
+  Future<void> _setupCookieManager() async {
+    if (!kIsWeb) {
+      final myAppCookieManager = await MyAppCookieManager.create(baseUrl);
+      _dio.interceptors.insert(0, CookieManager(myAppCookieManager.cookieJar));
+    }
+  }
+
+  Future<void> _handleRequest(
+    RequestOptions options,
+    RequestInterceptorHandler handler,
+  ) async {
+    await ready;
+
+    final token = await _getAccessToken?.call();
+    if (token != null && token.isNotEmpty) {
+      options.headers['Authorization'] = 'Bearer $token';
+    }
+
+    handler.next(options);
+  }
+
+  Future<void> _handleError(
+    DioException error,
+    ErrorInterceptorHandler handler,
+  ) async {
+    _logDioError(error);
+
+    final requestOptions = error.requestOptions;
+    final hasRetried = requestOptions.extra['retried'] == true;
+    final skipAuthRetry = requestOptions.extra['skipAuthRetry'] == true;
+
+    if (error.response?.statusCode != 401 || hasRetried || skipAuthRetry) {
+      handler.next(error);
+      return;
+    }
+
+    try {
+      await _refreshTokenOnce();
+      final response = await _retry(requestOptions);
+      handler.resolve(response);
+    } catch (refreshError) {
+      logger.d('?? token ?? $refreshError');
+      handler.next(error);
+    }
+  }
+
+  Future<void> _refreshTokenOnce() {
+    final currentRefreshing = _refreshingToken;
+    if (currentRefreshing != null) {
+      return currentRefreshing;
+    }
+
+    final refreshing = _refreshToken();
+    _refreshingToken = refreshing;
+    refreshing.whenComplete(() {
+      _refreshingToken = null;
+    });
+    return refreshing;
+  }
+
+  Future<void> _refreshToken() async {
+    final refreshToken =
+        await _getRefreshToken?.call() ?? AppConfig.appRefreshToken;
+
+    final response = await _dio.post(
+      AppConfig.appRefreshTokenPath,
+      data: {'refreshToken': refreshToken},
+      options: Options(extra: {'skipAuthRetry': true}),
+    );
+
+    final newToken = _pickToken(response.data);
+    if (newToken == null || newToken.isEmpty) {
+      throw StateError('?? token ?????? token');
+    }
+
+    await _saveAccessToken?.call(newToken);
+  }
+
+  String? _pickToken(dynamic data) {
+    if (data is Map<String, dynamic>) {
+      final token =
+          data['token'] ?? data['accessToken'] ?? data['access_token'];
+      if (token is String) {
+        return token;
+      }
+
+      final nestedData = data['data'];
+      if (nestedData is Map<String, dynamic>) {
+        final nestedToken = nestedData['token'] ??
+            nestedData['accessToken'] ??
+            nestedData['access_token'];
+        if (nestedToken is String) {
+          return nestedToken;
+        }
+      }
+    }
+    return null;
+  }
+
+  Future<Response<dynamic>> _retry(RequestOptions requestOptions) {
+    final headers = Map<String, dynamic>.from(requestOptions.headers);
+    final extra = Map<String, dynamic>.from(requestOptions.extra);
+
+    extra['retried'] = true;
+
+    return _dio.request<dynamic>(
+      requestOptions.path,
+      data: requestOptions.data,
+      queryParameters: requestOptions.queryParameters,
+      cancelToken: requestOptions.cancelToken,
+      onReceiveProgress: requestOptions.onReceiveProgress,
+      onSendProgress: requestOptions.onSendProgress,
+      options: Options(
+        method: requestOptions.method,
+        sendTimeout: requestOptions.sendTimeout,
+        receiveTimeout: requestOptions.receiveTimeout,
+        extra: extra,
+        headers: headers,
+        responseType: requestOptions.responseType,
+        contentType: requestOptions.contentType,
+        validateStatus: requestOptions.validateStatus,
+        receiveDataWhenStatusError: requestOptions.receiveDataWhenStatusError,
+        followRedirects: requestOptions.followRedirects,
+        maxRedirects: requestOptions.maxRedirects,
+        requestEncoder: requestOptions.requestEncoder,
+        responseDecoder: requestOptions.responseDecoder,
+        listFormat: requestOptions.listFormat,
+      ),
+    );
+  }
+
+  void _logDioError(DioException error) {
+    if (error.type == DioExceptionType.unknown) {
+      logger.d('????????URL???????');
+    } else if (error.type == DioExceptionType.connectionTimeout) {
+      logger.d('????');
+    } else if (error.type == DioExceptionType.sendTimeout) {
+      logger.d('????');
+    } else if (error.type == DioExceptionType.receiveTimeout) {
+      logger.d('????');
+    } else if (error.type == DioExceptionType.cancel) {
+      logger.d('????');
+    } else {
+      logger.d('????: ${error.message}');
+    }
+  }
+
+  Future<Response> get(
+    String path, {
+    Map<String, dynamic>? queryParameters,
+    Options? options,
+    CancelToken? cancelToken,
+  }) async {
+    await ready;
     return _dio.get(
       path,
       queryParameters: queryParameters,
@@ -161,9 +230,13 @@ class DioClient {
     );
   }
 
-  /// post 请求
-  Future<Response> post(String path,
-      {Map<String, dynamic>? data, Options? options}) {
+  Future<Response> post(
+    String path, {
+    Map<String, dynamic>? data,
+    Options? options,
+    CancelToken? cancelToken,
+  }) async {
+    await ready;
     return _dio.post(
       path,
       data: data,
@@ -172,9 +245,13 @@ class DioClient {
     );
   }
 
-  /// post 请求 formdata 格式
-  Future<Response> postFormData(String path,
-      {Map<String, dynamic>? data, Options? options}) {
+  Future<Response> postFormData(
+    String path, {
+    Map<String, dynamic>? data,
+    Options? options,
+    CancelToken? cancelToken,
+  }) async {
+    await ready;
     return _dio.post(
       path,
       data: FormData.fromMap(data ?? {}),
@@ -183,50 +260,46 @@ class DioClient {
     );
   }
 
-  /// 上传文件
-  /**
-      dioClient.uploadFiles("/uploadEndpoint", filePaths: ["/path/to/file1.jpg", "/path/to/file2.jpg"], data: {"key": "value"});
-   */
-
-  Future<Response> uploadFiles(String path,
-      {List<String>? filePaths,
-      Map<String, dynamic>? data,
-      Options? options}) async {
-    var formData = FormData.fromMap(data ?? {});
+  Future<Response> uploadFiles(
+    String path, {
+    List<String>? filePaths,
+    Map<String, dynamic>? data,
+    Options? options,
+    CancelToken? cancelToken,
+  }) async {
+    await ready;
+    final formData = FormData.fromMap(data ?? {});
 
     if (filePaths != null && filePaths.isNotEmpty) {
       for (var i = 0; i < filePaths.length; i++) {
-        String filePath = filePaths[i];
-        String fileName = filePath.split('/').last;
+        final filePath = filePaths[i];
+        final fileName = filePath.split('/').last;
         formData.files.add(
-          MapEntry('file$i',
-              await MultipartFile.fromFile(filePath, filename: fileName)),
+          MapEntry(
+            'file$i',
+            await MultipartFile.fromFile(filePath, filename: fileName),
+          ),
         );
       }
     }
-    return _dio.post(path,
-        data: formData, cancelToken: cancelToken, options: options);
+
+    return _dio.post(
+      path,
+      data: formData,
+      cancelToken: cancelToken,
+      options: options,
+    );
   }
 
-  /// 下载文件
-  /**
-      downloadFile(
-      "your_path_here",
-      "your_save_path_here",
-      onProgress: (int receivedBytes, int totalBytes) {
-      double progressPercent = (receivedBytes / totalBytes) * 100;
-      print("下载进度: $progressPercent %");
-      // 你也可以在此处进行其他操作，如更新 UI
-      },
-      );
-   */
   Future<Response> downloadFile(
     String path,
     String savePath, {
     Map<String, dynamic>? queryParameters,
     Options? options,
     required ProgressCallback onProgress,
-  }) {
+    CancelToken? cancelToken,
+  }) async {
+    await ready;
     return _dio.download(
       path,
       savePath,
@@ -237,45 +310,33 @@ class DioClient {
     );
   }
 
-  /// put 请求
-  Future<Response> put(String path,
-      {Map<String, dynamic>? data, Options? options}) {
-    return _dio.put(path,
-        data: data, cancelToken: cancelToken, options: options);
+  Future<Response> put(
+    String path, {
+    Map<String, dynamic>? data,
+    Options? options,
+    CancelToken? cancelToken,
+  }) async {
+    await ready;
+    return _dio.put(
+      path,
+      data: data,
+      cancelToken: cancelToken,
+      options: options,
+    );
   }
 
-  /// delete 请求
-  Future<Response> delete(String path,
-      {Map<String, dynamic>? data, Options? options}) {
-    return _dio.delete(path,
-        data: data, cancelToken: cancelToken, options: options);
-  }
-}
-
-/// request lock 实现
-
-class RequestLock {
-  final _queue = Queue<Completer>();
-  bool _isLocked = false;
-
-  void lock() {
-    _isLocked = true;
-  }
-
-  void unlock() {
-    _isLocked = false;
-
-    while (_queue.isNotEmpty) {
-      final nextCompleter = _queue.removeFirst();
-      nextCompleter.complete();
-    }
-  }
-
-  Future<void> ensureUnlocked() async {
-    if (_isLocked) {
-      final completer = Completer();
-      _queue.add(completer);
-      await completer.future;
-    }
+  Future<Response> delete(
+    String path, {
+    Map<String, dynamic>? data,
+    Options? options,
+    CancelToken? cancelToken,
+  }) async {
+    await ready;
+    return _dio.delete(
+      path,
+      data: data,
+      cancelToken: cancelToken,
+      options: options,
+    );
   }
 }

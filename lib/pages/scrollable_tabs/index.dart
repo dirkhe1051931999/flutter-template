@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_template_start/api/news/index.dart';
-import 'package:flutter_template_start/layouts/app_theme.dart';
 import 'package:flutter_template_start/model/news/index.dart';
 import 'package:flutter_template_start/pages/scrollable_tabs/children/common_page.dart';
 import 'package:flutter_template_start/router/config.dart';
@@ -88,11 +87,7 @@ class _ScrollableTabsPageState extends State<ScrollableTabsPage> with TickerProv
         }
         var columnTypeList = snapshot.data?.respData.columnTypeList;
         if (columnTypeList != null && _tabController != null) {
-          return MaterialApp(
-            title: 'News',
-            debugShowCheckedModeBanner: false,
-            theme: AppTheme().light,
-            home: Scaffold(
+          return Scaffold(
               appBar: AppBar(
                 bottom: TabBar(
                   controller: _tabController,
@@ -161,7 +156,6 @@ class _ScrollableTabsPageState extends State<ScrollableTabsPage> with TickerProv
                   );
                 }).toList() as List<Widget>,
               ),
-            ),
           );
         } else {
           return Container();

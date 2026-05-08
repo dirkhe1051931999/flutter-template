@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_template_start/api/news/index.dart';
 import 'package:flutter_template_start/components/network_img/index.dart';
-import 'package:flutter_template_start/layouts/app_theme.dart';
 import 'package:flutter_template_start/model/news/index.dart';
 import 'package:flutter_template_start/utils/helper.dart';
 import 'package:html/parser.dart' as html_parser;
@@ -71,11 +70,7 @@ class _ScrollableTabsDetailPageState extends State<ScrollableTabsDetailPage>
             child: CircularProgressIndicator(),
           );
         }
-        return MaterialApp(
-          title: 'News',
-          debugShowCheckedModeBanner: false,
-          theme: AppTheme().light,
-          home: Scaffold(
+        return Scaffold(
             appBar: AppBar(
               title: SizedBox(
                 height: 50,
@@ -234,7 +229,6 @@ class _ScrollableTabsDetailPageState extends State<ScrollableTabsDetailPage>
                 ),
               ],
             ),
-          ),
         );
       },
     );

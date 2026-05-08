@@ -25,7 +25,7 @@ class ListWidget extends StatelessWidget {
                           Text(item),
                           IconButton(
                             onPressed: () {
-                              store.dispatch(ITodolistRemove(item));
+                              store.dispatch(RemoveTodoAction(item));
                             },
                             icon: const Icon(Icons.delete),
                           ),

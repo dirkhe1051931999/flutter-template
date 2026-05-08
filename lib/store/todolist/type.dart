@@ -1,13 +1,13 @@
-class ITodolistAdd {
+class AddTodoAction {
   final String name;
-  ITodolistAdd(this.name);
+  AddTodoAction(this.name);
 }
 
-class ITodolistRemove {
+class RemoveTodoAction {
   final String name;
-  ITodolistRemove(this.name);
+  RemoveTodoAction(this.name);
 }
 
-class ITodolistClear {
-  ITodolistClear();
+class ClearTodoAction {
+  const ClearTodoAction();
 }

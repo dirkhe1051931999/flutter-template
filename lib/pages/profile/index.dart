@@ -49,7 +49,7 @@ class _ProfilePageState extends State<ProfilePage> {
               converter: (store) {
                 return () {
                   int age = int.parse(controller.text);
-                  store.dispatch(IUserUpdate(fields: {'age': age}));
+                  store.dispatch(UpdateUserInfoAction(age: age));
                 };
               },
             )
@@ -67,9 +67,9 @@ class _ProfilePageState extends State<ProfilePage> {
       mainAxisAlignment: MainAxisAlignment.center,
       mainAxisSize: MainAxisSize.max,
       children: [
-        StoreConnector<AppState, IUserinfo>(
+        StoreConnector<AppState, UserInfo>(
           builder: (context, state) {
-            IUserinfo userinfo = store.state.userinfo;
+            UserInfo userinfo = store.state.userinfo;
             List<Widget> list = [];
             userinfo.toMap().forEach((key, value) {
               list.add(

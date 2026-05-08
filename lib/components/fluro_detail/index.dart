@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:fluro/fluro.dart';
 import 'package:flutter_template_start/utils/helper.dart';
 
-class PathDetail extends StatelessWidget {
-  const PathDetail({
+class TransitionDetailPage extends StatelessWidget {
+  const TransitionDetailPage({
     Key? key,
-    this.message = 'Testing',
+    this.message = 'Flutter Template',
     this.color = const Color(0xFFFFFFFF),
     this.result,
   }) : super(key: key);

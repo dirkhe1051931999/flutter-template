@@ -16,7 +16,7 @@ class ClearWidget extends StatelessWidget {
         );
       },
       converter: (store) => () {
-        store.dispatch(ITodolistClear);
+        store.dispatch(const ClearTodoAction());
       },
     );
   }

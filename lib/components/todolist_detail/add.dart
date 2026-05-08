@@ -57,7 +57,7 @@ class AddWidget extends StatelessWidget {
             );
             return;
           }
-          store.dispatch(ITodolistAdd(controller!.text));
+          store.dispatch(AddTodoAction(controller!.text));
           controller!.clear();
           ScaffoldMessenger.of(context).clearSnackBars();
           ScaffoldMessenger.of(context).showSnackBar(

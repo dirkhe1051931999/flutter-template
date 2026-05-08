@@ -7,7 +7,6 @@ class HomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // helpers
     Widget menuButton(
       BuildContext context, {
       required String title,

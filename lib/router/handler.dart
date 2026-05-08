@@ -21,7 +21,7 @@ var rootHandler = Handler(
   },
 );
 
-var path1RouteHandler = Handler(
+var transitionDetailRouteHandler = Handler(
   handlerFunc: (
     BuildContext? context,
     Map<String, List<String>> params,
@@ -33,15 +33,15 @@ var path1RouteHandler = Handler(
     if (colorHex != null && colorHex.isNotEmpty) {
       color = Color(ColorHelpers.fromHexString(colorHex));
     }
-    return PathDetail(
-      message: message ?? 'Testing',
+    return TransitionDetailPage(
+      message: message ?? 'Flutter Template',
       color: color,
       result: result,
     );
   },
 );
 
-var path3RouteHandler = Handler(
+var dialogDemoRouteHandler = Handler(
   type: HandlerType.function,
   handlerFunc: (
     BuildContext? context,
@@ -77,7 +77,7 @@ var todolistRouteHandler = Handler(
     BuildContext? context,
     Map<String, List<String>> params,
   ) {
-    return const MaterialAppWrapWidget(
+    return const PageScaffold(
       title: 'TodoList',
       widget: TodoListPage(),
     );
@@ -89,7 +89,7 @@ var fluroRouteHandler = Handler(
     BuildContext? context,
     Map<String, List<String>> params,
   ) {
-    return const MaterialAppWrapWidget(
+    return const PageScaffold(
       title: 'Fluro',
       widget: FluroPage(),
     );
@@ -101,7 +101,7 @@ var requestRouteHandler = Handler(
     BuildContext? context,
     Map<String, List<String>> params,
   ) {
-    return const MaterialAppWrapWidget(
+    return const PageScaffold(
       title: 'Request',
       widget: RequestPage(),
     );
@@ -113,7 +113,7 @@ var profileRouteHandler = Handler(
     BuildContext? context,
     Map<String, List<String>> params,
   ) {
-    return const MaterialAppWrapWidget(
+    return const PageScaffold(
       title: 'Profile',
       widget: ProfilePage(),
     );
@@ -136,7 +136,7 @@ var scrollableTabsDetailRouteHandler = Handler(
     int? id = int.tryParse(params["id"]?.first ?? '');
     return ScrollableTabsDetailPage(
       id: id!,
-      title: title ?? 'Testing',
+      title: title ?? 'Flutter Template',
     );
   },
 );

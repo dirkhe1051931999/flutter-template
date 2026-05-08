@@ -1,13 +1,5 @@
-class IUserinfo {
-  String name;
-  int age;
-  String username;
-  String password;
-  String token;
-  String email;
-  String phone;
-
-  IUserinfo({
+class UserInfo {
+  const UserInfo({
     required this.name,
     required this.age,
     required this.username,
@@ -16,6 +8,14 @@ class IUserinfo {
     required this.email,
     required this.phone,
   });
+
+  final String name;
+  final int age;
+  final String username;
+  final String password;
+  final String token;
+  final String email;
+  final String phone;
 
   dynamic operator [](String key) {
     switch (key) {
@@ -34,12 +34,12 @@ class IUserinfo {
       case 'phone':
         return phone;
       default:
-        throw ArgumentError('Key $key not found in IUserinfo');
+        throw ArgumentError('Key $key not found in UserInfo');
     }
   }
 
-  factory IUserinfo.fromMap(Map<String, dynamic> map) {
-    return IUserinfo(
+  factory UserInfo.fromMap(Map<String, dynamic> map) {
+    return UserInfo(
       name: map['name'] as String,
       age: map['age'] as int,
       username: map['username'] as String,
@@ -50,7 +50,39 @@ class IUserinfo {
     );
   }
 
-  toMap() {
+  static UserInfo initial() {
+    return const UserInfo(
+      name: '',
+      age: -1,
+      username: '',
+      password: '',
+      token: '',
+      email: '',
+      phone: '',
+    );
+  }
+
+  UserInfo copyWith({
+    String? name,
+    int? age,
+    String? username,
+    String? password,
+    String? token,
+    String? email,
+    String? phone,
+  }) {
+    return UserInfo(
+      name: name ?? this.name,
+      age: age ?? this.age,
+      username: username ?? this.username,
+      password: password ?? this.password,
+      token: token ?? this.token,
+      email: email ?? this.email,
+      phone: phone ?? this.phone,
+    );
+  }
+
+  Map<String, Object> toMap() {
     return {
       'name': name,
       'age': age,
@@ -63,8 +95,22 @@ class IUserinfo {
   }
 }
 
-class IUserUpdate {
-  final Map<String, dynamic> fields;
+class UpdateUserInfoAction {
+  const UpdateUserInfoAction({
+    this.name,
+    this.age,
+    this.username,
+    this.password,
+    this.token,
+    this.email,
+    this.phone,
+  });
 
-  IUserUpdate({required this.fields});
+  final String? name;
+  final int? age;
+  final String? username;
+  final String? password;
+  final String? token;
+  final String? email;
+  final String? phone;
 }

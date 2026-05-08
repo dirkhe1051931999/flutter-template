@@ -36,9 +36,8 @@ class ColorHelpers {
     final red = (sourceColor.r * 255.0).round().clamp(0, 255);
     final green = (sourceColor.g * 255.0).round().clamp(0, 255);
     final blue = (sourceColor.b * 255.0).round().clamp(0, 255);
-    double value = (((red * 299.0) + (green * 587.0) + (blue * 114.0)) /
-            1000.0) /
-        255.0;
+    double value =
+        (((red * 299.0) + (green * 587.0) + (blue * 114.0)) / 1000.0) / 255.0;
     if (prefer != ContrastPreference.none) {
       if (value >= _kMinContrastModifierRange &&
           value <= _kMaxContrastModifierRange) {
@@ -80,7 +79,7 @@ class MyAppCookieManager {
   Future<void> _initCookieJar() async {
     cookieJar = PersistCookieJar(
       storage: FileStorage(
-          "${(await getApplicationDocumentsDirectory()).path}/${APP_CONFIG.APP_NAME}/.cookies/"),
+          "${(await getApplicationDocumentsDirectory()).path}/${AppConfig.appName}/.cookies/"),
     );
   }
 

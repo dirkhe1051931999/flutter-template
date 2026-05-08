@@ -2,13 +2,13 @@ import 'package:fluro/fluro.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_template_start/router/config.dart';
+import 'package:flutter_template_start/router/routes.dart';
 
 class FluroPage extends StatelessWidget {
   const FluroPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // actions
     void tappedMenuButton(BuildContext context, {required String key}) async {
       String message = "";
       String hexCode = "";
@@ -36,7 +36,7 @@ class FluroPage extends StatelessWidget {
           result = "OK，你成功返回了！";
         }
         String route =
-            "/path1?message=${Uri.encodeComponent(message)}&color_hex=$hexCode";
+            "${Routes.transitionDetail}?message=${Uri.encodeComponent(message)}&color_hex=$hexCode";
         route += result != null ? "&result=${Uri.encodeComponent(result)}" : "";
         Application.router
             .navigateTo(context, route, transition: transitionType)
@@ -45,8 +45,8 @@ class FluroPage extends StatelessWidget {
             return;
           }
           if (key == "pop-result") {
-            Application.router.navigateTo(
-                context, "/path3?message=${Uri.encodeComponent(value)}");
+            Application.router.navigateTo(context,
+                "${Routes.dialogDemo}?message=${Uri.encodeComponent(value)}");
           }
         });
       } else if (key == "custom") {
@@ -69,7 +69,7 @@ class FluroPage extends StatelessWidget {
 
         Application.router.navigateTo(
           context,
-          "/path1?message=${Uri.encodeComponent(message)}&color_hex=$hexCode",
+          "${Routes.transitionDetail}?message=${Uri.encodeComponent(message)}&color_hex=$hexCode",
           transition: TransitionType.custom,
           transitionBuilder: transition,
           transitionDuration: const Duration(milliseconds: 600),
@@ -78,26 +78,25 @@ class FluroPage extends StatelessWidget {
         hexCode = "#f4424b";
         message = "在注册路由的时候就已经定义好了动画";
         Application.router.navigateTo(context,
-            "/path2?message=${Uri.encodeComponent(message)}&color_hex=$hexCode");
+            "${Routes.fixedTransitionDetail}?message=${Uri.encodeComponent(message)}&color_hex=$hexCode");
       } else if (key == "function-call") {
         message = "功能按钮！";
-        Application.router.navigateTo(
-            context, "/path3?message=${Uri.encodeComponent(message)}");
+        Application.router.navigateTo(context,
+            "${Routes.dialogDemo}?message=${Uri.encodeComponent(message)}");
       } else if (key == 'todolist') {
         message = "todolist";
         Application.router.navigateTo(
           context,
-          "/todolist?message=${Uri.encodeComponent(message)}",
+          "${Routes.todolist}?message=${Uri.encodeComponent(message)}",
           transition: TransitionType.inFromRight,
         );
       } else {
         message = '未知类型按钮';
-        Application.router.navigateTo(
-            context, "/path1?message=${Uri.encodeComponent(message)}");
+        Application.router.navigateTo(context,
+            "${Routes.transitionDetail}?message=${Uri.encodeComponent(message)}");
       }
     }
 
-    // helpers
     Widget menuButton(BuildContext context,
         {required String title, required String key}) {
       return Padding(

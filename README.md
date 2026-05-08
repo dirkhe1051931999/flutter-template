@@ -121,11 +121,6 @@ dependencies:
   shared_preferences: ^2.5.5
   device_info_plus: ^11.5.0
   package_info_plus: ^8.3.0
-
-dependency_overrides:
-  logger: ^1.1.0
-  win32: ^5.10.1
-  fading_edge_scrollview: ^4.1.1
 ```
 
 ### path_provider
@@ -481,12 +476,62 @@ lib/app.config.dart
 示例：
 
 ```dart
-class APP_CONFIG {
-  static const String BASE_URL = 'https://your-api-domain.com';
-  static const int CONNECT_TIMEOUT = 10;
-  static const int RECEIVE_TIMEOUT = 30;
-  static const String APP_REFRESH_TOKEN_PATH = '/refresh_token';
+class AppConfig {
+  static const appEnv = String.fromEnvironment(
+    'APP_ENV',
+    defaultValue: 'development',
+  );
+  static const customBaseUrl = String.fromEnvironment('BASE_URL');
+  static const developmentBaseUrl = String.fromEnvironment(
+    'DEV_BASE_URL',
+    defaultValue: 'http://10.0.2.2:3000',
+  );
+  static const testBaseUrl = String.fromEnvironment('TEST_BASE_URL');
+  static const productionBaseUrl = String.fromEnvironment(
+    'PROD_BASE_URL',
+    defaultValue: 'https://aphelios-api.oolaf.top',
+  );
 }
+```
+
+### API 环境变量
+
+项目不在代码中固定线上 API 域名，通过 `--dart-define` 注入环境配置。
+
+开发环境默认使用 Android 模拟器访问宿主机的地址：
+
+```powershell
+flutter run
+```
+
+等价于：
+
+```powershell
+flutter run --dart-define=APP_ENV=development --dart-define=DEV_BASE_URL=http://10.0.2.2:3000
+```
+
+测试环境：
+
+```powershell
+flutter run --dart-define=APP_ENV=test --dart-define=TEST_BASE_URL=https://test-api.example.com
+```
+
+生产环境：
+
+```powershell
+flutter run --dart-define=APP_ENV=production
+```
+
+生产环境也可以覆盖默认 API 地址：
+
+```powershell
+flutter run --dart-define=APP_ENV=production --dart-define=PROD_BASE_URL=https://api.example.com
+```
+
+临时覆盖任意环境的 API 地址：
+
+```powershell
+flutter run --dart-define=BASE_URL=https://mock-api.example.com
 ```
 
 ## 注意事项

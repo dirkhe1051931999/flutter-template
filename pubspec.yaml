@@ -66,14 +66,9 @@ dev_dependencies:
   # rules and activating additional ones.
   flutter_lints: ^2.0.0
   flutter_launcher_icons: ^0.13.1
-  rename: ^2.1.1
+  rename: ^3.1.0
   json_serializable: ^6.7.1
   build_runner: ^2.4.6
-
-dependency_overrides:
-  logger: ^1.1.0
-  win32: ^5.10.1
-  fading_edge_scrollview: ^4.1.1
 
 flutter_launcher_icons:
   android: "launcher_icon"

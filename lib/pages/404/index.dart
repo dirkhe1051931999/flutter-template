@@ -6,7 +6,7 @@ class NotFoundPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialAppWrapWidget(
+    return const PageScaffold(
       title: '404',
       widget: Center(
         child: Text('ROUTE WAS NOT FOUND !!!'),
