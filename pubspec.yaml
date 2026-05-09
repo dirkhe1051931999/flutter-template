@@ -54,6 +54,8 @@ dependencies:
   pull_to_refresh: ^2.0.0
   html: ^0.15.4
   marquee: ^2.2.3
+  just_audio: ^0.9.36
+  audio_session: ^0.1.19
 
 dev_dependencies:
   flutter_test:

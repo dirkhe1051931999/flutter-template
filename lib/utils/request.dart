@@ -12,6 +12,7 @@ typedef TokenSetter = FutureOr<void> Function(String token);
 typedef RefreshTokenGetter = FutureOr<String?> Function();
 
 final httpClient = DioClient(baseUrl: AppConfig.baseUrl);
+final oolafHubClient = DioClient(baseUrl: AppConfig.oolafHubBaseUrl);
 
 class DioClient {
   DioClient({

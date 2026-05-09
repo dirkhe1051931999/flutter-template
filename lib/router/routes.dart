@@ -11,6 +11,7 @@ class Routes {
   static const todolist = "/todolist";
   static const fluro = "/fluro";
   static const request = "/request";
+  static const oolafDynamicAudio = "/oolaf-dynamic-audio";
   static const profile = "/profile";
   static const scrollableTabs = "/scrollable-tabs";
   static const scrollableTabsDetail = "/scrollable-tabs-detail";
@@ -33,6 +34,7 @@ class Routes {
     router.define(todolist, handler: todolistRouteHandler);
     router.define(fluro, handler: fluroRouteHandler);
     router.define(request, handler: requestRouteHandler);
+    router.define(oolafDynamicAudio, handler: oolafDynamicAudioRouteHandler);
     router.define(
       profile,
       handler: profileRouteHandler,

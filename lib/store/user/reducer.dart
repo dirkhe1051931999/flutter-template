@@ -1,7 +1,8 @@
+import 'package:flutter_template_start/store/action.dart';
 import 'package:flutter_template_start/store/index.dart';
 import 'package:flutter_template_start/store/user/type.dart';
 
-AppState userReducer(AppState state, dynamic action) {
+AppState userReducer(AppState state, AppAction action) {
   if (action is UpdateUserInfoAction) {
     return state.copyWith(
       userInfo: state.userInfo.copyWith(

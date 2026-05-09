@@ -258,6 +258,86 @@ try {
 - 网络错误统一在 `DioClient` 中做基础日志和转换。
 - UI 层只处理用户可见反馈。
 
+## 目录结构约定
+
+目标：让 Flutter 项目像 Vue/TS 项目一样“文件放哪里一眼就知道”。
+
+### 规则
+
+- `lib/utils/`：基础设施工具（例如 `request.dart`、`logger.dart`、`storage.dart`）。
+- `lib/api/`：API 声明层，只负责声明接口 + 返回强类型 model，不写 UI。
+- `lib/model/`：业务数据结构（entity/DTO），包含 `fromJson/toJson`。
+- `lib/store/`：全局状态（redux 的 state/action/reducer），保持 immutable。
+- `lib/pages/`：页面（路由入口），只做 UI composition，不直接写复杂业务。
+- `lib/components/`：可复用组件（尽量无业务或轻业务）。
+- `lib/router/`：路由与跳转封装（等价 Vue 的 `router/index.ts`）。
+- `lib/constants/`：常量/枚举/配置 key（等价 `constants.ts`）。
+
+## UI / ViewModel 规则
+
+目标：页面代码保持“像 Vue 的 template + computed”，只消费稳定结构，不直接吃后端原始 JSON。
+
+### 规则
+
+- 页面 Widget（`pages/**`）中不允许出现：
+  - `Map<String, dynamic>` 作为业务数据承载
+  - `json['xx']` 这类 JSON 字段直取
+  - `response.data['xx']` 这类对网络层返回的直连渲染
+- API 层必须把响应转换成 model（你上面已定义），页面层只消费：
+  - model
+  - 或者更进一步：页面专用 ViewModel（推荐用 `xxx_view_model.dart`/`mapper` 负责转换）
+
+## 副作用与生命周期规则
+
+目标：避免“渲染期副作用”，等价于 Vue 里禁止在 render/template 执行请求。
+
+### 规则
+
+- `build()` 必须是纯 UI 渲染：给定当前 state -> 返回 widget tree。
+- 不允许在 `build()` 中：
+  - 发起网络请求
+  - `store.dispatch(...)`
+  - 读写本地存储（会导致重复触发、难以追踪）
+- 允许的副作用位置：
+  - `initState` / `didChangeDependencies`
+  - 用户交互回调（`onPressed`/`onTap`）
+  - 业务 controller/service（如果项目引入对应抽象）
+
+## 单例与依赖创建规则
+
+目标：对齐 Vue/TS 的“单例集中创建”，避免到处 `new` 造成行为不一致。
+
+### 规则
+
+- 只允许在 `main.dart` / `bootstrap.dart` 创建：router、store（全局单例）。
+- 只允许在基础设施层（例如 `utils/request.dart`）创建并导出：`httpClient` / `DioClient` / logger。
+- 业务页面/组件中不允许直接 `new`：
+  - `Dio()` / `DioClient()`
+  - `FluroRouter()`
+  - `Store()`
+
+## 分层 import 规则（禁止倒引用）
+
+目标：像前端工程一样，避免跨层耦合和循环依赖。
+
+### 规则
+
+- `model/**` 不允许 import：`api/**`、`pages/**`、`store/**`。
+- `api/**` 不允许 import：`pages/**`。
+- `components/**` 不允许 import：具体业务页面（避免组件绑定页面）。
+- `pages/**` 可以组合其它层，但应避免页面之间互相 import 形成网状依赖。
+
+## 统一返回与错误模型（建议）
+
+目标：让调用方像 TS 里消费 `Response<T>` 一样稳定，UI 只处理 success/failure。
+
+### 规则
+
+- API 层不建议把三方异常（例如 Dio 的 error 类型）原样抛给 UI。
+- 建议在网络基础设施层将错误统一转换为项目内错误类型（例如 `RequestError`），并在 API 层对外返回：
+  - `ApiResult<T>`（成功/失败 + message + code + data）
+  - 或明确的 `T?` + 统一异常（两者选一种，项目内保持一致）
+
 ## 后续改代码时必须遵守
 
 - 如果要新增 API，先放到 `lib/api/**`，使用统一 `httpClient`。

@@ -4,6 +4,7 @@ import 'package:flutter_template_start/components/fluro_detail/index.dart';
 import 'package:flutter_template_start/layouts/app_wrap/index.dart';
 import 'package:flutter_template_start/pages/fluro/index.dart';
 import 'package:flutter_template_start/pages/home/index.dart';
+import 'package:flutter_template_start/pages/oolaf_dynamic_audio/index.dart';
 import 'package:flutter_template_start/pages/profile/index.dart';
 import 'package:flutter_template_start/pages/request/index.dart';
 import 'package:flutter_template_start/pages/scrollable_tabs/detail.dart';
@@ -105,6 +106,15 @@ var requestRouteHandler = Handler(
       title: 'Request',
       widget: RequestPage(),
     );
+  },
+);
+
+var oolafDynamicAudioRouteHandler = Handler(
+  handlerFunc: (
+    BuildContext? context,
+    Map<String, List<String>> params,
+  ) {
+    return const OolafDynamicAudioPage();
   },
 );
 

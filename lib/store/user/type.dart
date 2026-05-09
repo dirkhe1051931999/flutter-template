@@ -1,3 +1,5 @@
+import 'package:flutter_template_start/store/action.dart';
+
 class UserInfo {
   const UserInfo({
     required this.name,
@@ -95,7 +97,7 @@ class UserInfo {
   }
 }
 
-class UpdateUserInfoAction {
+class UpdateUserInfoAction extends AppAction {
   const UpdateUserInfoAction({
     this.name,
     this.age,

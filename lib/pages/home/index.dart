@@ -42,6 +42,7 @@ class HomePage extends StatelessWidget {
       menuButton(context, title: "redux 做的 todolist", key: "todolist"),
       menuButton(context, title: "fluro 的使用", key: "fluro"),
       menuButton(context, title: "dio 的使用", key: "request"),
+      menuButton(context, title: "oolaf 动感音频", key: "oolaf-dynamic-audio"),
       menuButton(context, title: "profile", key: "profile"),
       menuButton(context, title: "可滑动选项卡", key: "scrollable-tabs"),
     ];

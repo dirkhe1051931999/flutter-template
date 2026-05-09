@@ -1,13 +1,15 @@
-class AddTodoAction {
+import 'package:flutter_template_start/store/action.dart';
+
+class AddTodoAction extends AppAction {
   final String name;
-  AddTodoAction(this.name);
+  const AddTodoAction(this.name);
 }
 
-class RemoveTodoAction {
+class RemoveTodoAction extends AppAction {
   final String name;
-  RemoveTodoAction(this.name);
+  const RemoveTodoAction(this.name);
 }
 
-class ClearTodoAction {
+class ClearTodoAction extends AppAction {
   const ClearTodoAction();
 }

@@ -4,6 +4,14 @@ class AppConfig {
   static const appDescription = 'FlutterTemplate';
   static const appRefreshToken = 'refresh_token';
   static const appRefreshTokenPath = '/refresh_token';
+  static const oolafHubBaseUrl = String.fromEnvironment(
+    'OOLAF_HUB_BASE_URL',
+    defaultValue: 'https://hub.oolaf.top',
+  );
+  static const oolafMusicCdnBaseUrl = String.fromEnvironment(
+    'OOLAF_MUSIC_CDN_BASE_URL',
+    defaultValue: 'https://s1.oolaf.top',
+  );
   static const appEnv = String.fromEnvironment(
     'APP_ENV',
     defaultValue: 'development',

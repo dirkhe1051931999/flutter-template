@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_template_start/router/config.dart';
 import 'package:flutter_template_start/router/routes.dart';
+import 'package:flutter_template_start/store/action.dart';
 import 'package:flutter_template_start/store/index.dart';
 import 'package:redux/redux.dart';
 
@@ -36,7 +37,12 @@ FluroRouter createAppRouter() {
 
 Store<AppState> createAppStore() {
   return Store<AppState>(
-    appReducer,
+    (state, action) {
+      if (action is! AppAction) {
+        return state;
+      }
+      return appReducer(state, action);
+    },
     initialState: AppState.initial(),
   );
 }
