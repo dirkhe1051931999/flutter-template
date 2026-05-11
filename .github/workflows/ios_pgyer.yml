@@ -40,21 +40,58 @@ jobs:
           cp -R "$APP_PATH" Payload/
           /usr/bin/zip -r app.ipa Payload
 
-      - name: Upload to PGYER
+      - name: Upload to PGYER (getCOSToken -> COS upload)
         env:
           PGYER_API_KEY: ${{ secrets.PGYER_API_KEY }}
         shell: bash
         run: |
-          set -e
-          if [ -z "$PGYER_API_KEY" ]; then
+          set -euo pipefail
+
+          if [ -z "${PGYER_API_KEY:-}" ]; then
             echo "Missing secrets.PGYER_API_KEY" >&2
             exit 1
           fi
-          curl -f -sS \
-            -F "file=@app.ipa" \
-            -F "buildInstallType=1" \
+
+          if [ ! -f "app.ipa" ]; then
+            echo "app.ipa not found" >&2
+            exit 1
+          fi
+
+          echo "[1/2] Requesting getCOSToken..."
+          TOKEN_JSON=$(curl -fsS -X POST \
             -F "_api_key=${PGYER_API_KEY}" \
-            https://www.pgyer.com/apiv2/app/upload
+            -F "buildType=ios" \
+            -F "buildFileName=app.ipa" \
+            https://www.pgyer.com/apiv2/app/getCOSToken)
+
+          CODE=$(echo "$TOKEN_JSON" | /usr/bin/python3 -c 'import json,sys; print(json.load(sys.stdin).get("code"))')
+          if [ "$CODE" != "0" ]; then
+            echo "getCOSToken failed: $TOKEN_JSON" >&2
+            exit 1
+          fi
+
+          ENDPOINT=$(echo "$TOKEN_JSON" | /usr/bin/python3 -c 'import json,sys; print(json.load(sys.stdin)["data"]["endpoint"])')
+          COS_KEY=$(echo "$TOKEN_JSON" | /usr/bin/python3 -c 'import json,sys; print(json.load(sys.stdin)["data"]["key"])')
+          SIGNATURE=$(echo "$TOKEN_JSON" | /usr/bin/python3 -c 'import json,sys; print(json.load(sys.stdin)["data"]["params"]["signature"])')
+          SECURITY_TOKEN=$(echo "$TOKEN_JSON" | /usr/bin/python3 -c 'import json,sys; print(json.load(sys.stdin)["data"]["params"]["x-cos-security-token"])')
+
+          echo "Endpoint: $ENDPOINT"
+          echo "COS key: $COS_KEY"
+
+          echo "[2/2] Uploading ipa to COS (expect HTTP 204)..."
+          HTTP_CODE=$(curl -sS -o /dev/null -w "%{http_code}" -X POST \
+            -F "key=${COS_KEY}" \
+            -F "signature=${SIGNATURE}" \
+            -F "x-cos-security-token=${SECURITY_TOKEN}" \
+            -F "file=@app.ipa" \
+            "$ENDPOINT")
+
+          if [ "$HTTP_CODE" != "204" ]; then
+            echo "COS upload failed, http_code=$HTTP_CODE" >&2
+            exit 1
+          fi
+
+          echo "Upload accepted by COS (204). PGYER will process publish in background."
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
