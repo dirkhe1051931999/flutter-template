@@ -338,6 +338,29 @@ try {
   - `ApiResult<T>`（成功/失败 + message + code + data）
   - 或明确的 `T?` + 统一异常（两者选一种，项目内保持一致）
 
+## 跨平台兼容性与发布检查规则（必须）
+
+目标：必须保证 Windows / iOS / Android / Web 端：页面正常加载、接口正确请求与响应、video/audio 正常播放。
+
+### 规则
+
+- 每次新增功能（尤其是：网络请求、音视频播放、文件/缓存、权限、WebView、第三方插件）后，必须检查这些平台目录是否需要额外配置，并确保对应能力可用：
+  - `D:\code\flutter-template\android`
+  - `D:\code\flutter-template\ios`
+  - `D:\code\flutter-template\web`
+  - `D:\code\flutter-template\windows`
+- 不允许只在单一平台验证后就合并/提交。
+- 网络相关必须考虑：
+  - Android：`android.permission.INTERNET`、明文 HTTP(需要 `network_security_config`/`usesCleartextTraffic`)、证书/域名兼容。
+  - iOS：ATS（App Transport Security）对 HTTP/证书的限制。
+  - Web：CORS、混合内容（https 页面请求 http 资源）、浏览器缓存策略。
+  - Windows：代理/证书链、插件平台实现（例如音视频插件的 windows 实现包）。
+- 音视频相关必须考虑：
+  - 插件是否覆盖目标平台（例如 `just_audio` 对应的 windows/web 平台实现）。
+  - 资源 URL 是否为 https、是否支持 Range、格式是否被平台解码器支持。
+  - 失败时必须有可定位的错误日志（不要只 toast“失败”）。
+- 所有新引入的第三方插件必须先确认：Android/iOS/Web/Windows 的支持矩阵；不支持的平台要么提供降级方案，要么明确禁止在该平台进入相关功能入口。
+
 ## 后续改代码时必须遵守
 
 - 如果要新增 API，先放到 `lib/api/**`，使用统一 `httpClient`。

@@ -19,7 +19,7 @@ class AppConfig {
   static const customBaseUrl = String.fromEnvironment('BASE_URL');
   static const developmentBaseUrl = String.fromEnvironment(
     'DEV_BASE_URL',
-    defaultValue: 'http://10.0.2.2:3000',
+    defaultValue: 'https://aphelios-api.oolaf.top',
   );
   static const testBaseUrl = String.fromEnvironment('TEST_BASE_URL');
   static const productionBaseUrl = String.fromEnvironment(

@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_redux/flutter_redux.dart';
 import 'package:flutter_template_start/model/oolaf_music/index.dart';
@@ -308,134 +309,166 @@ class OolafMusicListState extends State<OolafMusicList> {
 
         return ListView.builder(
           controller: _scrollController,
-          padding: const EdgeInsets.only(bottom: 80),
+          padding: const EdgeInsets.fromLTRB(12, 10, 12, 92),
           itemCount: items.length,
           itemBuilder: (context, i) {
             final item = items[i];
             final rowKey = _rowKeys.putIfAbsent(item.key, () => GlobalKey());
-            final left = 12.0 + item.depth * 12.0;
+            final left = 10.0 + item.depth * 12.0;
 
             final isActive =
                 item.isFile && vm.playingUrl == item.entry.cdnUri.toString();
             final isRowLoading = item.isFile &&
                 vm.loadingUrls.contains(item.entry.cdnUri.toString());
 
-            return Material(
+            return KeyedSubtree(
               key: rowKey,
-              color: isActive ? const Color(0xFFFFF4F4) : Colors.white,
-              child: InkWell(
-                onTap: () async {
-                  final store = StoreProvider.of<AppState>(context);
-                  if (item.isFolder) {
-                    store.dispatch(OolafToggleFolderExpandedAction(item.key));
-                    return;
-                  }
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(16),
+                  onTap: () async {
+                    final store = StoreProvider.of<AppState>(context);
+                    if (item.isFolder) {
+                      store.dispatch(OolafToggleFolderExpandedAction(item.key));
+                      return;
+                    }
 
-                  final url = item.entry.cdnUri.toString();
-                  if (vm.playingUrl == url && vm.isPlaying) {
-                    return;
-                  }
+                    final url = item.entry.cdnUri.toString();
+                    if (vm.playingUrl == url && vm.isPlaying) {
+                      return;
+                    }
 
-                  await _playTrack(
-                    OolafMusicTrackItem(
-                      key: item.key,
-                      parentKey: _groupKeyForItem(item),
-                      ancestorKeys: item.key
-                          .split('/')
-                          .take(item.key.split('/').length - 1)
-                          .fold<List<String>>(<String>[], (keys, segment) {
-                        final next =
-                            keys.isEmpty ? segment : '${keys.last}/$segment';
-                        return <String>[...keys, next];
-                      }),
-                      entry: item.entry,
-                    ),
-                    items,
-                  );
-                },
-                child: Container(
-                  padding: EdgeInsets.fromLTRB(left, 14, 12, 14),
-                  decoration: const BoxDecoration(
-                    border: Border(
-                      bottom: BorderSide(color: Color(0xFFF0F0F0)),
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      if (item.isFolder)
-                        Icon(
-                          item.isExpanded
-                              ? Icons.keyboard_arrow_down
-                              : Icons.keyboard_arrow_right,
-                          size: 20,
-                          color: Colors.black54,
-                        )
-                      else
-                        const SizedBox(width: 20),
-                      const SizedBox(width: 6),
-                      Expanded(
-                        child: Text(
-                          item.entry.displayName,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context)
-                              .textTheme
-                              .bodyMedium
-                              ?.copyWith(
-                                color: isActive ? themeColor : null,
-                                fontWeight: isActive ? FontWeight.w600 : null,
-                              ),
-                        ),
+                    await _playTrack(
+                      OolafMusicTrackItem(
+                        key: item.key,
+                        parentKey: _groupKeyForItem(item),
+                        ancestorKeys: item.key
+                            .split('/')
+                            .take(item.key.split('/').length - 1)
+                            .fold<List<String>>(<String>[], (keys, segment) {
+                          final next =
+                              keys.isEmpty ? segment : '${keys.last}/$segment';
+                          return <String>[...keys, next];
+                        }),
+                        entry: item.entry,
                       ),
-                      if (item.isFile)
-                        IconButton(
-                          onPressed: () {
-                            widget.onToggleFavorite(
-                              item.entry.cdnUri.toString(),
-                            );
-                          },
-                          padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints(
-                            minWidth: 36,
-                            minHeight: 36,
+                      items,
+                    );
+                  },
+                  child: Container(
+                    margin: const EdgeInsets.symmetric(vertical: 6),
+                    padding: EdgeInsets.fromLTRB(left, 12, 12, 12),
+                    decoration: BoxDecoration(
+                      color: isActive ? const Color(0xFFFFF2F2) : Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: isActive
+                            ? const Color(0x22D43C33)
+                            : const Color(0x0F000000),
+                      ),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: Color(0x0D000000),
+                          blurRadius: 14,
+                          offset: Offset(0, 8),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      children: [
+                        if (item.isFolder)
+                          Icon(
+                            item.isExpanded
+                                ? CupertinoIcons.chevron_down
+                                : CupertinoIcons.chevron_right,
+                            size: 18,
+                            color: Colors.black54,
+                          )
+                        else
+                          const SizedBox(width: 18),
+                        const SizedBox(width: 8),
+                        if (item.isFolder)
+                          const Icon(
+                            CupertinoIcons.folder_fill,
+                            size: 18,
+                            color: Color(0xFF8E8E93),
+                          )
+                        else
+                          const Icon(
+                            CupertinoIcons.music_note,
+                            size: 18,
+                            color: Color(0xFF8E8E93),
                           ),
-                          icon: Icon(
-                            widget.favoriteUrls
-                                    .contains(item.entry.cdnUri.toString())
-                                ? Icons.star
-                                : Icons.star_border,
-                            size: 20,
-                            color: themeColor,
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            item.entry.displayName,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodyMedium
+                                ?.copyWith(
+                                  color: isActive
+                                      ? themeColor
+                                      : const Color(0xFF1C1C1E),
+                                  fontWeight: isActive
+                                      ? FontWeight.w700
+                                      : FontWeight.w600,
+                                ),
                           ),
                         ),
-                      if (item.isFile)
-                        isActive
-                            ? vm.isPlaying
-                                ? const Icon(
-                                    Icons.pause_circle_filled,
-                                    size: 22,
-                                    color: themeColor,
-                                  )
-                                : const Icon(
-                                    Icons.play_circle_outline,
-                                    size: 22,
-                                    color: themeColor,
-                                  )
-                            : isRowLoading
-                                ? const SizedBox(
-                                    width: 22,
-                                    height: 22,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
+                        if (item.isFile)
+                          IconButton(
+                            onPressed: () {
+                              widget.onToggleFavorite(
+                                item.entry.cdnUri.toString(),
+                              );
+                            },
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(
+                              minWidth: 36,
+                              minHeight: 36,
+                            ),
+                            icon: Icon(
+                              widget.favoriteUrls
+                                      .contains(item.entry.cdnUri.toString())
+                                  ? CupertinoIcons.star_fill
+                                  : CupertinoIcons.star,
+                              size: 18,
+                              color: themeColor,
+                            ),
+                          ),
+                        if (item.isFile)
+                          isActive
+                              ? vm.isPlaying
+                                  ? const Icon(
+                                      CupertinoIcons.pause_circle_fill,
+                                      size: 22,
+                                      color: themeColor,
+                                    )
+                                  : const Icon(
+                                      CupertinoIcons.play_circle_fill,
+                                      size: 22,
+                                      color: themeColor,
+                                    )
+                              : isRowLoading
+                                  ? const SizedBox(
+                                      width: 22,
+                                      height: 22,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: themeColor,
+                                      ),
+                                    )
+                                  : const Icon(
+                                      CupertinoIcons.play_circle,
+                                      size: 22,
                                       color: themeColor,
                                     ),
-                                  )
-                                : const Icon(
-                                    Icons.play_circle_outline,
-                                    size: 22,
-                                    color: themeColor,
-                                  ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),

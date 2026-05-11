@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:audio_session/audio_session.dart';
 import 'package:just_audio/just_audio.dart';
@@ -23,6 +24,10 @@ class OolafAudioPlayer {
       }).map((_) {});
 
   Future<void> _ensureAudioSession() async {
+    if (!(Platform.isAndroid || Platform.isIOS || Platform.isMacOS)) {
+      return;
+    }
+
     if (_sessionConfigured) {
       return;
     }

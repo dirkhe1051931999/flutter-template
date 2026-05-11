@@ -1,6 +1,7 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_template_start/api/oolaf/music.dart';
 import 'package:flutter_template_start/components/app_sheet/index.dart';
@@ -152,24 +153,33 @@ class _OolafDynamicAudioPageState extends State<OolafDynamicAudioPage> {
                     Expanded(
                       child: Text(
                         title,
-                        style: Theme.of(context).textTheme.titleMedium,
+                        style: CupertinoTheme.of(context)
+                            .textTheme
+                            .navTitleTextStyle
+                            .copyWith(
+                              fontSize: 17,
+                              fontWeight: FontWeight.w600,
+                            ),
                       ),
                     ),
-                    IconButton(
+                    CupertinoButton(
+                      padding: EdgeInsets.zero,
+                      minimumSize: const Size(36, 36),
                       onPressed: () {
                         Navigator.of(context).pop();
                       },
-                      icon: const Icon(Icons.close),
+                      child: const Icon(
+                        CupertinoIcons.xmark_circle_fill,
+                        size: 26,
+                        color: Color(0xFF8E8E93),
+                      ),
                     ),
                   ],
                 ),
                 if (showSearchInput)
-                  TextField(
+                  CupertinoSearchTextField(
                     autofocus: true,
-                    decoration: const InputDecoration(
-                      hintText: '搜索歌曲名',
-                      prefixIcon: Icon(Icons.search),
-                    ),
+                    placeholder: '搜索歌曲名',
                     onChanged: (value) {
                       setSheetState(() {
                         keyword = value;
@@ -185,7 +195,7 @@ class _OolafDynamicAudioPageState extends State<OolafDynamicAudioPage> {
                             child: Text(
                               emptyText,
                               style: const TextStyle(
-                                color: Colors.black45,
+                                color: CupertinoColors.systemGrey,
                               ),
                             ),
                           ),
@@ -194,46 +204,78 @@ class _OolafDynamicAudioPageState extends State<OolafDynamicAudioPage> {
                           shrinkWrap: true,
                           itemCount: tracks.length,
                           separatorBuilder: (_, __) {
-                            return const Divider(height: 1);
+                            return Container(
+                              height: 1,
+                              color: const Color(0x1F3C3C43),
+                            );
                           },
                           itemBuilder: (context, index) {
                             final track = tracks[index];
                             final isFavorite =
                                 _favoriteUrls.contains(track.cdnUrl);
-                            return ListTile(
-                              dense: true,
-                              contentPadding: EdgeInsets.zero,
-                              title: _HighlightedText(
-                                text: track.title,
-                                keyword: keyword,
-                                highlightColor: themeColor,
+                            return CupertinoButton(
+                              padding: const EdgeInsets.symmetric(
+                                vertical: 10,
                               ),
-                              subtitle: Text(
-                                track.parentKey == '__root__'
-                                    ? '根目录'
-                                    : track.parentKey,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              leading: const Icon(
-                                Icons.music_note,
-                                color: themeColor,
-                              ),
-                              trailing: IconButton(
-                                onPressed: enableFavoriteToggle
-                                    ? () async {
-                                        await _toggleFavorite(track.cdnUrl);
-                                        setSheetState(() {});
-                                      }
-                                    : null,
-                                icon: Icon(
-                                  isFavorite ? Icons.star : Icons.star_border,
-                                  color: themeColor,
-                                ),
-                              ),
-                              onTap: () {
+                              alignment: Alignment.centerLeft,
+                              onPressed: () {
                                 _locateTrack(track);
                               },
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Padding(
+                                    padding: EdgeInsets.only(top: 2),
+                                    child: Icon(
+                                      CupertinoIcons.music_note,
+                                      color: themeColor,
+                                      size: 18,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        _HighlightedText(
+                                          text: track.title,
+                                          keyword: keyword,
+                                          highlightColor: themeColor,
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          track.parentKey == '__root__'
+                                              ? '根目录'
+                                              : track.parentKey,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: const TextStyle(
+                                            fontSize: 12,
+                                            color: CupertinoColors.systemGrey,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  if (enableFavoriteToggle)
+                                    CupertinoButton(
+                                      padding: EdgeInsets.zero,
+                                      minimumSize: const Size(36, 36),
+                                      onPressed: () async {
+                                        await _toggleFavorite(track.cdnUrl);
+                                        setSheetState(() {});
+                                      },
+                                      child: Icon(
+                                        isFavorite
+                                            ? CupertinoIcons.star_fill
+                                            : CupertinoIcons.star,
+                                        color: themeColor,
+                                        size: 20,
+                                      ),
+                                    ),
+                                ],
+                              ),
                             );
                           },
                         ),
@@ -244,6 +286,57 @@ class _OolafDynamicAudioPageState extends State<OolafDynamicAudioPage> {
         );
       },
     );
+  }
+
+  Future<void> _playPrevByState() async {
+    if (_isAutoAdvancing) {
+      return;
+    }
+
+    _isAutoAdvancing = true;
+    final store = StoreProvider.of<AppState>(context);
+    try {
+      final music = store.state.oolafMusic;
+      final queue = music.queue;
+      final currentIndex = music.queueIndex;
+
+      if (queue.isEmpty || currentIndex < 0 || currentIndex >= queue.length) {
+        store.dispatch(const OolafSetPlayingAction(false));
+        return;
+      }
+
+      if (music.loopMode == OolafLoopMode.one) {
+        final track = queue[currentIndex];
+        await oolafAudioPlayer.playUrl(track.cdnUrl);
+        store.dispatch(OolafPlayByQueueIndexAction(currentIndex));
+        return;
+      }
+
+      final prevIndex = currentIndex - 1;
+      if (prevIndex < 0) {
+        if (music.loopMode == OolafLoopMode.all) {
+          final lastIndex = queue.length - 1;
+          final track = queue[lastIndex];
+          await oolafAudioPlayer.playUrl(track.cdnUrl);
+          store.dispatch(OolafPlayByQueueIndexAction(lastIndex));
+          return;
+        }
+
+        store.dispatch(const OolafSetPlayingAction(false));
+        return;
+      }
+
+      final track = queue[prevIndex];
+      await oolafAudioPlayer.playUrl(track.cdnUrl);
+      store.dispatch(OolafPlayByQueueIndexAction(prevIndex));
+    } catch (error, stackTrace) {
+      customLogger.log('play prev oolaf music failed: $error');
+      customLogger.log(stackTrace);
+      store.dispatch(const OolafSetPlayingAction(false));
+      EasyLoading.showToast('播放上一首失败');
+    } finally {
+      _isAutoAdvancing = false;
+    }
   }
 
   Future<void> _playNextByState() async {
@@ -335,7 +428,10 @@ class _OolafDynamicAudioPageState extends State<OolafDynamicAudioPage> {
       context: context,
       position: AppSheetPosition.bottom,
       builder: (context) {
-        return const OolafPlayerSheet();
+        return OolafPlayerSheet(
+          onPrev: _playPrevByState,
+          onNext: _playNextByState,
+        );
       },
     );
   }
@@ -343,62 +439,189 @@ class _OolafDynamicAudioPageState extends State<OolafDynamicAudioPage> {
   @override
   Widget build(BuildContext context) {
     const themeColor = Color(0xFFD43C33);
-    return Scaffold(
-      backgroundColor: const Color(0xFFF2F3F4),
-      appBar: AppBar(
-        title: const Text('oolaf 动感音频'),
-        backgroundColor: themeColor,
-        foregroundColor: Colors.white,
-        elevation: 0,
-        actions: [
-          IconButton(
-            onPressed: _openFavoriteSheet,
-            icon: const Icon(Icons.star),
+    const headerImageUrl = 'https://picsum.photos/seed/oolaf-music/128/128';
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle.dark,
+      child: CupertinoTheme(
+        data: const CupertinoThemeData(
+          primaryColor: themeColor,
+        ),
+        child: CupertinoPageScaffold(
+          backgroundColor: const Color(0xFFF4F5F7),
+          navigationBar: CupertinoNavigationBar(
+            backgroundColor: CupertinoColors.white,
+            border: null,
+            leading: Navigator.of(context).canPop()
+                ? CupertinoNavigationBarBackButton(
+                    color: themeColor,
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                    },
+                  )
+                : null,
+            middle: const Text(
+              'oolaf 动感音频',
+              style: TextStyle(color: Color(0xFF1C1C1E)),
+            ),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CupertinoButton(
+                  padding: EdgeInsets.zero,
+                  minimumSize: const Size(36, 36),
+                  onPressed: _openFavoriteSheet,
+                  child: const Icon(
+                    CupertinoIcons.star,
+                    color: themeColor,
+                    size: 20,
+                  ),
+                ),
+                CupertinoButton(
+                  padding: EdgeInsets.zero,
+                  minimumSize: const Size(36, 36),
+                  onPressed: _openSearchSheet,
+                  child: const Icon(
+                    CupertinoIcons.search,
+                    color: themeColor,
+                    size: 20,
+                  ),
+                ),
+                CupertinoButton(
+                  padding: EdgeInsets.zero,
+                  minimumSize: const Size(36, 36),
+                  onPressed: _refreshIndex,
+                  child: const Icon(
+                    CupertinoIcons.refresh,
+                    color: themeColor,
+                    size: 20,
+                  ),
+                ),
+              ],
+            ),
           ),
-          IconButton(
-            onPressed: _openSearchSheet,
-            icon: const Icon(Icons.search),
-          ),
-          IconButton(
-            onPressed: _refreshIndex,
-            icon: const Icon(Icons.refresh),
-          ),
-        ],
-      ),
-      body: SafeArea(
-        child: Stack(
-          children: [
-            StoreConnector<AppState, bool>(
-              distinct: true,
-              converter: (store) => store.state.oolafMusic.isLoading,
-              builder: (context, isLoading) {
-                return Column(
-                  children: [
-                    Expanded(
-                      child: Container(
-                        color: Colors.white,
-                        child: isLoading
-                            ? const Center(
-                                child: CircularProgressIndicator(
-                                  color: themeColor,
-                                ),
-                              )
-                            : OolafMusicList(
-                                key: _musicListKey,
-                                favoriteUrls: _favoriteUrls,
-                                onToggleFavorite: _toggleFavorite,
+          child: SafeArea(
+            child: Stack(
+              children: [
+                StoreConnector<AppState, bool>(
+                  distinct: true,
+                  converter: (store) => store.state.oolafMusic.isLoading,
+                  builder: (context, isLoading) {
+                    return Column(
+                      children: [
+                        Container(
+                          margin: const EdgeInsets.fromLTRB(12, 12, 12, 10),
+                          padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(22),
+                            gradient: const LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [
+                                Color(0xFFFFE7E7),
+                                Color(0xFFFFF6F6),
+                              ],
+                            ),
+                            boxShadow: const [
+                              BoxShadow(
+                                color: Color(0x1A000000),
+                                blurRadius: 18,
+                                offset: Offset(0, 8),
                               ),
-                      ),
-                    ),
-                  ],
-                );
-              },
+                            ],
+                          ),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      '你的音乐库',
+                                      style: CupertinoTheme.of(context)
+                                          .textTheme
+                                          .navTitleTextStyle
+                                          .copyWith(
+                                            fontSize: 17,
+                                            fontWeight: FontWeight.w700,
+                                            color: const Color(0xFF1C1C1E),
+                                          ),
+                                    ),
+                                    const SizedBox(height: 6),
+                                    const Text(
+                                      '搜索 / 收藏 / 播放列表都在这里',
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        color: CupertinoColors.systemGrey,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(16),
+                                child: Image.network(
+                                  headerImageUrl,
+                                  width: 64,
+                                  height: 64,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return const SizedBox(
+                                      width: 64,
+                                      height: 64,
+                                    );
+                                  },
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(22),
+                              child: DecoratedBox(
+                                decoration: const BoxDecoration(
+                                  color: CupertinoColors.white,
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Color(0x12000000),
+                                      blurRadius: 20,
+                                      offset: Offset(0, 10),
+                                    ),
+                                  ],
+                                ),
+                                child: isLoading
+                                    ? const Center(
+                                        child: CupertinoActivityIndicator(
+                                          radius: 12,
+                                        ),
+                                      )
+                                    : OolafMusicList(
+                                        key: _musicListKey,
+                                        favoriteUrls: _favoriteUrls,
+                                        onToggleFavorite: _toggleFavorite,
+                                      ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+                Align(
+                  alignment: Alignment.bottomCenter,
+                  child: OolafMiniPlayer(
+                    onOpenPlayer: _openPlayerSheet,
+                    onPrev: _playPrevByState,
+                    onNext: _playNextByState,
+                  ),
+                ),
+              ],
             ),
-            Align(
-              alignment: Alignment.bottomCenter,
-              child: OolafMiniPlayer(onOpenPlayer: _openPlayerSheet),
-            ),
-          ],
+          ),
         ),
       ),
     );

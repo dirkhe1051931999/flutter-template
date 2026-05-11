@@ -55,6 +55,7 @@ dependencies:
   html: ^0.15.4
   marquee: ^2.2.3
   just_audio: ^0.9.36
+  just_audio_windows: ^0.2.0
   audio_session: ^0.1.19
 
 dev_dependencies:

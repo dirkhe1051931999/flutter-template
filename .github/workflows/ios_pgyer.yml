@@ -1,0 +1,63 @@
+name: iOS Build & Upload (PGYER)
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  build_ios_and_upload:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Flutter Pub Get
+        run: flutter pub get
+
+      - name: Build iOS (no codesign)
+        run: flutter build ios --release --no-codesign
+
+      - name: Package IPA (unsigned)
+        shell: bash
+        run: |
+          set -e
+          APP_PATH="build/ios/iphoneos/Runner.app"
+          if [ ! -d "$APP_PATH" ]; then
+            echo "Runner.app not found at $APP_PATH" >&2
+            exit 1
+          fi
+          rm -rf Payload
+          mkdir -p Payload
+          cp -R "$APP_PATH" Payload/
+          /usr/bin/zip -r app.ipa Payload
+
+      - name: Upload to PGYER
+        env:
+          PGYER_API_KEY: ${{ secrets.PGYER_API_KEY }}
+        shell: bash
+        run: |
+          set -e
+          if [ -z "$PGYER_API_KEY" ]; then
+            echo "Missing secrets.PGYER_API_KEY" >&2
+            exit 1
+          fi
+          curl -f -sS \
+            -F "file=@app.ipa" \
+            -F "buildInstallType=1" \
+            -F "_api_key=${PGYER_API_KEY}" \
+            https://www.pgyer.com/apiv2/app/upload
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-ipa
+          path: app.ipa
