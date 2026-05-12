@@ -66,7 +66,7 @@ void AddTrayIcon(HWND hwnd) {
   nid.uFlags = NIF_MESSAGE | NIF_ICON | NIF_TIP;
   nid.uCallbackMessage = kTrayCallbackMessage;
   nid.hIcon = LoadIcon(GetModuleHandle(nullptr), MAKEINTRESOURCE(IDI_APP_ICON));
-  wcscpy_s(nid.szTip, L"flutter_template_start");
+  wcscpy_s(nid.szTip, L"oolaf flutted");
   Shell_NotifyIcon(NIM_ADD, &nid);
 }
 

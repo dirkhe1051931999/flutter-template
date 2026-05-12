@@ -1,4 +1,4 @@
-import 'package:flutter_template_start/app.config.dart';
+import 'package:oolaf_flutted/app.config.dart';
 
 class OolafMusicEntry {
   const OolafMusicEntry({

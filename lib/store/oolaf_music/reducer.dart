@@ -1,7 +1,8 @@
-import 'package:flutter_template_start/store/action.dart';
-import 'package:flutter_template_start/store/index.dart';
-import 'package:flutter_template_start/store/oolaf_music/action.dart';
-import 'package:flutter_template_start/store/oolaf_music/state.dart';
+import 'package:oolaf_flutted/store/action.dart';
+import 'package:oolaf_flutted/store/index.dart';
+import 'package:oolaf_flutted/store/oolaf_music/action.dart';
+import 'package:oolaf_flutted/store/oolaf_music/state.dart';
+import 'package:oolaf_flutted/utils/oolaf_audio_player.dart';
 
 AppState oolafMusicReducer(AppState state, AppAction action) {
   final current = state.oolafMusic;
@@ -26,6 +27,7 @@ AppState oolafMusicReducer(AppState state, AppAction action) {
         expandedKeys: current.expandedKeys,
         nowPlaying: null,
         isPlaying: false,
+        playbackState: OolafPlaybackState.idle,
         loopMode: current.loopMode,
         queue: const <OolafTrack>[],
         queueIndex: -1,
@@ -127,9 +129,33 @@ AppState oolafMusicReducer(AppState state, AppAction action) {
     );
   }
 
+  if (action is OolafSetPlaybackStateAction) {
+    return state.copyWith(
+      oolafMusic: current.copyWith(playbackState: action.playbackState),
+    );
+  }
+
   if (action is OolafSetLoopModeAction) {
     return state.copyWith(
       oolafMusic: current.copyWith(loopMode: action.loopMode),
+    );
+  }
+
+  if (action is OolafRestorePlaybackAction) {
+    return state.copyWith(
+      oolafMusic: OolafMusicState(
+        isLoading: current.isLoading,
+        index: current.index,
+        expandedKeys: current.expandedKeys,
+        nowPlaying: action.nowPlaying,
+        isPlaying: false,
+        playbackState: OolafPlaybackState.idle,
+        loopMode: action.loopMode,
+        queue: action.queue,
+        queueIndex: action.queueIndex,
+        queueGroupKey: action.queueGroupKey,
+        loadingUrls: const <String>{},
+      ),
     );
   }
 

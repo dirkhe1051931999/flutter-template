@@ -1,8 +1,8 @@
 import 'package:cookie_jar/cookie_jar.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_template_start/app.config.dart';
+import 'package:oolaf_flutted/app.config.dart';
 import 'package:logger/logger.dart';
-import 'package:flutter_template_start/utils/IHelper.dart';
+import 'package:oolaf_flutted/utils/IHelper.dart';
 import 'package:path_provider/path_provider.dart';
 
 /// 一些需要初始化的工具类

@@ -9,11 +9,14 @@ class DetailModel extends INewsCommon {
     DetailRespData? respData,
   }) : super(respData: respData);
 
-  factory DetailModel.fromJson(Map<String, dynamic> json, [int? id]) => DetailModel(
+  factory DetailModel.fromJson(Map<String, dynamic> json, [int? id]) =>
+      DetailModel(
         respStatus: json["success"] == true ? "success" : "fail",
         respInfo: json["message"],
         errorCode: json["code"]?.toString(),
-        respData: json["data"] == null ? null : DetailRespData.fromJson(json["data"], id),
+        respData: json["data"] == null
+            ? null
+            : DetailRespData.fromJson(json["data"], id),
       );
 
   @override

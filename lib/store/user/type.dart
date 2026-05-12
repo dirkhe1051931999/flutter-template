@@ -1,4 +1,4 @@
-import 'package:flutter_template_start/store/action.dart';
+import 'package:oolaf_flutted/store/action.dart';
 
 class UserInfo {
   const UserInfo({

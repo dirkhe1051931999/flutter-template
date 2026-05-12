@@ -1,5 +1,5 @@
-import 'package:flutter_template_start/bootstrap.dart';
-import 'package:flutter_template_start/layouts/index.dart';
+import 'package:oolaf_flutted/bootstrap.dart';
+import 'package:oolaf_flutted/layouts/index.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

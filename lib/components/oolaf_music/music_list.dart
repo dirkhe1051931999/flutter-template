@@ -1,11 +1,13 @@
+import 'dart:async';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_redux/flutter_redux.dart';
-import 'package:flutter_template_start/model/oolaf_music/index.dart';
-import 'package:flutter_template_start/store/index.dart';
-import 'package:flutter_template_start/store/oolaf_music/action.dart';
-import 'package:flutter_template_start/store/oolaf_music/state.dart';
-import 'package:flutter_template_start/utils/oolaf_audio_player.dart';
+import 'package:oolaf_flutted/model/oolaf_music/index.dart';
+import 'package:oolaf_flutted/store/index.dart';
+import 'package:oolaf_flutted/store/oolaf_music/action.dart';
+import 'package:oolaf_flutted/store/oolaf_music/state.dart';
+import 'package:oolaf_flutted/utils/oolaf_audio_player.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 
 class OolafMusicListItem {
@@ -43,7 +45,44 @@ class OolafMusicListState extends State<OolafMusicList> {
   final ScrollController _scrollController = ScrollController();
   final Map<String, GlobalKey> _rowKeys = <String, GlobalKey>{};
 
+  List<OolafMusicListItem> _lastItems = const <OolafMusicListItem>[];
+  Timer? _prefetchDebounce;
+
   int _playRequestId = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_onScrollPrefetch);
+  }
+
+  void _onScrollPrefetch() {
+    _prefetchDebounce?.cancel();
+    _prefetchDebounce = Timer(const Duration(milliseconds: 160), () {
+      if (!mounted || !_scrollController.hasClients) {
+        return;
+      }
+
+      final items = _lastItems;
+      if (items.isEmpty) {
+        return;
+      }
+
+      final offset = _scrollController.offset;
+      final approxIndex = (offset / 60.0).floor().clamp(0, items.length - 1);
+
+      var prefetched = 0;
+      for (var i = approxIndex; i < items.length && prefetched < 3; i += 1) {
+        final item = items[i];
+        if (!item.isFile) {
+          continue;
+        }
+        final url = item.entry.cdnUri.toString();
+        oolafAudioPlayer.prefetchUrl(url);
+        prefetched += 1;
+      }
+    });
+  }
 
   double _estimatedOffsetForIndex(
     List<OolafMusicListItem> items,
@@ -268,13 +307,13 @@ class OolafMusicListState extends State<OolafMusicList> {
 
   @override
   void dispose() {
+    _prefetchDebounce?.cancel();
     _scrollController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    const themeColor = Color(0xFFD43C33);
     return StoreConnector<
         AppState,
         ({
@@ -282,6 +321,7 @@ class OolafMusicListState extends State<OolafMusicList> {
           Set<String> expanded,
           String? playingUrl,
           bool isPlaying,
+          OolafPlaybackState playbackState,
           Set<String> loadingUrls,
         })>(
       distinct: true,
@@ -291,6 +331,7 @@ class OolafMusicListState extends State<OolafMusicList> {
           expanded: store.state.oolafMusic.expandedKeys,
           playingUrl: store.state.oolafMusic.nowPlaying?.cdnUrl,
           isPlaying: store.state.oolafMusic.isPlaying,
+          playbackState: store.state.oolafMusic.playbackState,
           loadingUrls: store.state.oolafMusic.loadingUrls,
         );
       },
@@ -307,6 +348,8 @@ class OolafMusicListState extends State<OolafMusicList> {
           parentKey: '',
         );
 
+        _lastItems = items;
+
         return ListView.builder(
           controller: _scrollController,
           padding: const EdgeInsets.fromLTRB(12, 10, 12, 92),
@@ -320,162 +363,230 @@ class OolafMusicListState extends State<OolafMusicList> {
                 item.isFile && vm.playingUrl == item.entry.cdnUri.toString();
             final isRowLoading = item.isFile &&
                 vm.loadingUrls.contains(item.entry.cdnUri.toString());
+            final isBuffering =
+                isActive && vm.playbackState == OolafPlaybackState.buffering;
 
             return KeyedSubtree(
               key: rowKey,
-              child: Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(16),
-                  onTap: () async {
-                    final store = StoreProvider.of<AppState>(context);
-                    if (item.isFolder) {
-                      store.dispatch(OolafToggleFolderExpandedAction(item.key));
-                      return;
-                    }
+              child: _OolafMusicListRow(
+                leftPadding: left,
+                title: item.entry.displayName,
+                isFolder: item.isFolder,
+                isExpanded: item.isExpanded,
+                isActive: isActive,
+                isRowLoading: isRowLoading,
+                isBuffering: isBuffering,
+                isPlaying: vm.isPlaying,
+                isFavorite:
+                    widget.favoriteUrls.contains(item.entry.cdnUri.toString()),
+                onToggleFavorite: item.isFile
+                    ? () {
+                        widget.onToggleFavorite(
+                          item.entry.cdnUri.toString(),
+                        );
+                      }
+                    : null,
+                onTap: () async {
+                  final store = StoreProvider.of<AppState>(context);
+                  if (item.isFolder) {
+                    store.dispatch(OolafToggleFolderExpandedAction(item.key));
+                    return;
+                  }
 
-                    final url = item.entry.cdnUri.toString();
-                    if (vm.playingUrl == url && vm.isPlaying) {
-                      return;
-                    }
+                  final url = item.entry.cdnUri.toString();
+                  if (vm.playingUrl == url && vm.isPlaying) {
+                    return;
+                  }
 
-                    await _playTrack(
-                      OolafMusicTrackItem(
-                        key: item.key,
-                        parentKey: _groupKeyForItem(item),
-                        ancestorKeys: item.key
-                            .split('/')
-                            .take(item.key.split('/').length - 1)
-                            .fold<List<String>>(<String>[], (keys, segment) {
-                          final next =
-                              keys.isEmpty ? segment : '${keys.last}/$segment';
-                          return <String>[...keys, next];
-                        }),
-                        entry: item.entry,
-                      ),
-                      items,
-                    );
-                  },
-                  child: Container(
-                    margin: const EdgeInsets.symmetric(vertical: 6),
-                    padding: EdgeInsets.fromLTRB(left, 12, 12, 12),
-                    decoration: BoxDecoration(
-                      color: isActive ? const Color(0xFFFFF2F2) : Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: isActive
-                            ? const Color(0x22D43C33)
-                            : const Color(0x0F000000),
-                      ),
-                      boxShadow: const [
-                        BoxShadow(
-                          color: Color(0x0D000000),
-                          blurRadius: 14,
-                          offset: Offset(0, 8),
-                        ),
-                      ],
+                  await _playTrack(
+                    OolafMusicTrackItem(
+                      key: item.key,
+                      parentKey: _groupKeyForItem(item),
+                      ancestorKeys: item.key
+                          .split('/')
+                          .take(item.key.split('/').length - 1)
+                          .fold<List<String>>(<String>[], (keys, segment) {
+                        final next =
+                            keys.isEmpty ? segment : '${keys.last}/$segment';
+                        return <String>[...keys, next];
+                      }),
+                      entry: item.entry,
                     ),
-                    child: Row(
-                      children: [
-                        if (item.isFolder)
-                          Icon(
-                            item.isExpanded
-                                ? CupertinoIcons.chevron_down
-                                : CupertinoIcons.chevron_right,
-                            size: 18,
-                            color: Colors.black54,
-                          )
-                        else
-                          const SizedBox(width: 18),
-                        const SizedBox(width: 8),
-                        if (item.isFolder)
-                          const Icon(
-                            CupertinoIcons.folder_fill,
-                            size: 18,
-                            color: Color(0xFF8E8E93),
-                          )
-                        else
-                          const Icon(
-                            CupertinoIcons.music_note,
-                            size: 18,
-                            color: Color(0xFF8E8E93),
-                          ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Text(
-                            item.entry.displayName,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodyMedium
-                                ?.copyWith(
-                                  color: isActive
-                                      ? themeColor
-                                      : const Color(0xFF1C1C1E),
-                                  fontWeight: isActive
-                                      ? FontWeight.w700
-                                      : FontWeight.w600,
-                                ),
-                          ),
-                        ),
-                        if (item.isFile)
-                          IconButton(
-                            onPressed: () {
-                              widget.onToggleFavorite(
-                                item.entry.cdnUri.toString(),
-                              );
-                            },
-                            padding: EdgeInsets.zero,
-                            constraints: const BoxConstraints(
-                              minWidth: 36,
-                              minHeight: 36,
-                            ),
-                            icon: Icon(
-                              widget.favoriteUrls
-                                      .contains(item.entry.cdnUri.toString())
-                                  ? CupertinoIcons.star_fill
-                                  : CupertinoIcons.star,
-                              size: 18,
-                              color: themeColor,
-                            ),
-                          ),
-                        if (item.isFile)
-                          isActive
-                              ? vm.isPlaying
-                                  ? const Icon(
-                                      CupertinoIcons.pause_circle_fill,
-                                      size: 22,
-                                      color: themeColor,
-                                    )
-                                  : const Icon(
-                                      CupertinoIcons.play_circle_fill,
-                                      size: 22,
-                                      color: themeColor,
-                                    )
-                              : isRowLoading
-                                  ? const SizedBox(
-                                      width: 22,
-                                      height: 22,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        color: themeColor,
-                                      ),
-                                    )
-                                  : const Icon(
-                                      CupertinoIcons.play_circle,
-                                      size: 22,
-                                      color: themeColor,
-                                    ),
-                      ],
-                    ),
-                  ),
-                ),
+                    items,
+                  );
+                },
               ),
             );
           },
         );
       },
+    );
+  }
+}
+
+class _OolafMusicListRow extends StatefulWidget {
+  const _OolafMusicListRow({
+    required this.leftPadding,
+    required this.title,
+    required this.isFolder,
+    required this.isExpanded,
+    required this.isActive,
+    required this.isRowLoading,
+    required this.isBuffering,
+    required this.isPlaying,
+    required this.isFavorite,
+    required this.onTap,
+    this.onToggleFavorite,
+  });
+
+  final double leftPadding;
+  final String title;
+  final bool isFolder;
+  final bool isExpanded;
+  final bool isActive;
+  final bool isRowLoading;
+  final bool isBuffering;
+  final bool isPlaying;
+  final bool isFavorite;
+  final VoidCallback? onToggleFavorite;
+  final Future<void> Function() onTap;
+
+  @override
+  State<_OolafMusicListRow> createState() => _OolafMusicListRowState();
+}
+
+class _OolafMusicListRowState extends State<_OolafMusicListRow> {
+  bool _isPressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    const themeColor = Color(0xFFD43C33);
+
+    final background = widget.isActive
+        ? const Color(0xFFFFF2F2)
+        : _isPressed
+            ? const Color(0x0A000000)
+            : Colors.white;
+
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () async {
+        await widget.onTap();
+      },
+      onTapDown: (_) {
+        setState(() {
+          _isPressed = true;
+        });
+      },
+      onTapCancel: () {
+        setState(() {
+          _isPressed = false;
+        });
+      },
+      onTapUp: (_) {
+        setState(() {
+          _isPressed = false;
+        });
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 120),
+        margin: const EdgeInsets.symmetric(vertical: 6),
+        padding: EdgeInsets.fromLTRB(widget.leftPadding, 12, 12, 12),
+        decoration: BoxDecoration(
+          color: background,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: widget.isActive
+                ? const Color(0x22D43C33)
+                : const Color(0x0F000000),
+          ),
+        ),
+        child: Row(
+          children: [
+            if (widget.isFolder)
+              Icon(
+                widget.isExpanded
+                    ? CupertinoIcons.chevron_down
+                    : CupertinoIcons.chevron_right,
+                size: 18,
+                color: Colors.black54,
+              )
+            else
+              const SizedBox(width: 18),
+            const SizedBox(width: 8),
+            if (widget.isFolder)
+              const Icon(
+                CupertinoIcons.folder_fill,
+                size: 18,
+                color: Color(0xFF8E8E93),
+              )
+            else
+              const Icon(
+                CupertinoIcons.music_note,
+                size: 18,
+                color: Color(0xFF8E8E93),
+              ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                widget.title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: CupertinoTheme.of(context).textTheme.textStyle.copyWith(
+                      color: widget.isActive
+                          ? themeColor
+                          : const Color(0xFF1C1C1E),
+                      fontWeight:
+                          widget.isActive ? FontWeight.w700 : FontWeight.w600,
+                    ),
+              ),
+            ),
+            if (widget.onToggleFavorite != null)
+              CupertinoButton(
+                padding: EdgeInsets.zero,
+                minimumSize: const Size(36, 36),
+                onPressed: widget.onToggleFavorite,
+                child: Icon(
+                  widget.isFavorite
+                      ? CupertinoIcons.star_fill
+                      : CupertinoIcons.star,
+                  size: 18,
+                  color: themeColor,
+                ),
+              ),
+            if (!widget.isFolder)
+              widget.isActive
+                  ? widget.isBuffering
+                      ? const SizedBox(
+                          width: 22,
+                          height: 22,
+                          child: CupertinoActivityIndicator(radius: 11),
+                        )
+                      : widget.isPlaying
+                          ? const Icon(
+                              CupertinoIcons.pause_circle_fill,
+                              size: 22,
+                              color: themeColor,
+                            )
+                          : const Icon(
+                              CupertinoIcons.play_circle_fill,
+                              size: 22,
+                              color: themeColor,
+                            )
+                  : widget.isRowLoading
+                      ? const SizedBox(
+                          width: 22,
+                          height: 22,
+                          child: CupertinoActivityIndicator(radius: 11),
+                        )
+                      : const Icon(
+                          CupertinoIcons.play_circle,
+                          size: 22,
+                          color: themeColor,
+                        ),
+          ],
+        ),
+      ),
     );
   }
 }

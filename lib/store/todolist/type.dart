@@ -1,4 +1,4 @@
-import 'package:flutter_template_start/store/action.dart';
+import 'package:oolaf_flutted/store/action.dart';
 
 class AddTodoAction extends AppAction {
   final String name;

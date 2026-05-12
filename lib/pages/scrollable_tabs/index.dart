@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_template_start/api/news/index.dart';
-import 'package:flutter_template_start/model/news/index.dart';
-import 'package:flutter_template_start/pages/scrollable_tabs/children/common_page.dart';
-import 'package:flutter_template_start/router/config.dart';
+import 'package:oolaf_flutted/api/news/index.dart';
+import 'package:oolaf_flutted/model/news/index.dart';
+import 'package:oolaf_flutted/pages/scrollable_tabs/children/common_page.dart';
+import 'package:oolaf_flutted/router/config.dart';
 
 class ScrollableTabsPage extends StatefulWidget {
   const ScrollableTabsPage({super.key});
@@ -11,7 +11,8 @@ class ScrollableTabsPage extends StatefulWidget {
   State<ScrollableTabsPage> createState() => _ScrollableTabsPageState();
 }
 
-class _ScrollableTabsPageState extends State<ScrollableTabsPage> with TickerProviderStateMixin {
+class _ScrollableTabsPageState extends State<ScrollableTabsPage>
+    with TickerProviderStateMixin {
   Future<TabsModel?>? tabsFuture;
   TabController? _tabController;
   Map<int, Map<String, dynamic>> _newsPagination = {};
@@ -41,7 +42,8 @@ class _ScrollableTabsPageState extends State<ScrollableTabsPage> with TickerProv
       ListModel? newsListAd = await getNewsListAd(
         {
           "column_id": value?.respData?.columnTypeList?[0].id,
-          "pageNum": pagination[value?.respData?.columnTypeList?[0].id!]?['pageNum'],
+          "pageNum": pagination[value?.respData?.columnTypeList?[0].id!]
+              ?['pageNum'],
           "flag": false,
           "channelCode": "tt",
         },
@@ -88,74 +90,74 @@ class _ScrollableTabsPageState extends State<ScrollableTabsPage> with TickerProv
         var columnTypeList = snapshot.data?.respData.columnTypeList;
         if (columnTypeList != null && _tabController != null) {
           return Scaffold(
-              appBar: AppBar(
-                bottom: TabBar(
-                  controller: _tabController,
-                  isScrollable: true,
-                  tabs: columnTypeList.map<Widget>((item) {
-                    return Tab(
-                      text: item.name,
-                    );
-                  }).toList(),
-                ),
-                title: const Text('新闻tab切换'),
-                leading: IconButton(
-                  icon: const Icon(Icons.arrow_back),
-                  onPressed: () {
-                    Navigator.pop(context);
-                  },
-                ),
-              ),
-              body: TabBarView(
+            appBar: AppBar(
+              bottom: TabBar(
                 controller: _tabController,
-                children: columnTypeList.map<Widget>((item) {
-                  return TabContent(
-                    tabId: item.id!,
-                    newsIdMap: _newsIdMap,
-                    itemTap: (news) {
-                      Application.router.navigateTo(
-                        context,
-                        "/scrollable-tabs-detail?title=${Uri.encodeComponent(news.author ?? '')}&id=${news.id}",
-                      );
-                    },
-                    pullToRefresh: (tabId, refreshController) async {
-                      ListModel? newsListAd = await getNewsListAd(
-                        {
-                          "column_id": tabId,
-                          "pageNum": 1,
-                          "flag": false,
-                          "channelCode": "tt",
-                        },
-                      );
-                      if (mounted) {
-                        setState(() {
-                          _newsIdMap[tabId] = [newsListAd];
-                        });
-                      }
-                      refreshController.refreshCompleted();
-                    },
-                    moreLoad: (tabId, refreshController) async {
-                      int pageNum = _newsPagination[tabId]?['pageNum'] ?? 1;
-                      pageNum++;
-                      ListModel? newsListAd = await getNewsListAd(
-                        {
-                          "column_id": tabId,
-                          "pageNum": pageNum,
-                          "flag": false,
-                          "channelCode": "tt",
-                        },
-                      );
-                      if (mounted) {
-                        setState(() {
-                          _newsIdMap[tabId]!.add(newsListAd);
-                          _newsPagination[tabId]?['pageNum'] = pageNum;
-                        });
-                      }
-                      refreshController.loadComplete();
-                    },
+                isScrollable: true,
+                tabs: columnTypeList.map<Widget>((item) {
+                  return Tab(
+                    text: item.name,
                   );
-                }).toList() as List<Widget>,
+                }).toList(),
               ),
+              title: const Text('新闻tab切换'),
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back),
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+              ),
+            ),
+            body: TabBarView(
+              controller: _tabController,
+              children: columnTypeList.map<Widget>((item) {
+                return TabContent(
+                  tabId: item.id!,
+                  newsIdMap: _newsIdMap,
+                  itemTap: (news) {
+                    Application.router.navigateTo(
+                      context,
+                      "/scrollable-tabs-detail?title=${Uri.encodeComponent(news.author ?? '')}&id=${news.id}",
+                    );
+                  },
+                  pullToRefresh: (tabId, refreshController) async {
+                    ListModel? newsListAd = await getNewsListAd(
+                      {
+                        "column_id": tabId,
+                        "pageNum": 1,
+                        "flag": false,
+                        "channelCode": "tt",
+                      },
+                    );
+                    if (mounted) {
+                      setState(() {
+                        _newsIdMap[tabId] = [newsListAd];
+                      });
+                    }
+                    refreshController.refreshCompleted();
+                  },
+                  moreLoad: (tabId, refreshController) async {
+                    int pageNum = _newsPagination[tabId]?['pageNum'] ?? 1;
+                    pageNum++;
+                    ListModel? newsListAd = await getNewsListAd(
+                      {
+                        "column_id": tabId,
+                        "pageNum": pageNum,
+                        "flag": false,
+                        "channelCode": "tt",
+                      },
+                    );
+                    if (mounted) {
+                      setState(() {
+                        _newsIdMap[tabId]!.add(newsListAd);
+                        _newsPagination[tabId]?['pageNum'] = pageNum;
+                      });
+                    }
+                    refreshController.loadComplete();
+                  },
+                );
+              }).toList() as List<Widget>,
+            ),
           );
         } else {
           return Container();

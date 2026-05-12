@@ -1,10 +1,10 @@
 import 'package:fluro/fluro.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
-import 'package:flutter_template_start/router/config.dart';
-import 'package:flutter_template_start/router/routes.dart';
-import 'package:flutter_template_start/store/action.dart';
-import 'package:flutter_template_start/store/index.dart';
+import 'package:oolaf_flutted/router/config.dart';
+import 'package:oolaf_flutted/router/routes.dart';
+import 'package:oolaf_flutted/store/action.dart';
+import 'package:oolaf_flutted/store/index.dart';
 import 'package:redux/redux.dart';
 
 class AppBootstrap {

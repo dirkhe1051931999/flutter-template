@@ -1,6 +1,7 @@
-import 'package:flutter_template_start/model/oolaf_music/index.dart';
-import 'package:flutter_template_start/store/action.dart';
-import 'package:flutter_template_start/store/oolaf_music/state.dart';
+import 'package:oolaf_flutted/model/oolaf_music/index.dart';
+import 'package:oolaf_flutted/store/action.dart';
+import 'package:oolaf_flutted/store/oolaf_music/state.dart';
+import 'package:oolaf_flutted/utils/oolaf_audio_player.dart';
 
 class OolafSetLoadingAction extends AppAction {
   const OolafSetLoadingAction(this.isLoading);
@@ -100,8 +101,30 @@ class OolafSetPlayingAction extends AppAction {
   final bool isPlaying;
 }
 
+class OolafSetPlaybackStateAction extends AppAction {
+  const OolafSetPlaybackStateAction(this.playbackState);
+
+  final OolafPlaybackState playbackState;
+}
+
 class OolafSetLoopModeAction extends AppAction {
   const OolafSetLoopModeAction(this.loopMode);
 
   final OolafLoopMode loopMode;
+}
+
+class OolafRestorePlaybackAction extends AppAction {
+  const OolafRestorePlaybackAction({
+    required this.queue,
+    required this.queueIndex,
+    required this.queueGroupKey,
+    required this.loopMode,
+    required this.nowPlaying,
+  });
+
+  final List<OolafTrack> queue;
+  final int queueIndex;
+  final String queueGroupKey;
+  final OolafLoopMode loopMode;
+  final OolafNowPlaying? nowPlaying;
 }

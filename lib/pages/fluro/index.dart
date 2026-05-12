@@ -1,8 +1,8 @@
 import 'package:fluro/fluro.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:flutter_template_start/router/config.dart';
-import 'package:flutter_template_start/router/routes.dart';
+import 'package:oolaf_flutted/router/config.dart';
+import 'package:oolaf_flutted/router/routes.dart';
 
 class FluroPage extends StatelessWidget {
   const FluroPage({super.key});

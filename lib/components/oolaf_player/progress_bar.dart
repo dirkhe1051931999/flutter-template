@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_template_start/utils/duration_format.dart';
+import 'package:oolaf_flutted/utils/duration_format.dart';
 
 class OolafProgressBar extends StatelessWidget {
   const OolafProgressBar({

@@ -1,16 +1,18 @@
 import 'package:fluro/fluro.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_template_start/components/fluro_detail/index.dart';
-import 'package:flutter_template_start/layouts/app_wrap/index.dart';
-import 'package:flutter_template_start/pages/fluro/index.dart';
-import 'package:flutter_template_start/pages/home/index.dart';
-import 'package:flutter_template_start/pages/oolaf_dynamic_audio/index.dart';
-import 'package:flutter_template_start/pages/profile/index.dart';
-import 'package:flutter_template_start/pages/request/index.dart';
-import 'package:flutter_template_start/pages/scrollable_tabs/detail.dart';
-import 'package:flutter_template_start/pages/scrollable_tabs/index.dart';
-import 'package:flutter_template_start/pages/todolist/index.dart';
-import 'package:flutter_template_start/utils/helper.dart';
+import 'package:oolaf_flutted/components/fluro_detail/index.dart';
+import 'package:oolaf_flutted/layouts/app_wrap/index.dart';
+import 'package:oolaf_flutted/pages/fluro/index.dart';
+import 'package:oolaf_flutted/pages/home/index.dart';
+import 'package:oolaf_flutted/pages/oolaf_dynamic_audio/index.dart';
+import 'package:oolaf_flutted/pages/short_video/index.dart';
+import 'package:oolaf_flutted/pages/media_kit_test/index.dart';
+import 'package:oolaf_flutted/pages/profile/index.dart';
+import 'package:oolaf_flutted/pages/request/index.dart';
+import 'package:oolaf_flutted/pages/scrollable_tabs/detail.dart';
+import 'package:oolaf_flutted/pages/scrollable_tabs/index.dart';
+import 'package:oolaf_flutted/pages/todolist/index.dart';
+import 'package:oolaf_flutted/utils/helper.dart';
 
 /// 定义一个首页
 var rootHandler = Handler(
@@ -115,6 +117,24 @@ var oolafDynamicAudioRouteHandler = Handler(
     Map<String, List<String>> params,
   ) {
     return const OolafDynamicAudioPage();
+  },
+);
+
+var shortVideoRouteHandler = Handler(
+  handlerFunc: (
+    BuildContext? context,
+    Map<String, List<String>> params,
+  ) {
+    return const ShortVideoPage();
+  },
+);
+
+var mediaKitTestRouteHandler = Handler(
+  handlerFunc: (
+    BuildContext? context,
+    Map<String, List<String>> params,
+  ) {
+    return const MediaKitTestPage();
   },
 );
 

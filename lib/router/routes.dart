@@ -1,7 +1,7 @@
 import 'package:fluro/fluro.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_template_start/pages/404/index.dart';
-import 'package:flutter_template_start/router/handler.dart';
+import 'package:oolaf_flutted/pages/404/index.dart';
+import 'package:oolaf_flutted/router/handler.dart';
 
 class Routes {
   static const root = "/";
@@ -12,6 +12,8 @@ class Routes {
   static const fluro = "/fluro";
   static const request = "/request";
   static const oolafDynamicAudio = "/oolaf-dynamic-audio";
+  static const shortVideo = "/short-video";
+  static const mediaKitTest = "/media-kit-test";
   static const profile = "/profile";
   static const scrollableTabs = "/scrollable-tabs";
   static const scrollableTabsDetail = "/scrollable-tabs-detail";
@@ -35,6 +37,8 @@ class Routes {
     router.define(fluro, handler: fluroRouteHandler);
     router.define(request, handler: requestRouteHandler);
     router.define(oolafDynamicAudio, handler: oolafDynamicAudioRouteHandler);
+    router.define(shortVideo, handler: shortVideoRouteHandler);
+    router.define(mediaKitTest, handler: mediaKitTestRouteHandler);
     router.define(
       profile,
       handler: profileRouteHandler,

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_redux/flutter_redux.dart';
-import 'package:flutter_template_start/components/todolist_detail/list_empty.dart';
-import 'package:flutter_template_start/store/index.dart';
-import 'package:flutter_template_start/store/todolist/type.dart';
+import 'package:oolaf_flutted/components/todolist_detail/list_empty.dart';
+import 'package:oolaf_flutted/store/index.dart';
+import 'package:oolaf_flutted/store/todolist/type.dart';
 
 class ListWidget extends StatelessWidget {
   const ListWidget({super.key});

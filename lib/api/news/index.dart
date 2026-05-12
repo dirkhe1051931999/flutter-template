@@ -1,7 +1,7 @@
 import 'package:dio/dio.dart';
-import 'package:flutter_template_start/model/news/index.dart';
-import 'package:flutter_template_start/utils/helper.dart';
-import 'package:flutter_template_start/utils/request.dart';
+import 'package:oolaf_flutted/model/news/index.dart';
+import 'package:oolaf_flutted/utils/helper.dart';
+import 'package:oolaf_flutted/utils/request.dart';
 
 Future<TabsModel?> getNewsColumnAdd() async {
   return TabsModel.fromJson({

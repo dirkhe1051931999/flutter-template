@@ -1,22 +1,24 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_redux/flutter_redux.dart';
-import 'package:flutter_template_start/store/index.dart';
-import 'package:flutter_template_start/store/oolaf_music/action.dart';
-import 'package:flutter_template_start/store/oolaf_music/state.dart';
-import 'package:flutter_template_start/utils/oolaf_audio_player.dart';
-import 'package:flutter_template_start/components/oolaf_player/disc.dart';
-import 'package:flutter_template_start/components/oolaf_player/progress_bar.dart';
+import 'package:oolaf_flutted/store/index.dart';
+import 'package:oolaf_flutted/store/oolaf_music/action.dart';
+import 'package:oolaf_flutted/store/oolaf_music/state.dart';
+import 'package:oolaf_flutted/utils/oolaf_audio_player.dart';
+import 'package:oolaf_flutted/components/oolaf_player/disc.dart';
+import 'package:oolaf_flutted/components/oolaf_player/progress_bar.dart';
 
 class OolafPlayerSheet extends StatelessWidget {
   const OolafPlayerSheet({
     super.key,
     required this.onPrev,
     required this.onNext,
+    this.onClose,
   });
 
   final Future<void> Function() onPrev;
   final Future<void> Function() onNext;
+  final VoidCallback? onClose;
 
   @override
   Widget build(BuildContext context) {
@@ -27,6 +29,17 @@ class OolafPlayerSheet extends StatelessWidget {
         final nowPlaying = state.nowPlaying;
         const themeColor = Color(0xFFD43C33);
         const artUrl = 'https://picsum.photos/seed/oolaf-music/512/512';
+        final isBuffering =
+            state.playbackState == OolafPlaybackState.buffering;
+        final statusText = switch (state.playbackState) {
+          OolafPlaybackState.buffering => '缓冲中',
+          OolafPlaybackState.completed => '播放完成',
+          OolafPlaybackState.ready => '就绪',
+          OolafPlaybackState.paused => '已暂停',
+          OolafPlaybackState.playing => '正在播放',
+          OolafPlaybackState.idle => '空闲',
+          OolafPlaybackState.disposed => '已释放',
+        };
 
         if (nowPlaying == null) {
           return const SizedBox.shrink();
@@ -58,6 +71,20 @@ class OolafPlayerSheet extends StatelessWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  if (onClose != null)
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: CupertinoButton(
+                        padding: EdgeInsets.zero,
+                        minimumSize: const Size(36, 36),
+                        onPressed: onClose,
+                        child: const Icon(
+                          CupertinoIcons.xmark_circle_fill,
+                          color: Color(0xFFB0B0B0),
+                          size: 26,
+                        ),
+                      ),
+                    ),
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
@@ -107,7 +134,7 @@ class OolafPlayerSheet extends StatelessWidget {
                                 const SizedBox(width: 8),
                                 Expanded(
                                   child: Text(
-                                    state.isPlaying ? '正在播放' : '已暂停',
+                                    statusText,
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                     style: Theme.of(context)
@@ -199,13 +226,19 @@ class OolafPlayerSheet extends StatelessWidget {
                             oolafAudioPlayer.isPlaying,
                           ));
                         },
-                        icon: Icon(
-                          state.isPlaying
-                              ? CupertinoIcons.pause_circle_fill
-                              : CupertinoIcons.play_circle_fill,
-                          color: themeColor,
-                          size: 64,
-                        ),
+                        icon: isBuffering
+                            ? const SizedBox(
+                                width: 52,
+                                height: 52,
+                                child: CupertinoActivityIndicator(radius: 16),
+                              )
+                            : Icon(
+                                state.isPlaying
+                                    ? CupertinoIcons.pause_circle_fill
+                                    : CupertinoIcons.play_circle_fill,
+                                color: themeColor,
+                                size: 64,
+                              ),
                       ),
                       const SizedBox(width: 6),
                       IconButton(

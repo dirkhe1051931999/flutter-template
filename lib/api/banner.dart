@@ -1,5 +1,5 @@
-import 'package:flutter_template_start/utils/helper.dart';
-import 'package:flutter_template_start/utils/request.dart';
+import 'package:oolaf_flutted/utils/helper.dart';
+import 'package:oolaf_flutted/utils/request.dart';
 
 dynamic commonGetRequest() async {
   try {

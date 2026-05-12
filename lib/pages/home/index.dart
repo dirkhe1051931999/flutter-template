@@ -1,6 +1,6 @@
 import 'package:fluro/fluro.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:flutter_template_start/router/config.dart';
+import 'package:oolaf_flutted/router/config.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -24,6 +24,7 @@ class HomePage extends StatelessWidget {
         'fluro' => CupertinoIcons.arrow_branch,
         'request' => CupertinoIcons.globe,
         'oolaf-dynamic-audio' => CupertinoIcons.music_note_list,
+        'short-video' => CupertinoIcons.play_rectangle,
         'profile' => CupertinoIcons.person_crop_circle,
         'scrollable-tabs' => CupertinoIcons.rectangle_3_offgrid,
         _ => CupertinoIcons.square_grid_2x2,
@@ -96,6 +97,7 @@ class HomePage extends StatelessWidget {
       menuCard(title: 'fluro 的使用', key: 'fluro'),
       menuCard(title: 'dio 的使用', key: 'request'),
       menuCard(title: 'oolaf 动感音频', key: 'oolaf-dynamic-audio'),
+      menuCard(title: '短视频', key: 'short-video'),
       menuCard(title: 'profile', key: 'profile'),
       menuCard(title: '可滑动选项卡', key: 'scrollable-tabs'),
     ];

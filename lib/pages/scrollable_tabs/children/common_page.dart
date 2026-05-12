@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:flutter_template_start/components/network_img/index.dart';
-import 'package:flutter_template_start/model/news/index.dart';
+import 'package:oolaf_flutted/components/network_img/index.dart';
+import 'package:oolaf_flutted/model/news/index.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
 
 class TabContent extends StatefulWidget {
@@ -56,7 +56,8 @@ class CommonPage extends StatelessWidget {
   final Function(int, RefreshController) pullToRefresh;
   final Function(int, RefreshController) moreLoad;
   final Function(dynamic) itemTap;
-  final RefreshController _refreshController = RefreshController(initialRefresh: false);
+  final RefreshController _refreshController =
+      RefreshController(initialRefresh: false);
 
   @override
   Widget build(BuildContext context) {
@@ -117,7 +118,8 @@ class CommonPage extends StatelessWidget {
                         padding: EdgeInsets.symmetric(horizontal: 10.sp),
                         child: GridView.builder(
                           physics: const NeverScrollableScrollPhysics(),
-                          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          gridDelegate:
+                              SliverGridDelegateWithFixedCrossAxisCount(
                             crossAxisCount: 3, // 每行3个
                             mainAxisSpacing: 10.sp, // 主轴间距为10
                             crossAxisSpacing: 10.sp, // 横轴间距为10
@@ -125,7 +127,8 @@ class CommonPage extends StatelessWidget {
                           itemCount: images.length,
                           itemBuilder: (context, imageIndex) {
                             return ClipRRect(
-                              borderRadius: BorderRadius.circular(4.sp), // 设置圆角为4
+                              borderRadius:
+                                  BorderRadius.circular(4.sp), // 设置圆角为4
                               child: CustomNetworkImage(
                                 images[imageIndex],
                               ),

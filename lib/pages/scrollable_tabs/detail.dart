@@ -1,10 +1,10 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:flutter_template_start/api/news/index.dart';
-import 'package:flutter_template_start/components/network_img/index.dart';
-import 'package:flutter_template_start/model/news/index.dart';
-import 'package:flutter_template_start/utils/helper.dart';
+import 'package:oolaf_flutted/api/news/index.dart';
+import 'package:oolaf_flutted/components/network_img/index.dart';
+import 'package:oolaf_flutted/model/news/index.dart';
+import 'package:oolaf_flutted/utils/helper.dart';
 import 'package:html/parser.dart' as html_parser;
 import 'package:marquee/marquee.dart';
 
@@ -71,164 +71,164 @@ class _ScrollableTabsDetailPageState extends State<ScrollableTabsDetailPage>
           );
         }
         return Scaffold(
-            appBar: AppBar(
-              title: SizedBox(
-                height: 50,
-                child: Marquee(
-                  text: widget.title,
-                  style: TextStyle(
-                    fontSize: 14.sp,
-                  ),
+          appBar: AppBar(
+            title: SizedBox(
+              height: 50,
+              child: Marquee(
+                text: widget.title,
+                style: TextStyle(
+                  fontSize: 14.sp,
                 ),
-              ),
-              leading: IconButton(
-                icon: const Icon(Icons.arrow_back),
-                onPressed: () {
-                  Navigator.pop(context);
-                },
               ),
             ),
-            bottomNavigationBar: BottomAppBar(
-              child: Container(
-                height: 50,
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  border: Border(
-                    top: BorderSide(
-                      color: Colors.grey,
-                      width: 0.5,
-                    ),
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back),
+              onPressed: () {
+                Navigator.pop(context);
+              },
+            ),
+          ),
+          bottomNavigationBar: BottomAppBar(
+            child: Container(
+              height: 50,
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                border: Border(
+                  top: BorderSide(
+                    color: Colors.grey,
+                    width: 0.5,
                   ),
                 ),
+              ),
+              child: Padding(
+                padding: EdgeInsets.only(
+                  left: 10.sp,
+                  right: 10.sp,
+                ),
+                child: const Row(
+                  mainAxisAlignment:
+                      MainAxisAlignment.spaceBetween, // 设置主轴方向的排列方式为两端对齐
+                  children: [
+                    Icon(Icons.access_alarms_outlined), // 左边的图标
+                    Text('输入框'), // 中间的文本
+                    Icon(Icons.share), // 右边的图标
+                  ],
+                ),
+              ),
+            ),
+          ),
+          body: CustomScrollView(
+            slivers: <Widget>[
+              /// 在customScrollView插入单个盒子组件
+              SliverToBoxAdapter(
                 child: Padding(
-                  padding: EdgeInsets.only(
-                    left: 10.sp,
-                    right: 10.sp,
-                  ),
-                  child: const Row(
-                    mainAxisAlignment:
-                        MainAxisAlignment.spaceBetween, // 设置主轴方向的排列方式为两端对齐
+                  padding: EdgeInsets.all(10.sp),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Icon(Icons.access_alarms_outlined), // 左边的图标
-                      Text('输入框'), // 中间的文本
-                      Icon(Icons.share), // 右边的图标
-                    ],
-                  ),
-                ),
-              ),
-            ),
-            body: CustomScrollView(
-              slivers: <Widget>[
-                /// 在customScrollView插入单个盒子组件
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: EdgeInsets.all(10.sp),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Wrap(
+                      Wrap(
+                        children: [
+                          Text(
+                            newsvo.title ?? '',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                      Padding(
+                        padding: EdgeInsets.only(top: 10.sp),
+                        child: Row(
                           children: [
-                            Text(
-                              newsvo.title ?? '',
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w600,
+                            ClipOval(
+                              child: CustomNetworkImage(
+                                newsvo.sourceImg ?? '',
+                                width: 20.sp,
+                                height: 20.sp,
+                              ),
+                            ),
+                            Padding(
+                              padding: EdgeInsets.only(left: 10.sp),
+                              child: Text(
+                                newsvo.source ?? '',
+                                style: TextStyle(
+                                  color: Color(
+                                    ColorHelpers.fromHexString(
+                                      '#a5a5a5',
+                                    ),
+                                  ),
+                                  fontSize: 12.sp,
+                                ),
                               ),
                             ),
                           ],
                         ),
-                        Padding(
-                          padding: EdgeInsets.only(top: 10.sp),
-                          child: Row(
-                            children: [
-                              ClipOval(
-                                child: CustomNetworkImage(
-                                  newsvo.sourceImg ?? '',
-                                  width: 20.sp,
-                                  height: 20.sp,
-                                ),
-                              ),
-                              Padding(
-                                padding: EdgeInsets.only(left: 10.sp),
-                                child: Text(
-                                  newsvo.source ?? '',
-                                  style: TextStyle(
-                                    color: Color(
-                                      ColorHelpers.fromHexString(
-                                        '#a5a5a5',
-                                      ),
-                                    ),
-                                    fontSize: 12.sp,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ),
+              ),
 
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: EdgeInsets.only(
-                      left: 10.sp,
-                      right: 10.sp,
-                      bottom: 10.sp,
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: parseHtmlString(content),
-                    ),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.only(
+                    left: 10.sp,
+                    right: 10.sp,
+                    bottom: 10.sp,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: parseHtmlString(content),
                   ),
                 ),
+              ),
 
-                /// 固定高度和滚动吸顶
-                _buildPersistentHeader(
-                  const Padding(
-                    padding: EdgeInsets.all(10),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Text('这些回复亮了'),
-                        ),
-                        Row(
-                          children: [
-                            Text('最亮'),
-                            Text('最早'),
-                          ],
-                        )
-                      ],
-                    ),
+              /// 固定高度和滚动吸顶
+              _buildPersistentHeader(
+                const Padding(
+                  padding: EdgeInsets.all(10),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text('这些回复亮了'),
+                      ),
+                      Row(
+                        children: [
+                          Text('最亮'),
+                          Text('最早'),
+                        ],
+                      )
+                    ],
                   ),
-                  maxHeight: 40,
-                  minHeight: 40,
                 ),
-                SliverList.builder(
-                  itemBuilder: (context, index) {
-                    return Container(
-                      height: 100,
-                      color: Colors.grey[100],
-                      child: const Center(child: Text('这是评论区')),
-                    );
-                  },
-                  itemCount: 10,
-                ),
-                const SliverToBoxAdapter(
-                  child: Divider(),
-                ),
-                SliverList.builder(
-                  itemBuilder: (context, index) {
-                    return Container(
-                      height: 100,
-                      color: Colors.grey[50],
-                      child: const Center(child: Text('这是相关新闻区')),
-                    );
-                  },
-                  itemCount: 5,
-                ),
-              ],
-            ),
+                maxHeight: 40,
+                minHeight: 40,
+              ),
+              SliverList.builder(
+                itemBuilder: (context, index) {
+                  return Container(
+                    height: 100,
+                    color: Colors.grey[100],
+                    child: const Center(child: Text('这是评论区')),
+                  );
+                },
+                itemCount: 10,
+              ),
+              const SliverToBoxAdapter(
+                child: Divider(),
+              ),
+              SliverList.builder(
+                itemBuilder: (context, index) {
+                  return Container(
+                    height: 100,
+                    color: Colors.grey[50],
+                    child: const Center(child: Text('这是相关新闻区')),
+                  );
+                },
+                itemCount: 5,
+              ),
+            ],
+          ),
         );
       },
     );

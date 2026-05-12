@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fluro/fluro.dart';
-import 'package:flutter_template_start/utils/helper.dart';
+import 'package:oolaf_flutted/utils/helper.dart';
 
 class TransitionDetailPage extends StatelessWidget {
   const TransitionDetailPage({

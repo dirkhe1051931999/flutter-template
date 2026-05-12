@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_template_start/utils/helper.dart';
+import 'package:oolaf_flutted/utils/helper.dart';
 
 class AppTheme {
   ThemeData get light => ThemeData(

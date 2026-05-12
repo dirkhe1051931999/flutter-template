@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_redux/flutter_redux.dart';
-import 'package:flutter_template_start/store/index.dart';
-import 'package:flutter_template_start/store/user/type.dart';
+import 'package:oolaf_flutted/store/index.dart';
+import 'package:oolaf_flutted/store/user/type.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});

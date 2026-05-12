@@ -3,8 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_redux/flutter_redux.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:flutter_template_start/layouts/app_theme.dart';
-import 'package:flutter_template_start/store/index.dart';
+import 'package:oolaf_flutted/layouts/app_theme.dart';
+import 'package:oolaf_flutted/router/route_observer.dart';
+import 'package:oolaf_flutted/store/index.dart';
 import 'package:redux/redux.dart';
 
 class Layout extends StatelessWidget {
@@ -31,6 +32,7 @@ class Layout extends StatelessWidget {
             title: 'Flutter Template Start',
             theme: AppTheme().light,
             onGenerateRoute: router.generator,
+            navigatorObservers: [appRouteObserver],
             builder: EasyLoading.init(),
           ),
         );

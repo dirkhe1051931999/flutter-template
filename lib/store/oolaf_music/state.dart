@@ -1,4 +1,5 @@
-import 'package:flutter_template_start/model/oolaf_music/index.dart';
+import 'package:oolaf_flutted/model/oolaf_music/index.dart';
+import 'package:oolaf_flutted/utils/oolaf_audio_player.dart';
 
 enum OolafLoopMode {
   off,
@@ -33,6 +34,7 @@ class OolafMusicState {
     required this.expandedKeys,
     required this.nowPlaying,
     required this.isPlaying,
+    required this.playbackState,
     required this.loopMode,
     required this.queue,
     required this.queueIndex,
@@ -45,6 +47,7 @@ class OolafMusicState {
   final Set<String> expandedKeys;
   final OolafNowPlaying? nowPlaying;
   final bool isPlaying;
+  final OolafPlaybackState playbackState;
   final OolafLoopMode loopMode;
   final List<OolafTrack> queue;
   final int queueIndex;
@@ -58,6 +61,7 @@ class OolafMusicState {
       expandedKeys: <String>{},
       nowPlaying: null,
       isPlaying: false,
+      playbackState: OolafPlaybackState.idle,
       loopMode: OolafLoopMode.all,
       queue: <OolafTrack>[],
       queueIndex: -1,
@@ -72,6 +76,7 @@ class OolafMusicState {
     Set<String>? expandedKeys,
     OolafNowPlaying? nowPlaying,
     bool? isPlaying,
+    OolafPlaybackState? playbackState,
     OolafLoopMode? loopMode,
     List<OolafTrack>? queue,
     int? queueIndex,
@@ -84,6 +89,7 @@ class OolafMusicState {
       expandedKeys: expandedKeys ?? this.expandedKeys,
       nowPlaying: nowPlaying ?? this.nowPlaying,
       isPlaying: isPlaying ?? this.isPlaying,
+      playbackState: playbackState ?? this.playbackState,
       loopMode: loopMode ?? this.loopMode,
       queue: queue ?? this.queue,
       queueIndex: queueIndex ?? this.queueIndex,

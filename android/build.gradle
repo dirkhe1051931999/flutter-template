@@ -1,5 +1,5 @@
 buildscript {
-    ext.kotlin_version = '2.1.0'
+    ext.kotlin_version = '1.9.24'
     repositories {
         maven { url 'https://storage.flutter-io.cn/download.flutter.io' }
         maven { url 'https://maven.aliyun.com/repository/google' }
@@ -23,6 +23,17 @@ allprojects {
         maven { url 'https://maven.aliyun.com/repository/public' }
         google()
         mavenCentral()
+    }
+}
+
+subprojects {
+    configurations.configureEach {
+        resolutionStrategy.eachDependency { details ->
+            if (details.requested.group == 'org.jetbrains.kotlin') {
+                details.useVersion('1.9.24')
+                details.because('Align Kotlin runtime to KGP 1.9.24 to avoid metadata version mismatch')
+            }
+        }
     }
 }
 

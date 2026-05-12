@@ -22,7 +22,8 @@ class IBanner {
   });
 
   factory IBanner.fromJson(Map<String, dynamic> json) => IBanner(
-        data: json["data"] == null ? null : GuestbookData.fromJson(json["data"]),
+        data:
+            json["data"] == null ? null : GuestbookData.fromJson(json["data"]),
         code: json["code"],
         success: json["success"],
         message: json["message"],

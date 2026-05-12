@@ -3,8 +3,8 @@ import 'dart:async';
 import 'package:dio/dio.dart';
 import 'package:dio_cookie_manager/dio_cookie_manager.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter_template_start/app.config.dart';
-import 'package:flutter_template_start/utils/helper.dart';
+import 'package:oolaf_flutted/app.config.dart';
+import 'package:oolaf_flutted/utils/helper.dart';
 import 'package:logger/logger.dart';
 
 typedef TokenGetter = FutureOr<String?> Function();

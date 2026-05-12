@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_template_start/api/banner.dart';
-import 'package:flutter_template_start/model/banner/index.dart';
+import 'package:oolaf_flutted/api/banner.dart';
+import 'package:oolaf_flutted/model/banner/index.dart';
 
 class RequestPage extends StatefulWidget {
   const RequestPage({super.key});

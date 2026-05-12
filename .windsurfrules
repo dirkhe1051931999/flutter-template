@@ -23,7 +23,7 @@ var client = DioClient(baseUrl: 'https://example.com');
 ### 正确写法
 
 ```dart
-import 'package:flutter_template_start/utils/request.dart';
+import 'package:oolaf_flutted/utils/request.dart';
 
 final response = await httpClient.get('/guestbook/list');
 ```

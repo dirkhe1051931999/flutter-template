@@ -3,19 +3,19 @@ import 'dart:async';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
-import 'package:flutter_template_start/api/oolaf/music.dart';
-import 'package:flutter_template_start/components/app_sheet/index.dart';
-import 'package:flutter_template_start/components/oolaf_music/music_list.dart';
-import 'package:flutter_template_start/components/oolaf_player/mini_player.dart';
-import 'package:flutter_template_start/components/oolaf_player/player_sheet.dart';
-import 'package:flutter_template_start/model/oolaf_music/index.dart';
-import 'package:flutter_template_start/store/index.dart';
-import 'package:flutter_template_start/store/oolaf_music/action.dart';
-import 'package:flutter_template_start/store/oolaf_music/state.dart';
-import 'package:flutter_template_start/utils/helper.dart';
-import 'package:flutter_template_start/utils/oolaf_music_cache.dart';
-import 'package:flutter_template_start/utils/oolaf_music_favorites.dart';
-import 'package:flutter_template_start/utils/oolaf_audio_player.dart';
+import 'package:oolaf_flutted/api/oolaf/music.dart';
+import 'package:oolaf_flutted/components/app_sheet/index.dart';
+import 'package:oolaf_flutted/components/oolaf_music/music_list.dart';
+import 'package:oolaf_flutted/components/oolaf_player/floating_ball.dart';
+import 'package:oolaf_flutted/model/oolaf_music/index.dart';
+import 'package:oolaf_flutted/store/index.dart';
+import 'package:oolaf_flutted/store/oolaf_music/action.dart';
+import 'package:oolaf_flutted/store/oolaf_music/state.dart';
+import 'package:oolaf_flutted/utils/helper.dart';
+import 'package:oolaf_flutted/utils/oolaf_music_cache.dart';
+import 'package:oolaf_flutted/utils/oolaf_music_favorites.dart';
+import 'package:oolaf_flutted/utils/oolaf_audio_player.dart';
+import 'package:oolaf_flutted/utils/oolaf_playback_persistence.dart';
 import 'package:flutter_redux/flutter_redux.dart';
 
 class OolafDynamicAudioPage extends StatefulWidget {
@@ -30,8 +30,12 @@ class _OolafDynamicAudioPageState extends State<OolafDynamicAudioPage> {
       GlobalKey<OolafMusicListState>();
   StreamSubscription<void>? _completedSub;
   StreamSubscription<bool>? _playingSub;
+  StreamSubscription<OolafPlaybackState>? _playbackSub;
+  StreamSubscription<AppState>? _storeSub;
+  Timer? _persistDebounce;
+  String? _lastPersistKey;
   Set<String> _favoriteUrls = <String>{};
-  bool _isAutoAdvancing = false;
+  int _playByStateToken = 0;
 
   @override
   void initState() {
@@ -39,6 +43,8 @@ class _OolafDynamicAudioPageState extends State<OolafDynamicAudioPage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadIndexFromCacheOrRemote();
       _loadFavorites();
+      _restorePlayback();
+      _subscribePlaybackPersistence();
     });
 
     _completedSub = oolafAudioPlayer.completedStream.listen((_) {
@@ -52,13 +58,80 @@ class _OolafDynamicAudioPageState extends State<OolafDynamicAudioPage> {
         OolafSetPlayingAction(isPlaying),
       );
     });
+    _playbackSub = oolafAudioPlayer.playbackStateStream.listen((state) {
+      if (!mounted) {
+        return;
+      }
+      StoreProvider.of<AppState>(context).dispatch(
+        OolafSetPlaybackStateAction(state),
+      );
+    });
   }
 
   @override
   void dispose() {
     _completedSub?.cancel();
     _playingSub?.cancel();
+    _playbackSub?.cancel();
+    _storeSub?.cancel();
+    _persistDebounce?.cancel();
     super.dispose();
+  }
+
+  Future<void> _restorePlayback() async {
+    final snapshot = await OolafPlaybackPersistence.load();
+    if (!mounted || snapshot == null || snapshot.nowPlaying == null) {
+      return;
+    }
+    final store = StoreProvider.of<AppState>(context);
+    store.dispatch(
+      OolafRestorePlaybackAction(
+        queue: snapshot.queue,
+        queueIndex: snapshot.queueIndex,
+        queueGroupKey: snapshot.queueGroupKey,
+        loopMode: snapshot.loopMode,
+        nowPlaying: snapshot.nowPlaying,
+      ),
+    );
+    try {
+      await oolafAudioPlayer.setUrl(snapshot.nowPlaying!.cdnUrl);
+    } catch (error, stackTrace) {
+      customLogger.log('restore playback setUrl failed: $error');
+      customLogger.log(stackTrace);
+    }
+  }
+
+  void _subscribePlaybackPersistence() {
+    if (!mounted) {
+      return;
+    }
+    final store = StoreProvider.of<AppState>(context);
+    _storeSub = store.onChange.listen(_handlePlaybackPersistence);
+    _handlePlaybackPersistence(store.state);
+  }
+
+  void _handlePlaybackPersistence(AppState appState) {
+    final music = appState.oolafMusic;
+    final key =
+        '${music.queueGroupKey}|${music.queueIndex}|${music.loopMode.name}|${music.nowPlaying?.cdnUrl ?? ''}|${music.queue.length}';
+    if (key == _lastPersistKey) {
+      return;
+    }
+    _lastPersistKey = key;
+    _persistDebounce?.cancel();
+    _persistDebounce = Timer(const Duration(milliseconds: 250), () {
+      if (music.nowPlaying == null && music.queue.isEmpty) {
+        OolafPlaybackPersistence.clear();
+        return;
+      }
+      OolafPlaybackPersistence.save(
+        queue: music.queue,
+        queueIndex: music.queueIndex,
+        queueGroupKey: music.queueGroupKey,
+        loopMode: music.loopMode,
+        nowPlaying: music.nowPlaying,
+      );
+    });
   }
 
   Future<void> _loadFavorites() async {
@@ -289,11 +362,7 @@ class _OolafDynamicAudioPageState extends State<OolafDynamicAudioPage> {
   }
 
   Future<void> _playPrevByState() async {
-    if (_isAutoAdvancing) {
-      return;
-    }
-
-    _isAutoAdvancing = true;
+    final token = ++_playByStateToken;
     final store = StoreProvider.of<AppState>(context);
     try {
       final music = store.state.oolafMusic;
@@ -308,6 +377,9 @@ class _OolafDynamicAudioPageState extends State<OolafDynamicAudioPage> {
       if (music.loopMode == OolafLoopMode.one) {
         final track = queue[currentIndex];
         await oolafAudioPlayer.playUrl(track.cdnUrl);
+        if (token != _playByStateToken) {
+          return;
+        }
         store.dispatch(OolafPlayByQueueIndexAction(currentIndex));
         return;
       }
@@ -318,6 +390,9 @@ class _OolafDynamicAudioPageState extends State<OolafDynamicAudioPage> {
           final lastIndex = queue.length - 1;
           final track = queue[lastIndex];
           await oolafAudioPlayer.playUrl(track.cdnUrl);
+          if (token != _playByStateToken) {
+            return;
+          }
           store.dispatch(OolafPlayByQueueIndexAction(lastIndex));
           return;
         }
@@ -328,23 +403,23 @@ class _OolafDynamicAudioPageState extends State<OolafDynamicAudioPage> {
 
       final track = queue[prevIndex];
       await oolafAudioPlayer.playUrl(track.cdnUrl);
+      if (token != _playByStateToken) {
+        return;
+      }
       store.dispatch(OolafPlayByQueueIndexAction(prevIndex));
     } catch (error, stackTrace) {
+      if (token != _playByStateToken) {
+        return;
+      }
       customLogger.log('play prev oolaf music failed: $error');
       customLogger.log(stackTrace);
       store.dispatch(const OolafSetPlayingAction(false));
       EasyLoading.showToast('播放上一首失败');
-    } finally {
-      _isAutoAdvancing = false;
     }
   }
 
   Future<void> _playNextByState() async {
-    if (_isAutoAdvancing) {
-      return;
-    }
-
-    _isAutoAdvancing = true;
+    final token = ++_playByStateToken;
     final store = StoreProvider.of<AppState>(context);
     try {
       final music = store.state.oolafMusic;
@@ -359,6 +434,9 @@ class _OolafDynamicAudioPageState extends State<OolafDynamicAudioPage> {
       if (music.loopMode == OolafLoopMode.one) {
         final track = queue[currentIndex];
         await oolafAudioPlayer.playUrl(track.cdnUrl);
+        if (token != _playByStateToken) {
+          return;
+        }
         store.dispatch(
           OolafPlayByQueueIndexAction(currentIndex),
         );
@@ -370,24 +448,38 @@ class _OolafDynamicAudioPageState extends State<OolafDynamicAudioPage> {
         if (music.loopMode == OolafLoopMode.all) {
           final track = queue[0];
           await oolafAudioPlayer.playUrl(track.cdnUrl);
+          if (token != _playByStateToken) {
+            return;
+          }
           store.dispatch(const OolafPlayByQueueIndexAction(0));
           return;
         }
 
-        store.dispatch(const OolafSetPlayingAction(false));
+        await oolafAudioPlayer.stop();
+        if (token != _playByStateToken) {
+          return;
+        }
+        store.dispatch(const OolafResetPlaybackAction());
+        store.dispatch(
+          const OolafSetPlaybackStateAction(OolafPlaybackState.idle),
+        );
         return;
       }
 
       final track = queue[nextIndex];
       await oolafAudioPlayer.playUrl(track.cdnUrl);
+      if (token != _playByStateToken) {
+        return;
+      }
       store.dispatch(OolafPlayByQueueIndexAction(nextIndex));
     } catch (error, stackTrace) {
+      if (token != _playByStateToken) {
+        return;
+      }
       customLogger.log('auto play next oolaf music failed: $error');
       customLogger.log(stackTrace);
       store.dispatch(const OolafSetPlayingAction(false));
       EasyLoading.showToast('播放下一首失败');
-    } finally {
-      _isAutoAdvancing = false;
     }
   }
 
@@ -421,19 +513,6 @@ class _OolafDynamicAudioPageState extends State<OolafDynamicAudioPage> {
     } finally {
       store.dispatch(const OolafSetLoadingAction(false));
     }
-  }
-
-  void _openPlayerSheet() {
-    showAppSheet<void>(
-      context: context,
-      position: AppSheetPosition.bottom,
-      builder: (context) {
-        return OolafPlayerSheet(
-          onPrev: _playPrevByState,
-          onNext: _playNextByState,
-        );
-      },
-    );
   }
 
   @override
@@ -611,13 +690,9 @@ class _OolafDynamicAudioPageState extends State<OolafDynamicAudioPage> {
                     );
                   },
                 ),
-                Align(
-                  alignment: Alignment.bottomCenter,
-                  child: OolafMiniPlayer(
-                    onOpenPlayer: _openPlayerSheet,
-                    onPrev: _playPrevByState,
-                    onNext: _playNextByState,
-                  ),
+                OolafFloatingBall(
+                  onPrev: _playPrevByState,
+                  onNext: _playNextByState,
                 ),
               ],
             ),

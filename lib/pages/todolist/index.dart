@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_template_start/components/todolist_detail/add.dart';
-import 'package:flutter_template_start/components/todolist_detail/clear.dart';
-import 'package:flutter_template_start/components/todolist_detail/input.dart';
-import 'package:flutter_template_start/components/todolist_detail/list.dart';
+import 'package:oolaf_flutted/components/todolist_detail/add.dart';
+import 'package:oolaf_flutted/components/todolist_detail/clear.dart';
+import 'package:oolaf_flutted/components/todolist_detail/input.dart';
+import 'package:oolaf_flutted/components/todolist_detail/list.dart';
 
 class TodoListPage extends StatefulWidget {
   const TodoListPage({super.key});

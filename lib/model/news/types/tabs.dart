@@ -12,7 +12,8 @@ class TabsModel extends INewsCommon {
         respStatus: json["success"] == true ? "success" : "fail",
         respInfo: json["message"],
         errorCode: json["code"]?.toString(),
-        respData: json["data"] == null ? null : TabsRespData.fromJson(json["data"]),
+        respData:
+            json["data"] == null ? null : TabsRespData.fromJson(json["data"]),
       );
 
   @override
@@ -34,7 +35,8 @@ class TabsRespData {
   factory TabsRespData.fromJson(Map<String, dynamic> json) => TabsRespData(
         columnTypeList: json["columnTypeList"] == null
             ? []
-            : List<TabsItem>.from(json["columnTypeList"].map((x) => TabsItem.fromJson(x))),
+            : List<TabsItem>.from(
+                json["columnTypeList"].map((x) => TabsItem.fromJson(x))),
       );
 
   Map<String, dynamic> toJson() => {
