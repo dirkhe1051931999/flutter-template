@@ -37,6 +37,10 @@ class OolafVideoPlayerController implements OolafVideoController {
   ValueListenable<Size?> get videoSize => _delegate.videoSize;
 
   @override
+  ValueListenable<OolafVideoOutputStatus> get videoOutputStatus =>
+      _delegate.videoOutputStatus;
+
+  @override
   Future<void> initialize() => _delegate.initialize();
 
   @override

@@ -21,6 +21,8 @@ class VideoManager with WidgetsBindingObserver {
 
   Duration backgroundDisposeDelay = const Duration(seconds: 60);
   Timer? _backgroundDisposeTimer;
+  Future<void>? _disposeAllFuture;
+  bool _isDisposingAll = false;
 
   final Map<String, int> _scopeRefCount = <String, int>{};
 
@@ -35,6 +37,8 @@ class VideoManager with WidgetsBindingObserver {
   }
 
   void acquire(String scope) {
+    _backgroundDisposeTimer?.cancel();
+    _backgroundDisposeTimer = null;
     _scopeRefCount[scope] = (_scopeRefCount[scope] ?? 0) + 1;
   }
 
@@ -47,11 +51,14 @@ class VideoManager with WidgetsBindingObserver {
     }
 
     if (_scopeRefCount.isEmpty) {
-      await disposeAll();
+      await _disposeAllSafely();
     }
   }
 
   OolafVideoController? getById(String id) {
+    if (_isDisposingAll) {
+      return null;
+    }
     final c = _controllerCache[id];
     if (c != null) {
       _touch(id);
@@ -59,7 +66,47 @@ class VideoManager with WidgetsBindingObserver {
     return c;
   }
 
+  Future<void> _awaitPendingDispose() async {
+    final pending = _disposeAllFuture;
+    if (pending != null) {
+      await pending;
+    }
+  }
+
+  Future<void> _disposeAllSafely() {
+    final pending = _disposeAllFuture;
+    if (pending != null) {
+      return pending;
+    }
+
+    final task = _disposeAllInternal();
+    _disposeAllFuture = task;
+    return task.whenComplete(() {
+      _disposeAllFuture = null;
+    });
+  }
+
+  Future<void> _disposeAllInternal() async {
+    _isDisposingAll = true;
+    try {
+      _backgroundDisposeTimer?.cancel();
+      _backgroundDisposeTimer = null;
+
+      final ids = _controllerCache.keys.toList(growable: false);
+      for (final id in ids) {
+        final c = _controllerCache.remove(id);
+        try {
+          await c?.dispose();
+        } catch (_) {}
+      }
+      _accessOrder.clear();
+    } finally {
+      _isDisposingAll = false;
+    }
+  }
+
   Future<void> setActiveIndex(int index) async {
+    await _awaitPendingDispose();
     _activeIndex = index;
     if (_sources.isEmpty) return;
 
@@ -81,6 +128,7 @@ class VideoManager with WidgetsBindingObserver {
     required String id,
     required String url,
   }) async {
+    await _awaitPendingDispose();
     final existing = _controllerCache[id];
     if (existing != null) {
       _touch(id);
@@ -102,6 +150,7 @@ class VideoManager with WidgetsBindingObserver {
   }
 
   Future<void> pauseAll() async {
+    await _awaitPendingDispose();
     for (final entry in _controllerCache.entries) {
       try {
         await entry.value.pause();
@@ -110,6 +159,7 @@ class VideoManager with WidgetsBindingObserver {
   }
 
   Future<void> playActive() async {
+    await _awaitPendingDispose();
     if (_sources.isEmpty) return;
     if (_activeIndex < 0 || _activeIndex >= _sources.length) return;
 
@@ -126,17 +176,7 @@ class VideoManager with WidgetsBindingObserver {
   }
 
   Future<void> disposeAll() async {
-    _backgroundDisposeTimer?.cancel();
-    _backgroundDisposeTimer = null;
-
-    final ids = _controllerCache.keys.toList(growable: false);
-    for (final id in ids) {
-      final c = _controllerCache.remove(id);
-      try {
-        await c?.dispose();
-      } catch (_) {}
-    }
-    _accessOrder.clear();
+    await _disposeAllSafely();
   }
 
   @override
@@ -147,7 +187,7 @@ class VideoManager with WidgetsBindingObserver {
       pauseAll();
       _backgroundDisposeTimer?.cancel();
       _backgroundDisposeTimer = Timer(backgroundDisposeDelay, () {
-        disposeAll();
+        _disposeAllSafely();
       });
       return;
     }
@@ -164,6 +204,7 @@ class VideoManager with WidgetsBindingObserver {
   }
 
   Future<void> _disposeNotIn(Set<String> keepIds) async {
+    await _awaitPendingDispose();
     final toDispose = _controllerCache.keys
         .where((id) => !keepIds.contains(id))
         .toList(growable: false);

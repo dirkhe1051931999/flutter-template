@@ -1,6 +1,11 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 
+enum OolafVideoOutputStatus {
+  normal,
+  codecUnsupported,
+}
+
 abstract class OolafVideoController {
   ValueListenable<bool> get isInitialized;
   ValueListenable<bool> get isPlaying;
@@ -10,6 +15,7 @@ abstract class OolafVideoController {
   ValueListenable<Duration> get duration;
 
   ValueListenable<Size?> get videoSize;
+  ValueListenable<OolafVideoOutputStatus> get videoOutputStatus;
 
   Future<void> initialize();
   Future<void> play();

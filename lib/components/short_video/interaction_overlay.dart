@@ -3,9 +3,13 @@ import 'package:flutter/cupertino.dart';
 class ShortVideoInteractionOverlay extends StatelessWidget {
   const ShortVideoInteractionOverlay({
     super.key,
+    required this.source,
+    required this.title,
     required this.onTapComment,
   });
 
+  final String source;
+  final String title;
   final VoidCallback onTapComment;
 
   @override
@@ -18,7 +22,28 @@ class ShortVideoInteractionOverlay extends StatelessWidget {
           child: Stack(
             fit: StackFit.expand,
             children: [
-              const Positioned(
+              const IgnorePointer(
+                child: Align(
+                  alignment: Alignment.bottomCenter,
+                  child: SizedBox(
+                    height: 220,
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Color(0x00000000),
+                            Color(0x4D000000),
+                            Color(0xB3000000),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              Positioned(
                 left: 0,
                 bottom: 24,
                 right: 90,
@@ -27,19 +52,19 @@ class ShortVideoInteractionOverlay extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      '@oolaf',
-                      style: TextStyle(
+                      source,
+                      style: const TextStyle(
                         color: CupertinoColors.white,
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
-                    SizedBox(height: 8),
+                    const SizedBox(height: 8),
                     Text(
-                      'Short video description (WIP)',
+                      title,
                       maxLines: 3,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
+                      style: const TextStyle(
                         color: CupertinoColors.white,
                         fontSize: 14,
                         height: 1.25,

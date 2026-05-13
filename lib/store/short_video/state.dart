@@ -1,12 +1,14 @@
 class ShortVideoItem {
   const ShortVideoItem({
     required this.id,
+    this.source,
     required this.title,
     required this.videoUrl,
     required this.coverUrl,
   });
 
   final String id;
+  final String? source;
   final String title;
   final String videoUrl;
   final String coverUrl;
