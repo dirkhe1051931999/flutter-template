@@ -5,13 +5,20 @@ import 'package:oolaf_flutted/components/short_video/short_video_bottom_tab_bar.
 import 'package:oolaf_flutted/components/video_top_tabs/index.dart';
 import 'package:oolaf_flutted/pages/video_tabs/index.dart';
 import 'package:oolaf_flutted/pages/video_tabs/recomend_page.dart';
+import 'package:oolaf_flutted/pages/video_tabs/short_video_collection_page.dart';
 import 'package:oolaf_flutted/pages/video_tabs/watch_history_page.dart';
+import 'package:oolaf_flutted/pages/video_tabs/short_video_offline_cache_page.dart';
 import 'package:oolaf_flutted/store/index.dart';
 import 'package:oolaf_flutted/store/oolaf_music/action.dart';
 import 'package:oolaf_flutted/store/short_video/action.dart';
 import 'package:oolaf_flutted/store/short_video/state.dart';
 import 'package:oolaf_flutted/utils/oolaf_audio_player.dart';
+import 'package:oolaf_flutted/utils/short_video_blocked_persistence.dart';
+import 'package:oolaf_flutted/utils/short_video_collection_persistence.dart';
+import 'package:oolaf_flutted/utils/short_video_playback_progress_persistence.dart';
+import 'package:oolaf_flutted/utils/short_video_watch_history_persistence.dart';
 import 'package:oolaf_flutted/utils/short_video_preferences_persistence.dart';
+import 'package:oolaf_flutted/utils/video_manager.dart';
 
 class ShortVideoPage extends StatefulWidget {
   const ShortVideoPage({super.key});
@@ -163,6 +170,10 @@ class _ShortVideoPageState extends State<ShortVideoPage> {
       ShortVideoRestorePreferencesAction(
         recordWatchHistory: snapshot.recordWatchHistory,
         autoPlayNextVideo: snapshot.autoPlayNextVideo,
+        playbackRate: snapshot.playbackRate,
+        preloadPagesCount: snapshot.preloadPagesCount,
+        keepWindow: snapshot.keepWindow,
+        videoFitMode: snapshot.videoFitMode,
       ),
     );
   }
@@ -238,6 +249,37 @@ class _ShortVideoProfilePageState extends State<_ShortVideoProfilePage> {
       _headerStretchHeight = nextStretch;
     });
     return false;
+  }
+
+  Future<void> _clearShortVideoCache() async {
+    await ShortVideoWatchHistoryPersistence.clearAll();
+    await ShortVideoCollectionPersistence.favorites.clearAll();
+    await ShortVideoCollectionPersistence.watchLater.clearAll();
+    await ShortVideoBlockedPersistence.clearAll();
+    await ShortVideoPlaybackProgressPersistence.clearAll();
+    await VideoManager.instance.disposeAll();
+
+    if (!mounted) {
+      return;
+    }
+
+    await showCupertinoDialog<void>(
+      context: context,
+      builder: (context) {
+        return CupertinoAlertDialog(
+          title: const Text('清理完成'),
+          content: const Text('本地缓存、收藏、稍后再看与历史记录已清空。'),
+          actions: [
+            CupertinoDialogAction(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('知道了'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -361,25 +403,60 @@ class _ShortVideoProfilePageState extends State<_ShortVideoProfilePage> {
                         );
                       },
                     ),
-                    const CupertinoListTile(
-                      title: Text('离线缓存'),
-                      leading: Icon(CupertinoIcons.arrow_down_circle),
-                      trailing: CupertinoListTileChevron(),
+                    CupertinoListTile(
+                      title: const Text('我的喜欢'),
+                      leading: const Icon(CupertinoIcons.heart_fill),
+                      trailing: const CupertinoListTileChevron(),
+                      onTap: () {
+                        Navigator.of(context).push(
+                          CupertinoPageRoute<void>(
+                            builder: (_) => const ShortVideoCollectionPage(
+                              title: '我的喜欢',
+                              emptyText: '暂无喜欢的视频',
+                              persistence: ShortVideoCollectionPersistence.favorites,
+                            ),
+                          ),
+                        );
+                      },
                     ),
-                    const CupertinoListTile(
-                      title: Text('稍后再看'),
-                      leading: Icon(CupertinoIcons.clock),
-                      trailing: CupertinoListTileChevron(),
+                    CupertinoListTile(
+                      title: const Text('离线缓存'),
+                      leading: const Icon(CupertinoIcons.arrow_down_circle_fill),
+                      trailing: const CupertinoListTileChevron(),
+                      onTap: () {
+                        Navigator.of(context).push(
+                          CupertinoPageRoute<void>(
+                            builder: (_) => const ShortVideoOfflineCachePage(),
+                          ),
+                        );
+                      },
+                    ),
+                    CupertinoListTile(
+                      title: const Text('稍后再看'),
+                      leading: const Icon(CupertinoIcons.bookmark_fill),
+                      trailing: const CupertinoListTileChevron(),
+                      onTap: () {
+                        Navigator.of(context).push(
+                          CupertinoPageRoute<void>(
+                            builder: (_) => const ShortVideoCollectionPage(
+                              title: '稍后再看',
+                              emptyText: '暂无稍后观看的视频',
+                              persistence: ShortVideoCollectionPersistence.watchLater,
+                            ),
+                          ),
+                        );
+                      },
                     ),
                     const CupertinoListTile(
                       title: Text('我的二维码'),
                       leading: Icon(CupertinoIcons.qrcode),
                       trailing: CupertinoListTileChevron(),
                     ),
-                    const CupertinoListTile(
-                      title: Text('清理缓存'),
-                      leading: Icon(CupertinoIcons.delete_solid),
-                      trailing: CupertinoListTileChevron(),
+                    CupertinoListTile(
+                      title: const Text('清理缓存'),
+                      leading: const Icon(CupertinoIcons.delete_solid),
+                      trailing: const CupertinoListTileChevron(),
+                      onTap: _clearShortVideoCache,
                     ),
                   ],
                 ),
@@ -400,26 +477,73 @@ class _ShortVideoSettingsPage extends StatefulWidget {
 }
 
 class _ShortVideoSettingsPageState extends State<_ShortVideoSettingsPage> {
-  Future<void> _setRecordWatchHistory(bool value) async {
-    final store = StoreProvider.of<AppState>(context, listen: false);
-    store.dispatch(ShortVideoSetRecordWatchHistoryAction(value));
+  static const List<double> _speedOptions = <double>[0.75, 1.0, 1.25, 1.5, 2.0];
 
+  Future<void> _saveLatestPreferences() async {
+    final store = StoreProvider.of<AppState>(context, listen: false);
     final latest = store.state.shortVideo;
     await ShortVideoPreferencesPersistence.save(
       recordWatchHistory: latest.recordWatchHistory,
       autoPlayNextVideo: latest.autoPlayNextVideo,
+      playbackRate: latest.playbackRate,
+      preloadPagesCount: latest.preloadPagesCount,
+      keepWindow: latest.keepWindow,
+      videoFitMode: latest.videoFitMode,
     );
+  }
+
+  Future<void> _setRecordWatchHistory(bool value) async {
+    final store = StoreProvider.of<AppState>(context, listen: false);
+    store.dispatch(ShortVideoSetRecordWatchHistoryAction(value));
+    await _saveLatestPreferences();
   }
 
   Future<void> _setAutoPlayNextVideo(bool value) async {
     final store = StoreProvider.of<AppState>(context, listen: false);
     store.dispatch(ShortVideoSetAutoPlayNextVideoAction(value));
+    await _saveLatestPreferences();
+  }
 
-    final latest = store.state.shortVideo;
-    await ShortVideoPreferencesPersistence.save(
-      recordWatchHistory: latest.recordWatchHistory,
-      autoPlayNextVideo: latest.autoPlayNextVideo,
+  Future<void> _setPlaybackRate(double value) async {
+    final store = StoreProvider.of<AppState>(context, listen: false);
+    store.dispatch(ShortVideoSetPlaybackRateAction(value));
+    await _saveLatestPreferences();
+  }
+
+  Future<void> _setPreloadStrategy(int preloadPagesCount, int keepWindow) async {
+    final store = StoreProvider.of<AppState>(context, listen: false);
+    store.dispatch(
+      ShortVideoSetPreloadStrategyAction(
+        preloadPagesCount: preloadPagesCount,
+        keepWindow: keepWindow,
+      ),
     );
+    await _saveLatestPreferences();
+  }
+
+  Future<void> _setVideoFitMode(String mode) async {
+    final store = StoreProvider.of<AppState>(context, listen: false);
+    store.dispatch(ShortVideoSetVideoFitModeAction(mode));
+    await _saveLatestPreferences();
+  }
+
+  String _preloadLabel(ShortVideoState state) {
+    final preload = state.preloadPagesCount;
+    final keep = state.keepWindow;
+    if (preload <= 0 && keep <= 0) {
+      return '省流';
+    }
+    if (preload == 1 && keep == 1) {
+      return '平衡';
+    }
+    if (preload >= 2 && keep >= 2) {
+      return '流畅';
+    }
+    return '自定义';
+  }
+
+  String _fitModeLabel(ShortVideoState state) {
+    return state.videoFitMode == 'cover' ? '填充' : '完整';
   }
 
   @override
@@ -454,6 +578,103 @@ class _ShortVideoSettingsPageState extends State<_ShortVideoSettingsPage> {
                       trailing: CupertinoSwitch(
                         value: shortVideoState.autoPlayNextVideo,
                         onChanged: _setAutoPlayNextVideo,
+                      ),
+                    ),
+                    CupertinoListTile(
+                      title: const Text('默认播放速度'),
+                      additionalInfo:
+                          Text('${shortVideoState.playbackRate.toStringAsFixed(2)}x'),
+                      trailing: SizedBox(
+                        width: 130,
+                        child: CupertinoSlidingSegmentedControl<double>(
+                          groupValue: shortVideoState.playbackRate,
+                          children: {
+                            for (final speed in _speedOptions)
+                              speed: Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                                child: Text('${speed.toStringAsFixed(2)}x'),
+                              ),
+                          },
+                          onValueChanged: (value) {
+                            if (value == null) {
+                              return;
+                            }
+                            _setPlaybackRate(value);
+                          },
+                        ),
+                      ),
+                    ),
+                    CupertinoListTile(
+                      title: const Text('预加载策略'),
+                      additionalInfo: Text(_preloadLabel(shortVideoState)),
+                      trailing: SizedBox(
+                        width: 156,
+                        child: CupertinoSlidingSegmentedControl<int>(
+                          groupValue: switch ((
+                            shortVideoState.preloadPagesCount,
+                            shortVideoState.keepWindow,
+                          )) {
+                            (<= 0, <= 0) => 0,
+                            (1, 1) => 1,
+                            (>= 2, >= 2) => 2,
+                            _ => 1,
+                          },
+                          children: const {
+                            0: Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              child: Text('省流'),
+                            ),
+                            1: Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              child: Text('平衡'),
+                            ),
+                            2: Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              child: Text('流畅'),
+                            ),
+                          },
+                          onValueChanged: (value) {
+                            if (value == null) {
+                              return;
+                            }
+                            if (value == 0) {
+                              _setPreloadStrategy(0, 0);
+                              return;
+                            }
+                            if (value == 1) {
+                              _setPreloadStrategy(1, 1);
+                              return;
+                            }
+                            _setPreloadStrategy(2, 2);
+                          },
+                        ),
+                      ),
+                    ),
+                    CupertinoListTile(
+                      title: const Text('视频适配模式'),
+                      additionalInfo: Text(_fitModeLabel(shortVideoState)),
+                      trailing: SizedBox(
+                        width: 156,
+                        child: CupertinoSlidingSegmentedControl<String>(
+                          groupValue: shortVideoState.videoFitMode,
+                          children: const {
+                            'cover': Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              child: Text('填充'),
+                            ),
+                            'contain': Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              child: Text('完整'),
+                            ),
+                          },
+                          onValueChanged: (value) {
+                            if (value == null) {
+                              return;
+                            }
+                            _setVideoFitMode(value);
+                          },
+                        ),
                       ),
                     ),
                   ],

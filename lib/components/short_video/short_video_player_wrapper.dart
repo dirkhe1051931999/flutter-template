@@ -12,6 +12,7 @@ class ShortVideoPlayerWrapper extends StatefulWidget {
     required this.onDoubleTap,
     required this.onSwipeUp,
     required this.onSwipeDown,
+    this.fit,
   });
 
   final OolafVideoController? controller;
@@ -20,6 +21,7 @@ class ShortVideoPlayerWrapper extends StatefulWidget {
   final VoidCallback onDoubleTap;
   final VoidCallback onSwipeUp;
   final VoidCallback onSwipeDown;
+  final BoxFit? fit;
 
   @override
   State<ShortVideoPlayerWrapper> createState() =>
@@ -72,7 +74,7 @@ class _ShortVideoPlayerWrapperState extends State<ShortVideoPlayerWrapper> {
             valueListenable: controller.videoSize,
             builder: (context, videoSize, __) {
               final isLandscape = _isLandscapeVideo(videoSize);
-              final fit = isLandscape ? BoxFit.contain : BoxFit.cover;
+              final fit = widget.fit ?? (isLandscape ? BoxFit.contain : BoxFit.cover);
 
               return Stack(
                 fit: StackFit.expand,
@@ -177,6 +179,7 @@ class _ShortVideoPlayerWrapperState extends State<ShortVideoPlayerWrapper> {
           behavior: HitTestBehavior.opaque,
           onTap: widget.onSingleTap,
           onLongPress: widget.onLongPress,
+          onSecondaryTap: widget.onLongPress,
           onVerticalDragEnd: (details) {
             final velocity = details.primaryVelocity;
             if (velocity == null) {

@@ -2,14 +2,14 @@ import 'dart:convert';
 
 import 'package:shared_preferences/shared_preferences.dart';
 
-class ShortVideoWatchHistoryEntry {
-  const ShortVideoWatchHistoryEntry({
+class ShortVideoOfflineCacheEntry {
+  const ShortVideoOfflineCacheEntry({
     required this.videoId,
     required this.title,
     required this.updateTime,
     required this.coverUrl,
     required this.videoUrl,
-    required this.watchedAtMillis,
+    required this.savedAtMillis,
     this.source,
   });
 
@@ -19,29 +19,7 @@ class ShortVideoWatchHistoryEntry {
   final String coverUrl;
   final String videoUrl;
   final String? source;
-  final int watchedAtMillis;
-
-  DateTime get watchedAt => DateTime.fromMillisecondsSinceEpoch(watchedAtMillis);
-
-  ShortVideoWatchHistoryEntry copyWith({
-    String? videoId,
-    String? title,
-    String? updateTime,
-    String? coverUrl,
-    String? videoUrl,
-    String? source,
-    int? watchedAtMillis,
-  }) {
-    return ShortVideoWatchHistoryEntry(
-      videoId: videoId ?? this.videoId,
-      title: title ?? this.title,
-      updateTime: updateTime ?? this.updateTime,
-      coverUrl: coverUrl ?? this.coverUrl,
-      videoUrl: videoUrl ?? this.videoUrl,
-      source: source ?? this.source,
-      watchedAtMillis: watchedAtMillis ?? this.watchedAtMillis,
-    );
-  }
+  final int savedAtMillis;
 
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
@@ -51,11 +29,11 @@ class ShortVideoWatchHistoryEntry {
       'coverUrl': coverUrl,
       'videoUrl': videoUrl,
       'source': source,
-      'watchedAtMillis': watchedAtMillis,
+      'savedAtMillis': savedAtMillis,
     };
   }
 
-  static ShortVideoWatchHistoryEntry? fromJson(Object? json) {
+  static ShortVideoOfflineCacheEntry? fromJson(Object? json) {
     if (json is! Map<String, dynamic>) {
       return null;
     }
@@ -66,61 +44,62 @@ class ShortVideoWatchHistoryEntry {
     final coverUrl = json['coverUrl'];
     final videoUrl = json['videoUrl'];
     final source = json['source'];
-    final watchedAtMillis = json['watchedAtMillis'];
+    final savedAtMillis = json['savedAtMillis'];
 
     if (videoId is! String ||
         title is! String ||
         coverUrl is! String ||
         videoUrl is! String ||
-        watchedAtMillis is! int) {
+        savedAtMillis is! int) {
       return null;
     }
 
-    return ShortVideoWatchHistoryEntry(
+    return ShortVideoOfflineCacheEntry(
       videoId: videoId,
       title: title,
       updateTime: updateTime is String ? updateTime : '',
       coverUrl: coverUrl,
       videoUrl: videoUrl,
       source: source is String ? source : null,
-      watchedAtMillis: watchedAtMillis,
+      savedAtMillis: savedAtMillis,
     );
   }
 }
 
-class ShortVideoWatchHistoryPersistence {
-  ShortVideoWatchHistoryPersistence._();
+class ShortVideoOfflineCachePersistence {
+  ShortVideoOfflineCachePersistence._();
 
-  static const String _key = 'short_video_watch_history_v1';
+  static const String _key = 'short_video_offline_cache_v1';
   static const int _maxItems = 500;
 
-  static Future<List<ShortVideoWatchHistoryEntry>> loadAll() async {
+  static Future<List<ShortVideoOfflineCacheEntry>> loadAll() async {
     final prefs = await SharedPreferences.getInstance();
     final raw = prefs.getString(_key);
     if (raw == null || raw.isEmpty) {
-      return const <ShortVideoWatchHistoryEntry>[];
+      return const <ShortVideoOfflineCacheEntry>[];
     }
 
     try {
       final decoded = jsonDecode(raw);
       if (decoded is! List) {
-        return const <ShortVideoWatchHistoryEntry>[];
+        return const <ShortVideoOfflineCacheEntry>[];
       }
 
       final entries = decoded
-          .map(ShortVideoWatchHistoryEntry.fromJson)
-          .whereType<ShortVideoWatchHistoryEntry>()
-          .toList(growable: false);
-      entries.sort((a, b) => b.watchedAtMillis.compareTo(a.watchedAtMillis));
+          .map(ShortVideoOfflineCacheEntry.fromJson)
+          .whereType<ShortVideoOfflineCacheEntry>()
+          .toList(growable: false)
+        ..sort((a, b) => b.savedAtMillis.compareTo(a.savedAtMillis));
+
       return entries;
     } catch (_) {
-      return const <ShortVideoWatchHistoryEntry>[];
+      return const <ShortVideoOfflineCacheEntry>[];
     }
   }
 
-  static Future<void> record(ShortVideoWatchHistoryEntry entry) async {
+  static Future<void> save(ShortVideoOfflineCacheEntry entry) async {
     final existing = await loadAll();
-    final merged = <ShortVideoWatchHistoryEntry>[entry];
+    final merged = <ShortVideoOfflineCacheEntry>[entry];
     for (final item in existing) {
       if (item.videoId == entry.videoId) {
         continue;
@@ -133,11 +112,6 @@ class ShortVideoWatchHistoryPersistence {
     await _saveAll(merged);
   }
 
-  static Future<void> clearAll() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_key);
-  }
-
   static Future<void> remove(String videoId) async {
     final existing = await loadAll();
     final next = existing
@@ -146,7 +120,12 @@ class ShortVideoWatchHistoryPersistence {
     await _saveAll(next);
   }
 
-  static Future<void> _saveAll(List<ShortVideoWatchHistoryEntry> entries) async {
+  static Future<void> clearAll() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_key);
+  }
+
+  static Future<void> _saveAll(List<ShortVideoOfflineCacheEntry> entries) async {
     final prefs = await SharedPreferences.getInstance();
     final raw = jsonEncode(entries.map((e) => e.toJson()).toList(growable: false));
     await prefs.setString(_key, raw);

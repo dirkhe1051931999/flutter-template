@@ -22,6 +22,7 @@ abstract class OolafVideoController {
   Future<void> pause();
   Future<void> seekTo(Duration position);
   Future<void> setLooping(bool looping);
+  Future<void> setPlaybackRate(double rate);
 
   Widget buildView({BoxFit fit = BoxFit.cover});
 

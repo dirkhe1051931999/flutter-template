@@ -56,6 +56,9 @@ class OolafVideoPlayerController implements OolafVideoController {
   Future<void> setLooping(bool looping) => _delegate.setLooping(looping);
 
   @override
+  Future<void> setPlaybackRate(double rate) => _delegate.setPlaybackRate(rate);
+
+  @override
   Widget buildView({BoxFit fit = BoxFit.cover}) =>
       _delegate.buildView(fit: fit);
 

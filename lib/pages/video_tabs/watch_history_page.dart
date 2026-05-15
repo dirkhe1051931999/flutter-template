@@ -15,6 +15,7 @@ class _ShortVideoWatchHistoryPageState extends State<ShortVideoWatchHistoryPage>
   static const double _gridGap = 4;
 
   bool _isLoading = true;
+  String _searchKeyword = '';
   List<ShortVideoWatchHistorySection> _sections =
       const <ShortVideoWatchHistorySection>[];
 
@@ -105,8 +106,41 @@ class _ShortVideoWatchHistoryPageState extends State<ShortVideoWatchHistoryPage>
     });
   }
 
+  Future<void> _deleteSingle(String videoId) async {
+    await ShortVideoWatchHistoryPersistence.remove(videoId);
+    if (!mounted) {
+      return;
+    }
+    await _loadHistory();
+  }
+
+  List<ShortVideoWatchHistorySection> _buildFilteredSections() {
+    final keyword = _searchKeyword.trim();
+    if (keyword.isEmpty) {
+      return _sections;
+    }
+
+    return _sections
+        .map((section) {
+          final entries = section.entries
+              .where((entry) {
+                return entry.title.contains(keyword) ||
+                    (entry.source?.contains(keyword) ?? false);
+              })
+              .toList(growable: false);
+          return ShortVideoWatchHistorySection(
+            dateLabel: section.dateLabel,
+            entries: entries,
+          );
+        })
+        .where((section) => section.entries.isNotEmpty)
+        .toList(growable: false);
+  }
+
   @override
   Widget build(BuildContext context) {
+    final visibleSections = _buildFilteredSections();
+
     return CupertinoPageScaffold(
       backgroundColor: const Color(0xFFF4F5F7),
       navigationBar: CupertinoNavigationBar(
@@ -129,66 +163,93 @@ class _ShortVideoWatchHistoryPageState extends State<ShortVideoWatchHistoryPage>
       child: SafeArea(
         child: _isLoading
             ? const Center(child: CupertinoActivityIndicator(radius: 14))
-            : _sections.isEmpty
-                ? const Center(
-                    child: Text(
-                      '暂无观看历史',
-                      style: TextStyle(color: Color(0xFF8E8E93)),
+            : Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(10, 8, 10, 6),
+                    child: CupertinoSearchTextField(
+                      placeholder: '搜索历史视频',
+                      onChanged: (value) {
+                        setState(() {
+                          _searchKeyword = value;
+                        });
+                      },
                     ),
-                  )
-                : CustomScrollView(
-                    slivers: [
-                      for (final section in _sections) ...[
-                        SliverPersistentHeader(
-                          pinned: true,
-                          delegate: _ShortVideoHistoryHeaderDelegate(
-                            height: 30,
-                            label: section.dateLabel,
-                          ),
-                        ),
-                        SliverPadding(
-                          padding: const EdgeInsets.fromLTRB(4, 0, 4, 10),
-                          sliver: SliverGrid(
-                            delegate: SliverChildBuilderDelegate(
-                              (context, index) {
-                                final entry = section.entries[index];
-                                return _HistoryGridItem(
-                                  entry: entry,
-                                  onTap: () {
-                                    _openHistoryPlayPage(entry);
-                                  },
-                                );
-                              },
-                              childCount: section.entries.length,
-                            ),
-                            gridDelegate:
-                                const SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: _gridCrossAxisCount,
-                              crossAxisSpacing: _gridGap,
-                              mainAxisSpacing: _gridGap,
-                              childAspectRatio: 0.62,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ],
                   ),
+                  Expanded(
+                    child: visibleSections.isEmpty
+                        ? Center(
+                            child: Text(
+                              _searchKeyword.trim().isEmpty ? '暂无观看历史' : '没有匹配结果',
+                              style: const TextStyle(color: Color(0xFF8E8E93)),
+                            ),
+                          )
+                        : CustomScrollView(
+                            slivers: [
+                              for (final section in visibleSections) ...[
+                                SliverPersistentHeader(
+                                  pinned: true,
+                                  delegate: _ShortVideoHistoryHeaderDelegate(
+                                    height: 30,
+                                    label: section.dateLabel,
+                                  ),
+                                ),
+                                SliverPadding(
+                                  padding: const EdgeInsets.fromLTRB(4, 0, 4, 10),
+                                  sliver: SliverGrid(
+                                    delegate: SliverChildBuilderDelegate(
+                                      (context, index) {
+                                        final entry = section.entries[index];
+                                        return _HistoryGridItem(
+                                          entry: entry,
+                                          onTap: () {
+                                            _openHistoryPlayPage(entry);
+                                          },
+                                          onLongPress: () {
+                                            _deleteSingle(entry.videoId);
+                                          },
+                                        );
+                                      },
+                                      childCount: section.entries.length,
+                                    ),
+                                    gridDelegate:
+                                        const SliverGridDelegateWithFixedCrossAxisCount(
+                                      crossAxisCount: _gridCrossAxisCount,
+                                      crossAxisSpacing: _gridGap,
+                                      mainAxisSpacing: _gridGap,
+                                      childAspectRatio: 0.62,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                  ),
+                ],
+              ),
       ),
     );
   }
 }
 
 class _HistoryGridItem extends StatelessWidget {
-  const _HistoryGridItem({required this.entry, required this.onTap});
+  const _HistoryGridItem({
+    required this.entry,
+    required this.onTap,
+    required this.onLongPress,
+  });
 
   final ShortVideoWatchHistoryEntry entry;
   final VoidCallback onTap;
+  final VoidCallback onLongPress;
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: onTap,
+      onLongPress: onLongPress,
+      onSecondaryTap: onLongPress,
       child: DecoratedBox(
         decoration: BoxDecoration(
           color: CupertinoColors.white,

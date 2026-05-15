@@ -179,6 +179,22 @@ class VideoManager with WidgetsBindingObserver {
     await _disposeAllSafely();
   }
 
+  Future<void> disposeWhere(bool Function(String id) test) async {
+    await _awaitPendingDispose();
+    final toDispose = _controllerCache.keys.where(test).toList(growable: false);
+
+    for (final id in toDispose) {
+      final c = _controllerCache.remove(id);
+      _accessOrder.remove(id);
+      try {
+        await c?.pause();
+      } catch (_) {}
+      try {
+        await c?.dispose();
+      } catch (_) {}
+    }
+  }
+
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.paused ||

@@ -3,6 +3,7 @@ class ShortVideoItem {
     required this.id,
     this.source,
     required this.title,
+    this.updateTime,
     required this.videoUrl,
     required this.coverUrl,
   });
@@ -10,6 +11,7 @@ class ShortVideoItem {
   final String id;
   final String? source;
   final String title;
+  final String? updateTime;
   final String videoUrl;
   final String coverUrl;
 }
@@ -21,6 +23,10 @@ class ShortVideoState {
     required this.activeIndex,
     required this.recordWatchHistory,
     required this.autoPlayNextVideo,
+    required this.playbackRate,
+    required this.preloadPagesCount,
+    required this.keepWindow,
+    required this.videoFitMode,
   });
 
   final bool isLoading;
@@ -28,6 +34,10 @@ class ShortVideoState {
   final int activeIndex;
   final bool recordWatchHistory;
   final bool autoPlayNextVideo;
+  final double playbackRate;
+  final int preloadPagesCount;
+  final int keepWindow;
+  final String videoFitMode;
 
   factory ShortVideoState.initial() {
     return const ShortVideoState(
@@ -36,6 +46,10 @@ class ShortVideoState {
       activeIndex: 0,
       recordWatchHistory: true,
       autoPlayNextVideo: true,
+      playbackRate: 1.0,
+      preloadPagesCount: 2,
+      keepWindow: 1,
+      videoFitMode: 'cover',
     );
   }
 
@@ -45,6 +59,10 @@ class ShortVideoState {
     int? activeIndex,
     bool? recordWatchHistory,
     bool? autoPlayNextVideo,
+    double? playbackRate,
+    int? preloadPagesCount,
+    int? keepWindow,
+    String? videoFitMode,
   }) {
     return ShortVideoState(
       isLoading: isLoading ?? this.isLoading,
@@ -52,6 +70,10 @@ class ShortVideoState {
       activeIndex: activeIndex ?? this.activeIndex,
       recordWatchHistory: recordWatchHistory ?? this.recordWatchHistory,
       autoPlayNextVideo: autoPlayNextVideo ?? this.autoPlayNextVideo,
+      playbackRate: playbackRate ?? this.playbackRate,
+      preloadPagesCount: preloadPagesCount ?? this.preloadPagesCount,
+      keepWindow: keepWindow ?? this.keepWindow,
+      videoFitMode: videoFitMode ?? this.videoFitMode,
     );
   }
 }

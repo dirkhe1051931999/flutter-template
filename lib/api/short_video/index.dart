@@ -156,6 +156,7 @@ ShortVideoItem? _mapToShortVideoItem(Map<String, dynamic> raw) {
   final id = _asString(raw['staticId']) ?? _asString(raw['documentId']);
   final coverUrl = _pickCoverUrl(raw);
   final videoUrl = _pickVideoUrl(raw);
+  final updateTime = _pickUpdateTime(raw);
 
   if (id == null || title == null || videoUrl == null || videoUrl.isEmpty) {
     return null;
@@ -165,9 +166,19 @@ ShortVideoItem? _mapToShortVideoItem(Map<String, dynamic> raw) {
     id: id,
     source: source ?? '凤凰网视频',
     title: title,
+    updateTime: updateTime,
     videoUrl: videoUrl,
     coverUrl: coverUrl ?? '',
   );
+}
+
+String _pickUpdateTime(Map<String, dynamic> raw) {
+  return _asString(raw['updateTime']) ??
+      _asString(raw['update_time']) ??
+      _asString(raw['newsTime']) ??
+      _asString(raw['time']) ??
+      _asString(raw['date']) ??
+      '';
 }
 
 String? _pickVideoUrl(Map<String, dynamic> raw) {

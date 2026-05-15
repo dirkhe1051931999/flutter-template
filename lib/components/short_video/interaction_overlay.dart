@@ -5,12 +5,20 @@ class ShortVideoInteractionOverlay extends StatelessWidget {
     super.key,
     required this.source,
     required this.title,
+    required this.updateTime,
+    required this.isFavorite,
+    required this.onTapFavorite,
     required this.onTapComment,
+    required this.onTapShare,
   });
 
   final String source;
   final String title;
+  final String updateTime;
+  final bool isFavorite;
+  final VoidCallback onTapFavorite;
   final VoidCallback onTapComment;
+  final VoidCallback onTapShare;
 
   @override
   Widget build(BuildContext context) {
@@ -59,6 +67,20 @@ class ShortVideoInteractionOverlay extends StatelessWidget {
                         fontWeight: FontWeight.w700,
                       ),
                     ),
+                    if (updateTime.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        updateTime,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Color(0xCCFFFFFF),
+                          fontSize: 12,
+                          height: 1.2,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: 8),
                     Text(
                       title,
@@ -82,8 +104,11 @@ class ShortVideoInteractionOverlay extends StatelessWidget {
                   children: [
                     _IconButton(
                       icon: CupertinoIcons.heart_fill,
-                      label: '1.2k',
-                      onTap: () {},
+                      label: isFavorite ? '已喜欢' : '喜欢',
+                      color: isFavorite
+                          ? CupertinoColors.systemRed
+                          : CupertinoColors.white,
+                      onTap: onTapFavorite,
                     ),
                     const SizedBox(height: 18),
                     _IconButton(
@@ -95,7 +120,7 @@ class ShortVideoInteractionOverlay extends StatelessWidget {
                     _IconButton(
                       icon: CupertinoIcons.share_solid,
                       label: '分享',
-                      onTap: () {},
+                      onTap: onTapShare,
                     ),
                     const SizedBox(height: 18),
                     Container(
@@ -127,11 +152,13 @@ class _IconButton extends StatelessWidget {
     required this.icon,
     required this.label,
     required this.onTap,
+    this.color = CupertinoColors.white,
   });
 
   final IconData icon;
   final String label;
   final VoidCallback onTap;
+  final Color color;
 
   @override
   Widget build(BuildContext context) {
@@ -140,7 +167,7 @@ class _IconButton extends StatelessWidget {
       onPressed: onTap,
       child: Column(
         children: [
-          Icon(icon, color: CupertinoColors.white, size: 34),
+          Icon(icon, color: color, size: 34),
           const SizedBox(height: 6),
           Text(
             label,

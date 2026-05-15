@@ -293,6 +293,14 @@ class OolafMediaKitController implements OolafVideoController {
   }
 
   @override
+  Future<void> setPlaybackRate(double rate) async {
+    if (!_isAlive) {
+      return;
+    }
+    await _player.setRate(rate);
+  }
+
+  @override
   Widget buildView({BoxFit fit = BoxFit.cover}) {
     if (!_isAlive) {
       return const SizedBox.shrink();

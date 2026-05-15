@@ -31,12 +31,41 @@ class ShortVideoSetAutoPlayNextVideoAction extends AppAction {
   final bool autoPlayNextVideo;
 }
 
+class ShortVideoSetPlaybackRateAction extends AppAction {
+  const ShortVideoSetPlaybackRateAction(this.rate);
+
+  final double rate;
+}
+
+class ShortVideoSetPreloadStrategyAction extends AppAction {
+  const ShortVideoSetPreloadStrategyAction({
+    required this.preloadPagesCount,
+    required this.keepWindow,
+  });
+
+  final int preloadPagesCount;
+  final int keepWindow;
+}
+
+class ShortVideoSetVideoFitModeAction extends AppAction {
+  const ShortVideoSetVideoFitModeAction(this.mode);
+  final String mode;
+}
+
 class ShortVideoRestorePreferencesAction extends AppAction {
   const ShortVideoRestorePreferencesAction({
     required this.recordWatchHistory,
     required this.autoPlayNextVideo,
+    required this.playbackRate,
+    required this.preloadPagesCount,
+    required this.keepWindow,
+    required this.videoFitMode,
   });
 
   final bool recordWatchHistory;
   final bool autoPlayNextVideo;
+  final double playbackRate;
+  final int preloadPagesCount;
+  final int keepWindow;
+  final String videoFitMode;
 }
