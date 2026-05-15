@@ -1,6 +1,13 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/gestures.dart';
 
+enum VideoTopTabChangeSource { tap, swipe }
+
+typedef VideoTopTabChanged = void Function(
+  int index,
+  VideoTopTabChangeSource source,
+);
+
 class VideoTopTabItem {
   const VideoTopTabItem({
     required this.id,
@@ -23,7 +30,7 @@ class VideoTopTabs extends StatefulWidget {
 
   final List<VideoTopTabItem> items;
   final int initialIndex;
-  final ValueChanged<int>? onIndexChanged;
+  final VideoTopTabChanged? onIndexChanged;
 
   @override
   State<VideoTopTabs> createState() => _VideoTopTabsState();
@@ -42,6 +49,7 @@ class _VideoTopTabsState extends State<VideoTopTabs> {
   late final PageController _pageController;
   late final ScrollController _tabScrollController;
   late final ValueNotifier<int> _currentIndexNotifier;
+  VideoTopTabChangeSource _pendingChangeSource = VideoTopTabChangeSource.swipe;
 
   int get _currentIndex => _currentIndexNotifier.value;
 
@@ -109,14 +117,18 @@ class _VideoTopTabsState extends State<VideoTopTabs> {
     );
   }
 
-  void _updateIndex(int index, {required bool notify}) {
+  void _updateIndex(
+    int index, {
+    required bool notify,
+    VideoTopTabChangeSource source = VideoTopTabChangeSource.swipe,
+  }) {
     if (index == _currentIndex || widget.items.isEmpty) {
       return;
     }
     _currentIndexNotifier.value = index;
     _ensureActiveTabVisible(index);
     if (notify) {
-      widget.onIndexChanged?.call(index);
+      widget.onIndexChanged?.call(index, source);
     }
   }
 
@@ -124,6 +136,7 @@ class _VideoTopTabsState extends State<VideoTopTabs> {
     if (index == _currentIndex || widget.items.isEmpty) {
       return;
     }
+    _pendingChangeSource = VideoTopTabChangeSource.tap;
     _pageController.animateToPage(
       index,
       duration: const Duration(milliseconds: 220),
@@ -205,7 +218,9 @@ class _VideoTopTabsState extends State<VideoTopTabs> {
                 parent: BouncingScrollPhysics(),
               ),
               onPageChanged: (index) {
-                _updateIndex(index, notify: true);
+                final source = _pendingChangeSource;
+                _pendingChangeSource = VideoTopTabChangeSource.swipe;
+                _updateIndex(index, notify: true, source: source);
               },
               scrollBehavior: const CupertinoScrollBehavior().copyWith(
                 dragDevices: _dragDevices,

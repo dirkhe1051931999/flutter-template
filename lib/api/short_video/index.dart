@@ -4,6 +4,21 @@ import 'package:oolaf_flutted/utils/helper.dart';
 import 'package:oolaf_flutted/utils/request.dart';
 
 const String _shortVideoFeedUrl = 'https://ifeng-api.oolaf.top/recomlist';
+const String _phoenixTvChannelUrl = 'https://nine.ifeng.com/phoenixTvChannel';
+
+class PhoenixTvChannelRequest {
+  const PhoenixTvChannelRequest({
+    required this.channel,
+    required this.listId,
+    this.pullTotal = 2,
+    this.pullNum = 1,
+  });
+
+  final String channel;
+  final String listId;
+  final int pullTotal;
+  final int pullNum;
+}
 
 int _shortVideoDailyOpenNumCounter = 0;
 
@@ -11,28 +26,70 @@ int nextShortVideoDailyOpenNum() {
   _shortVideoDailyOpenNumCounter += 1;
   return _shortVideoDailyOpenNumCounter;
 }
-const Map<String, String> _shortVideoFixedParams = {
-  'id': 'RECOMVIDEO',
-  'ch': 'sp',
+
+const Map<String, String> _commonVideoFixedParams = {
   'action': 'down',
   'gv': '7.30.3',
   'av': '7.30.3',
-  'uid': '867241265475337',
-  'deviceid': '867241265475337',
   'proid': 'ifengnews',
-  'os': 'android_25',
   'df': 'androidphone',
   'vt': '5',
   'screen': '720x1280',
-  'publishid': '6010',
   'nw': 'wifi',
   'loginid': '',
   'adAid': '',
-  'hw': 'oppo_pcrt00',
   'ps': '1',
+};
+
+const Map<String, String> _shortVideoFixedParams = {
+  'id': 'RECOMVIDEO',
+  'ch': 'sp',
+  ..._commonVideoFixedParams,
+  'uid': '867241265475337',
+  'deviceid': '867241265475337',
+  'os': 'android_25',
+  'publishid': '6010',
+  'hw': 'oppo_pcrt00',
   'st': '16395595277916',
   'sn': 'fcb480832205d27372f8e66d260e69d8',
 };
+
+const Map<String, String> _phoenixTvChannelFixedParams = {
+  ..._commonVideoFixedParams,
+  'dailyOpenNum': '1',
+  'uid': '860250745769422',
+  'deviceid': '860250745769422',
+  'os': 'android_28',
+  'publishid': '2011',
+  'hw': 'asus_asus_ai2401_a',
+  'st': '17787276464257',
+  'sn': '5805d8aefff865576632c46fa573537f',
+};
+
+Future<List<ShortVideoItem>> getPhoenixTvChannelPage({
+  required PhoenixTvChannelRequest request,
+}) async {
+  final params = <String, dynamic>{
+    ..._phoenixTvChannelFixedParams,
+    'ch': request.channel,
+    'id': request.listId,
+    'pullTotal': request.pullTotal.toString(),
+    'pullNum': request.pullNum.toString(),
+  };
+
+  try {
+    final Response response = await httpClient.get(
+      _phoenixTvChannelUrl,
+      queryParameters: params,
+    );
+
+    return _extractShortVideoItems(response.data);
+  } catch (error, stackTrace) {
+    customLogger.log('getPhoenixTvChannelPage failed: $error');
+    customLogger.log(stackTrace);
+    return const <ShortVideoItem>[];
+  }
+}
 
 
 Future<List<ShortVideoItem>> getShortVideoPage({
@@ -51,44 +108,42 @@ Future<List<ShortVideoItem>> getShortVideoPage({
       _shortVideoFeedUrl,
       queryParameters: params,
     );
-
-    if (response.statusCode != 200 || response.data is! List<dynamic>) {
-      return const <ShortVideoItem>[];
-    }
-
-    final rootList = response.data as List<dynamic>;
-    if (rootList.isEmpty) {
-      return const <ShortVideoItem>[];
-    }
-
-    final firstSection = rootList.first;
-    if (firstSection is! Map<String, dynamic>) {
-      return const <ShortVideoItem>[];
-    }
-
-    final itemList = firstSection['item'];
-    if (itemList is! List<dynamic>) {
-      return const <ShortVideoItem>[];
-    }
-
-    final items = <ShortVideoItem>[];
-    for (final raw in itemList) {
-      if (raw is! Map<String, dynamic>) {
-        continue;
-      }
-
-      final mapped = _mapToShortVideoItem(raw);
-      if (mapped != null) {
-        items.add(mapped);
-      }
-    }
-
-    return items;
+    return _extractShortVideoItems(response.data);
   } catch (error, stackTrace) {
     customLogger.log('getShortVideoPage failed: $error');
     customLogger.log(stackTrace);
     return const <ShortVideoItem>[];
   }
+}
+
+List<ShortVideoItem> _extractShortVideoItems(dynamic responseData) {
+  if (responseData is! List<dynamic> || responseData.isEmpty) {
+    return const <ShortVideoItem>[];
+  }
+
+  final firstSection = responseData.first;
+  if (firstSection is! Map<String, dynamic>) {
+    return const <ShortVideoItem>[];
+  }
+
+  final itemList = firstSection['item'];
+  if (itemList is! List<dynamic>) {
+    return const <ShortVideoItem>[];
+  }
+
+  final items = <ShortVideoItem>[];
+  for (final raw in itemList) {
+    if (raw is! Map<String, dynamic>) {
+      continue;
+    }
+
+    final mapped = _mapToShortVideoItem(raw);
+    if (mapped != null) {
+      items.add(mapped);
+    }
+  }
+
+  return items;
 }
 
 ShortVideoItem? _mapToShortVideoItem(Map<String, dynamic> raw) {

@@ -22,6 +22,8 @@ class ShortVideoPage extends StatefulWidget {
 
 class _ShortVideoPageState extends State<ShortVideoPage> {
   static const Duration _homeTabDoubleTapGap = Duration(milliseconds: 320);
+  static const Duration _topTabLoadDebounceForTap = Duration(milliseconds: 140);
+  static const Duration _topTabLoadDebounceForSwipe = Duration(milliseconds: 260);
   static const List<ShortVideoTabItem> _tabItems = <ShortVideoTabItem>[
     ShortVideoTabItem(label: '首页'),
     ShortVideoTabItem(label: '我'),
@@ -30,20 +32,66 @@ class _ShortVideoPageState extends State<ShortVideoPage> {
   int _activeTabIndex = 0;
   int _activeHomeTopTabIndex = 0;
   DateTime? _lastHomeTabTapAt;
-  final GlobalKey<VideoTabRecomendPageState> _recomendPageKey =
-      GlobalKey<VideoTabRecomendPageState>();
+  bool _isHomeTopTabSwitching = false;
+  int _topTabLoadTicket = 0;
+  final List<GlobalKey<VideoTabRecomendPageState>> _feedPageKeys =
+      List<GlobalKey<VideoTabRecomendPageState>>.generate(
+        VideoTabsRegistry.feedTabCount,
+        (_) => GlobalKey<VideoTabRecomendPageState>(),
+      );
+
+  GlobalKey<VideoTabRecomendPageState>? _keyOfTopTab(int index) {
+    if (index < 0 || index >= _feedPageKeys.length) {
+      return null;
+    }
+    return _feedPageKeys[index];
+  }
+
+  void _syncTopTabVisibility({required int activeIndex}) {
+    for (var i = 0; i < _feedPageKeys.length; i += 1) {
+      final visible = _activeTabIndex == 0 && i == activeIndex;
+      _feedPageKeys[i].currentState?.onFeedVisibilityChanged(visible);
+    }
+  }
+
+  Future<void> _scheduleEnsureTopTabLoaded(
+    int index, {
+    required VideoTopTabChangeSource source,
+  }) async {
+    final debounce = source == VideoTopTabChangeSource.swipe
+        ? _topTabLoadDebounceForSwipe
+        : _topTabLoadDebounceForTap;
+    final ticket = ++_topTabLoadTicket;
+    await Future<void>.delayed(debounce);
+    if (!mounted || ticket != _topTabLoadTicket) {
+      return;
+    }
+    if (_activeTabIndex != 0 || _activeHomeTopTabIndex != index) {
+      return;
+    }
+    if (_isHomeTopTabSwitching) {
+      return;
+    }
+
+    _isHomeTopTabSwitching = true;
+    try {
+      await _keyOfTopTab(index)?.currentState?.ensureInitialLoaded();
+    } finally {
+      _isHomeTopTabSwitching = false;
+    }
+  }
 
   late final List<VideoTopTabItem> _homeTabs = VideoTabsRegistry.buildTabs(
-    recomendPageKey: _recomendPageKey,
+    feedPageKeys: _feedPageKeys,
   );
 
-  void _onHomeTopTabChanged(int index) {
+  void _onHomeTopTabChanged(int index, VideoTopTabChangeSource source) {
     if (_activeHomeTopTabIndex == index) {
       return;
     }
     _activeHomeTopTabIndex = index;
-    final shouldRecommendVisible = _activeTabIndex == 0 && index == 0;
-    _recomendPageKey.currentState?.onFeedVisibilityChanged(shouldRecommendVisible);
+    _syncTopTabVisibility(activeIndex: index);
+    _scheduleEnsureTopTabLoaded(index, source: source);
   }
 
   @override
@@ -90,13 +138,19 @@ class _ShortVideoPageState extends State<ShortVideoPage> {
       return;
     }
 
-    final shouldRecommendVisible = index == 0 && _activeHomeTopTabIndex == 0;
-    _recomendPageKey.currentState?.onFeedVisibilityChanged(
-      shouldRecommendVisible,
-    );
     setState(() {
       _activeTabIndex = index;
     });
+
+    if (index == 0) {
+      _syncTopTabVisibility(activeIndex: _activeHomeTopTabIndex);
+      _scheduleEnsureTopTabLoaded(
+        _activeHomeTopTabIndex,
+        source: VideoTopTabChangeSource.tap,
+      );
+    } else {
+      _syncTopTabVisibility(activeIndex: -1);
+    }
   }
 
   Future<void> _restoreShortVideoPreferences() async {
@@ -293,7 +347,7 @@ class _ShortVideoProfilePageState extends State<_ShortVideoProfilePage> {
                   margin: const EdgeInsets.only(top: 6),
                   backgroundColor: const Color(0xFFF4F5F7),
                   separatorColor: const Color(0xFFF5F5F5),
-                  header: const Text('常用功能（待开放）'),
+                  header: const Text('常用功能'),
                   children: [
                     CupertinoListTile(
                       title: const Text('观看历史'),

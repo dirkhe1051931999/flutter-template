@@ -1,59 +1,94 @@
 import 'package:flutter/widgets.dart';
+import 'package:oolaf_flutted/api/short_video/index.dart';
 import 'package:oolaf_flutted/components/video_top_tabs/index.dart';
 import 'package:oolaf_flutted/pages/video_tabs/recomend_page.dart';
-import 'package:oolaf_flutted/pages/video_tabs/vch_mrmdm_page.dart';
 
 class VideoTabsRegistry {
   const VideoTabsRegistry._();
 
+  static const int feedTabCount = 6;
+
   static List<VideoTopTabItem> buildTabs({
-    required GlobalKey<VideoTabRecomendPageState> recomendPageKey,
+    required List<GlobalKey<VideoTabRecomendPageState>> feedPageKeys,
   }) {
     return <VideoTopTabItem>[
       VideoTopTabItem(
         id: 'recomend',
         label: '推荐',
-        page: VideoTabRecomendPage(key: recomendPageKey),
+        page: VideoTabRecomendPage(
+          key: feedPageKeys[0],
+          initialFeedVisible: true,
+        ),
       ),
-      const VideoTopTabItem(
-        id: 'featured',
-        label: '精选',
-        page: VideoTabVchMrmdmPage(),
-      ),
-      const VideoTopTabItem(
-        id: 'focus',
-        label: '焦点',
-        page: VideoTabVchMrmdmPage(),
-      ),
-      const VideoTopTabItem(
+      VideoTopTabItem(
         id: 'vch_mrmdm',
         label: '名人面对面',
-        page: VideoTabVchMrmdmPage(),
+        page: VideoTabRecomendPage(
+          key: feedPageKeys[1],
+          channelRequest: const PhoenixTvChannelRequest(
+            channel: 'vch_mrmdm',
+            listId: 'VIDEOMRMDM',
+            pullTotal: 2,
+            pullNum: 1,
+          ),
+          initialFeedVisible: false,
+        ),
       ),
-      const VideoTopTabItem(
-        id: 'hot',
-        label: '热点',
-        page: VideoTabVchMrmdmPage(),
+      VideoTopTabItem(
+        id: 'vch_jqgcs',
+        label: '军事观察室',
+        page: VideoTabRecomendPage(
+          key: feedPageKeys[2],
+          channelRequest: const PhoenixTvChannelRequest(
+            channel: 'vch_jqgcs',
+            listId: 'VIDEOJQGCS',
+            pullTotal: 2,
+            pullNum: 1,
+          ),
+          initialFeedVisible: false,
+        ),
       ),
-      const VideoTopTabItem(
-        id: 'city',
-        label: '同城',
-        page: VideoTabVchMrmdmPage(),
+      VideoTopTabItem(
+        id: 'vch_ssztc',
+        label: '时事直通车',
+        page: VideoTabRecomendPage(
+          key: feedPageKeys[3],
+          channelRequest: const PhoenixTvChannelRequest(
+            channel: 'vch_ssztc',
+            listId: 'VIDEOSSZTC',
+            pullTotal: 2,
+            pullNum: 1,
+          ),
+          initialFeedVisible: false,
+        ),
       ),
-      const VideoTopTabItem(
-        id: 'sports',
-        label: '体育',
-        page: VideoTabVchMrmdmPage(),
+      VideoTopTabItem(
+        id: 'vch_lyyy',
+        label: '鲁豫有约',
+        page: VideoTabRecomendPage(
+          key: feedPageKeys[4],
+          channelRequest: const PhoenixTvChannelRequest(
+            channel: 'vch_lyyy',
+            listId: 'VIDEOLYYY',
+            pullTotal: 2,
+            pullNum: 1,
+          ),
+          initialFeedVisible: false,
+        ),
       ),
-      const VideoTopTabItem(
-        id: 'finance',
-        label: '财经',
-        page: VideoTabVchMrmdmPage(),
-      ),
-      const VideoTopTabItem(
-        id: 'tech',
-        label: '科技',
-        page: VideoTabVchMrmdmPage(),
+      VideoTopTabItem(
+        id: 'vch_fydh',
+        label: '风云对话',
+        page: VideoTabRecomendPage(
+          key: feedPageKeys[5],
+          channelRequest: const PhoenixTvChannelRequest(
+            channel: 'vch_fydh',
+            listId: 'VIDEOFYDH',
+            pullTotal: 2,
+            pullNum: 1,
+          ),
+          initialFeedVisible: false,
+        ),
       ),
     ];
   }
