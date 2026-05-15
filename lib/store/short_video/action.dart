@@ -18,3 +18,25 @@ class ShortVideoSetActiveIndexAction extends AppAction {
 
   final int activeIndex;
 }
+
+class ShortVideoSetRecordWatchHistoryAction extends AppAction {
+  const ShortVideoSetRecordWatchHistoryAction(this.recordWatchHistory);
+
+  final bool recordWatchHistory;
+}
+
+class ShortVideoSetAutoPlayNextVideoAction extends AppAction {
+  const ShortVideoSetAutoPlayNextVideoAction(this.autoPlayNextVideo);
+
+  final bool autoPlayNextVideo;
+}
+
+class ShortVideoRestorePreferencesAction extends AppAction {
+  const ShortVideoRestorePreferencesAction({
+    required this.recordWatchHistory,
+    required this.autoPlayNextVideo,
+  });
+
+  final bool recordWatchHistory;
+  final bool autoPlayNextVideo;
+}

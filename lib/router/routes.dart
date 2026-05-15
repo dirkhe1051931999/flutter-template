@@ -13,7 +13,6 @@ class Routes {
   static const request = "/request";
   static const oolafDynamicAudio = "/oolaf-dynamic-audio";
   static const shortVideo = "/short-video";
-  static const mediaKitTest = "/media-kit-test";
   static const profile = "/profile";
   static const scrollableTabs = "/scrollable-tabs";
   static const scrollableTabsDetail = "/scrollable-tabs-detail";
@@ -38,7 +37,6 @@ class Routes {
     router.define(request, handler: requestRouteHandler);
     router.define(oolafDynamicAudio, handler: oolafDynamicAudioRouteHandler);
     router.define(shortVideo, handler: shortVideoRouteHandler);
-    router.define(mediaKitTest, handler: mediaKitTestRouteHandler);
     router.define(
       profile,
       handler: profileRouteHandler,

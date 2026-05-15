@@ -28,6 +28,7 @@ class ShortVideoPlayerWrapper extends StatefulWidget {
 
 class _ShortVideoPlayerWrapperState extends State<ShortVideoPlayerWrapper> {
   static const double _swipeVelocityThreshold = 280;
+  static const double _tabBarHeight = 50;
 
   Offset? _lastDoubleTapPosition;
 
@@ -95,43 +96,51 @@ class _ShortVideoPlayerWrapperState extends State<ShortVideoPlayerWrapper> {
                   ValueListenableBuilder<bool>(
                     valueListenable: controller.isPlaying,
                     builder: (context, isPlaying, __) {
-                      return Align(
-                        alignment: Alignment.bottomCenter,
-                        child: Padding(
-                          padding: const EdgeInsets.only(bottom: 34),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              _ActionButton(
-                                icon: CupertinoIcons.gobackward_10,
+                      final bottomOffset =
+                          _tabBarHeight +
+                          MediaQuery.of(context).viewPadding.bottom +
+                          6;
+
+                      return Stack(
+                        children: [
+                          Positioned(
+                            left: 6,
+                            bottom: bottomOffset,
+                            child: _ActionButton(
+                              icon: CupertinoIcons.gobackward_10,
+                              onTap: () async {
+                                await _seekBy(const Duration(seconds: -10));
+                              },
+                            ),
+                          ),
+                          Positioned(
+                            right: 6,
+                            bottom: bottomOffset,
+                            child: _ActionButton(
+                              icon: CupertinoIcons.goforward_10,
+                              onTap: () async {
+                                await _seekBy(const Duration(seconds: 10));
+                              },
+                            ),
+                          ),
+                          if (!isPlaying)
+                            Center(
+                              child: GestureDetector(
+                                behavior: HitTestBehavior.opaque,
                                 onTap: () async {
-                                  await _seekBy(const Duration(seconds: -10));
-                                },
-                              ),
-                              const SizedBox(width: 14),
-                              _ActionButton(
-                                icon: isPlaying
-                                    ? CupertinoIcons.pause_fill
-                                    : CupertinoIcons.play_fill,
-                                size: 34,
-                                onTap: () async {
-                                  if (isPlaying) {
-                                    await controller.pause();
-                                    return;
-                                  }
                                   await controller.play();
                                 },
+                                child: const Padding(
+                                  padding: EdgeInsets.all(12),
+                                  child: Icon(
+                                    CupertinoIcons.play_fill,
+                                    color: Color(0x33FFFFFF),
+                                    size: 76,
+                                  ),
+                                ),
                               ),
-                              const SizedBox(width: 14),
-                              _ActionButton(
-                                icon: CupertinoIcons.goforward_10,
-                                onTap: () async {
-                                  await _seekBy(const Duration(seconds: 10));
-                                },
-                              ),
-                            ],
-                          ),
-                        ),
+                            ),
+                        ],
                       );
                     },
                   ),
@@ -203,12 +212,10 @@ class _ActionButton extends StatelessWidget {
   const _ActionButton({
     required this.icon,
     required this.onTap,
-    this.size = 28,
   });
 
   final IconData icon;
   final Future<void> Function() onTap;
-  final double size;
 
   @override
   Widget build(BuildContext context) {
@@ -218,16 +225,16 @@ class _ActionButton extends StatelessWidget {
         onTap();
       },
       child: Container(
-        width: 52,
-        height: 52,
+        width: 42,
+        height: 42,
         decoration: const BoxDecoration(
-          color: Color(0x66000000),
+          color: Color(0x4D000000),
           shape: BoxShape.circle,
         ),
         child: Icon(
           icon,
-          color: CupertinoColors.white,
-          size: size,
+          color: const Color(0xE6FFFFFF),
+          size: 22,
         ),
       ),
     );

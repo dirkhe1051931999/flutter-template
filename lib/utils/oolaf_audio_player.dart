@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:audio_session/audio_session.dart';
 import 'package:just_audio/just_audio.dart';
 
+import 'package:oolaf_flutted/utils/helper.dart';
 import 'package:oolaf_flutted/utils/oolaf_audio_cache_proxy.dart';
 
 enum OolafFocusEvent {
@@ -123,9 +124,15 @@ class OolafAudioPlayer {
       final removedActive = event.devicesRemoved.any(
         _isHeadsetOrBluetoothOutput,
       );
-      if (removedActive && _player.playing) {
+      final hasReplacementOutput = event.devicesAdded.any(
+        _isHeadsetOrBluetoothOutput,
+      );
+      if (removedActive && !hasReplacementOutput && _player.playing) {
         _pausedByFocus = false;
         _player.pause();
+        customLogger.log(
+          'audio paused by devicesChangedEvent: active headset/bluetooth output removed without replacement',
+        );
         if (!_focusEventController.isClosed) {
           _focusEventController.add(OolafFocusEvent.pause);
         }
@@ -216,14 +223,27 @@ class OolafAudioPlayer {
     _hasStarted = false;
 
     if (Platform.isAndroid || Platform.isIOS || Platform.isMacOS) {
-      final cached = await OolafAudioCacheProxy.instance.getCachedFile(url);
-      if (cached != null) {
-        await _player.setFilePath(cached.path);
+      try {
+        final cached = await OolafAudioCacheProxy.instance.getCachedFile(url);
+        if (cached != null) {
+          await _player.setFilePath(cached.path);
+          return;
+        }
+      } catch (error, stackTrace) {
+        customLogger.log('setUrl with cached file failed: $error');
+        customLogger.log(stackTrace);
+      }
+
+      try {
+        final proxyUri = await _playableUriFor(url);
+        await _player.setUrl(proxyUri.toString());
+        return;
+      } catch (error, stackTrace) {
+        customLogger.log('setUrl via local proxy failed, fallback direct url: $error');
+        customLogger.log(stackTrace);
+        await _player.setUrl(url);
         return;
       }
-      final proxyUri = await _playableUriFor(url);
-      await _player.setUrl(proxyUri.toString());
-      return;
     }
 
     await _player.setUrl(url);

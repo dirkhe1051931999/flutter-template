@@ -23,5 +23,30 @@ AppState shortVideoReducer(AppState state, AppAction action) {
     );
   }
 
+  if (action is ShortVideoSetRecordWatchHistoryAction) {
+    return state.copyWith(
+      shortVideo: current.copyWith(
+        recordWatchHistory: action.recordWatchHistory,
+      ),
+    );
+  }
+
+  if (action is ShortVideoSetAutoPlayNextVideoAction) {
+    return state.copyWith(
+      shortVideo: current.copyWith(
+        autoPlayNextVideo: action.autoPlayNextVideo,
+      ),
+    );
+  }
+
+  if (action is ShortVideoRestorePreferencesAction) {
+    return state.copyWith(
+      shortVideo: current.copyWith(
+        recordWatchHistory: action.recordWatchHistory,
+        autoPlayNextVideo: action.autoPlayNextVideo,
+      ),
+    );
+  }
+
   return state;
 }

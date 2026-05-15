@@ -11,7 +11,6 @@ int nextShortVideoDailyOpenNum() {
   _shortVideoDailyOpenNumCounter += 1;
   return _shortVideoDailyOpenNumCounter;
 }
-
 const Map<String, String> _shortVideoFixedParams = {
   'id': 'RECOMVIDEO',
   'ch': 'sp',
@@ -34,6 +33,7 @@ const Map<String, String> _shortVideoFixedParams = {
   'st': '16395595277916',
   'sn': 'fcb480832205d27372f8e66d260e69d8',
 };
+
 
 Future<List<ShortVideoItem>> getShortVideoPage({
   required int pullNum,
