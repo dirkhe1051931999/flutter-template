@@ -6,10 +6,12 @@ class ShortVideoProgressBar extends StatelessWidget {
     super.key,
     required this.position,
     required this.duration,
+    this.bottomOffset = 0,
   });
 
   final ValueListenable<Duration> position;
   final ValueListenable<Duration> duration;
+  final double bottomOffset;
 
   @override
   Widget build(BuildContext context) {
@@ -23,8 +25,10 @@ class ShortVideoProgressBar extends StatelessWidget {
             final value =
                 total <= 0 ? 0.0 : (pos.inMilliseconds / total).clamp(0.0, 1.0);
 
-            return Align(
-              alignment: Alignment.bottomCenter,
+            return Positioned(
+              left: 0,
+              right: 0,
+              bottom: bottomOffset,
               child: SizedBox(
                 height: 2,
                 child: LinearProgressIndicator(

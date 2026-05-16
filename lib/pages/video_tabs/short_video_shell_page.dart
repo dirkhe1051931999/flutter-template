@@ -5,6 +5,7 @@ import 'package:oolaf_flutted/components/short_video/short_video_bottom_tab_bar.
 import 'package:oolaf_flutted/components/video_top_tabs/index.dart';
 import 'package:oolaf_flutted/pages/video_tabs/index.dart';
 import 'package:oolaf_flutted/pages/video_tabs/recomend_page.dart';
+import 'package:oolaf_flutted/pages/video_tabs/short_video_channel_manage_page.dart';
 import 'package:oolaf_flutted/pages/video_tabs/short_video_collection_page.dart';
 import 'package:oolaf_flutted/pages/video_tabs/watch_history_page.dart';
 import 'package:oolaf_flutted/pages/video_tabs/short_video_offline_cache_page.dart';
@@ -17,6 +18,7 @@ import 'package:oolaf_flutted/utils/short_video_blocked_persistence.dart';
 import 'package:oolaf_flutted/utils/short_video_collection_persistence.dart';
 import 'package:oolaf_flutted/utils/short_video_playback_progress_persistence.dart';
 import 'package:oolaf_flutted/utils/short_video_watch_history_persistence.dart';
+import 'package:oolaf_flutted/utils/short_video_channel_order_persistence.dart';
 import 'package:oolaf_flutted/utils/short_video_preferences_persistence.dart';
 import 'package:oolaf_flutted/utils/video_manager.dart';
 
@@ -41,11 +43,19 @@ class _ShortVideoPageState extends State<ShortVideoPage> {
   DateTime? _lastHomeTabTapAt;
   bool _isHomeTopTabSwitching = false;
   int _topTabLoadTicket = 0;
+  List<String> _channelOrderIds = VideoTabsRegistry.defaultChannelOrderIds;
   final List<GlobalKey<VideoTabRecomendPageState>> _feedPageKeys =
       List<GlobalKey<VideoTabRecomendPageState>>.generate(
         VideoTabsRegistry.feedTabCount,
         (_) => GlobalKey<VideoTabRecomendPageState>(),
       );
+
+  List<VideoTopTabItem> get _homeTabs {
+    return VideoTabsRegistry.buildTabs(
+      feedPageKeys: _feedPageKeys,
+      orderedChannelIds: _channelOrderIds,
+    );
+  }
 
   GlobalKey<VideoTabRecomendPageState>? _keyOfTopTab(int index) {
     if (index < 0 || index >= _feedPageKeys.length) {
@@ -59,6 +69,68 @@ class _ShortVideoPageState extends State<ShortVideoPage> {
       final visible = _activeTabIndex == 0 && i == activeIndex;
       _feedPageKeys[i].currentState?.onFeedVisibilityChanged(visible);
     }
+  }
+
+  Future<void> _restoreChannelOrder() async {
+    final savedIds = await ShortVideoChannelOrderPersistence.load();
+    if (!mounted || savedIds == null || savedIds.isEmpty) {
+      return;
+    }
+
+    final resolvedIds = VideoTabsRegistry.resolveChannelOrder(savedIds)
+        .map((meta) => meta.id)
+        .toList(growable: false);
+    if (resolvedIds.isEmpty) {
+      return;
+    }
+
+    setState(() {
+      _channelOrderIds = resolvedIds;
+      if (_activeHomeTopTabIndex >= _homeTabs.length) {
+        _activeHomeTopTabIndex = _homeTabs.length - 1;
+      }
+    });
+  }
+
+  Future<void> _openChannelManagePage() async {
+    final currentTabs = _homeTabs;
+    final currentActiveId =
+        currentTabs[_activeHomeTopTabIndex.clamp(0, currentTabs.length - 1)].id;
+
+    final result = await Navigator.of(context).push<List<String>>(
+      CupertinoPageRoute<List<String>>(
+        builder: (context) {
+          return ShortVideoChannelManagePage(
+            initialOrderIds: _channelOrderIds,
+          );
+        },
+      ),
+    );
+
+    if (!mounted || result == null || result.isEmpty) {
+      return;
+    }
+
+    final resolvedIds = VideoTabsRegistry.resolveChannelOrder(result)
+        .map((meta) => meta.id)
+        .toList(growable: false);
+    await ShortVideoChannelOrderPersistence.save(resolvedIds);
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _channelOrderIds = resolvedIds;
+      final newTabs = _homeTabs;
+      final nextIndex = newTabs.indexWhere((item) => item.id == currentActiveId);
+      _activeHomeTopTabIndex = nextIndex < 0 ? 0 : nextIndex;
+    });
+
+    _syncTopTabVisibility(activeIndex: _activeHomeTopTabIndex);
+    _scheduleEnsureTopTabLoaded(
+      _activeHomeTopTabIndex,
+      source: VideoTopTabChangeSource.tap,
+    );
   }
 
   Future<void> _scheduleEnsureTopTabLoaded(
@@ -88,10 +160,6 @@ class _ShortVideoPageState extends State<ShortVideoPage> {
     }
   }
 
-  late final List<VideoTopTabItem> _homeTabs = VideoTabsRegistry.buildTabs(
-    feedPageKeys: _feedPageKeys,
-  );
-
   void _onHomeTopTabChanged(int index, VideoTopTabChangeSource source) {
     if (_activeHomeTopTabIndex == index) {
       return;
@@ -105,6 +173,7 @@ class _ShortVideoPageState extends State<ShortVideoPage> {
   void initState() {
     super.initState();
     _restoreShortVideoPreferences();
+    _restoreChannelOrder();
     _pauseMusicForShortVideoEntry();
   }
 
@@ -199,6 +268,7 @@ class _ShortVideoPageState extends State<ShortVideoPage> {
                     items: _homeTabs,
                     initialIndex: _activeHomeTopTabIndex,
                     onIndexChanged: _onHomeTopTabChanged,
+                    onTapManage: _openChannelManagePage,
                   ),
                 ),
               );

@@ -3,7 +3,7 @@ import 'package:oolaf_flutted/store/short_video/state.dart';
 import 'package:oolaf_flutted/utils/helper.dart';
 import 'package:oolaf_flutted/utils/request.dart';
 
-const String _shortVideoFeedUrl = 'https://ifeng-api.oolaf.top/recomlist';
+const String _shortVideoFeedUrl = 'https://nine.ifeng.com/recomlist';
 const String _phoenixTvChannelUrl = 'https://nine.ifeng.com/phoenixTvChannel';
 
 class PhoenixTvChannelRequest {

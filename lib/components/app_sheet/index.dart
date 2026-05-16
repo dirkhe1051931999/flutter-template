@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 
 enum AppSheetPosition { top, bottom }
@@ -8,6 +10,9 @@ Future<T?> showAppSheet<T>({
   AppSheetPosition position = AppSheetPosition.bottom,
   String? barrierLabel,
   double? maxHeightFactor,
+  Color backgroundColor = Colors.white,
+  bool enableBlur = false,
+  bool edgeToEdge = false,
 }) {
   return showGeneralDialog<T>(
     context: context,
@@ -19,6 +24,9 @@ Future<T?> showAppSheet<T>({
       return AppSheet(
         position: position,
         maxHeightFactor: maxHeightFactor,
+        backgroundColor: backgroundColor,
+        enableBlur: enableBlur,
+        edgeToEdge: edgeToEdge,
         child: builder(context),
       );
     },
@@ -48,12 +56,18 @@ class AppSheet extends StatelessWidget {
     this.position = AppSheetPosition.bottom,
     this.maxHeightFactor,
     this.padding,
+    this.backgroundColor = Colors.white,
+    this.enableBlur = false,
+    this.edgeToEdge = false,
   });
 
   final Widget child;
   final AppSheetPosition position;
   final double? maxHeightFactor;
   final EdgeInsetsGeometry? padding;
+  final Color backgroundColor;
+  final bool enableBlur;
+  final bool edgeToEdge;
 
   @override
   Widget build(BuildContext context) {
@@ -71,13 +85,48 @@ class AppSheet extends StatelessWidget {
     };
     final safeBottom = MediaQuery.of(context).padding.bottom;
 
+    final content = Material(
+      color: backgroundColor,
+      borderRadius: borderRadius,
+      clipBehavior: Clip.antiAlias,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * (maxHeightFactor ?? 0.9),
+        ),
+        child: Padding(
+          padding: padding ??
+              EdgeInsets.fromLTRB(
+                16,
+                14,
+                16,
+                position == AppSheetPosition.bottom ? safeBottom + 18 : 18,
+              ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              AppSheetHandle(
+                color: backgroundColor.computeLuminance() < 0.35
+                    ? const Color(0x66FFFFFF)
+                    : const Color(0xFFD1D1D6),
+              ),
+              const SizedBox(height: 12),
+              Flexible(child: child),
+            ],
+          ),
+        ),
+      ),
+    );
+
     return SafeArea(
       top: position == AppSheetPosition.top,
       bottom: position == AppSheetPosition.bottom,
       child: Align(
         alignment: alignment,
         child: Container(
-          margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+          width: double.infinity,
+          margin: edgeToEdge
+              ? EdgeInsets.zero
+              : const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
           decoration: BoxDecoration(
             borderRadius: borderRadius,
             boxShadow: const [
@@ -88,34 +137,14 @@ class AppSheet extends StatelessWidget {
               ),
             ],
           ),
-          child: Material(
-            color: Colors.white,
+          child: ClipRRect(
             borderRadius: borderRadius,
-            clipBehavior: Clip.antiAlias,
-            child: ConstrainedBox(
-              constraints: BoxConstraints(
-                maxHeight: MediaQuery.of(context).size.height *
-                    (maxHeightFactor ?? 0.9),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(
+                sigmaX: enableBlur ? 18 : 0,
+                sigmaY: enableBlur ? 18 : 0,
               ),
-              child: Padding(
-                padding: padding ??
-                    EdgeInsets.fromLTRB(
-                      16,
-                      14,
-                      16,
-                      position == AppSheetPosition.bottom
-                          ? safeBottom + 18
-                          : 18,
-                    ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const AppSheetHandle(),
-                    const SizedBox(height: 12),
-                    Flexible(child: child),
-                  ],
-                ),
-              ),
+              child: content,
             ),
           ),
         ),
@@ -125,7 +154,12 @@ class AppSheet extends StatelessWidget {
 }
 
 class AppSheetHandle extends StatelessWidget {
-  const AppSheetHandle({super.key});
+  const AppSheetHandle({
+    super.key,
+    this.color = const Color(0xFFD1D1D6),
+  });
+
+  final Color color;
 
   @override
   Widget build(BuildContext context) {
@@ -133,7 +167,7 @@ class AppSheetHandle extends StatelessWidget {
       width: 44,
       height: 5,
       decoration: BoxDecoration(
-        color: const Color(0xFFD1D1D6),
+        color: color,
         borderRadius: BorderRadius.circular(99),
       ),
     );

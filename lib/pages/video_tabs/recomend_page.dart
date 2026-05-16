@@ -38,6 +38,8 @@ class VideoTabRecomendPage extends StatefulWidget {
 class VideoTabRecomendPageState extends State<VideoTabRecomendPage>
     with WidgetsBindingObserver, RouteAware, AutomaticKeepAliveClientMixin {
   static const int _loadMoreThreshold = 5;
+  static const double _pullRefreshTriggerOffset = 88;
+  static const double _pullRefreshIndicatorMaxOffset = 86;
   static final Map<String, _VideoTabCacheState> _tabStateCache =
       <String, _VideoTabCacheState>{};
 
@@ -63,6 +65,7 @@ class VideoTabRecomendPageState extends State<VideoTabRecomendPage>
   Set<String> _favoriteVideoIds = const <String>{};
   Set<String> _blockedVideoIds = const <String>{};
   int _lastProgressPersistAtMillis = 0;
+  double _pullRefreshIndicatorOffset = 0;
 
   OolafVideoController? _activeStatusObservedController;
   VoidCallback? _activeStatusListener;
@@ -361,31 +364,120 @@ class VideoTabRecomendPageState extends State<VideoTabRecomendPage>
     await showAppSheet<void>(
       context: context,
       barrierLabel: '视频操作',
-      maxHeightFactor: 0.46,
+      maxHeightFactor: 1,
+      backgroundColor: const Color(0xD9161616),
+      enableBlur: true,
+      edgeToEdge: true,
       builder: (sheetContext) {
         final isFavorite = _favoriteVideoIds.contains(item.id);
+        final currentPlaybackRate = _store?.state.shortVideo.playbackRate ?? 1.0;
+        const speedOptions = <double>[0.75, 1.0, 1.25, 1.5, 2.0];
 
-        Widget actionButton({
+        Widget sectionTitle(String label) {
+          return Text(
+            label,
+            style: const TextStyle(
+              color: CupertinoColors.white,
+              fontSize: 15,
+              fontWeight: FontWeight.w700,
+            ),
+          );
+        }
+
+        Widget actionTile({
+          required IconData icon,
           required String label,
           required Future<void> Function() onPressed,
-          bool destructive = false,
+          bool isDanger = false,
         }) {
-          return SizedBox(
-            width: double.infinity,
-            child: CupertinoButton(
-              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 0),
-              alignment: Alignment.centerLeft,
-              onPressed: () async {
-                Navigator.of(sheetContext).pop();
-                await onPressed();
-              },
+          return CupertinoButton(
+            minimumSize: Size.zero,
+            padding: EdgeInsets.zero,
+            onPressed: () async {
+              Navigator.of(sheetContext).pop();
+              await onPressed();
+            },
+            child: Column(
+              children: [
+                Container(
+                  height: 52,
+                  width: 52,
+                  decoration: BoxDecoration(
+                    color: isDanger
+                        ? const Color(0x29FF453A)
+                        : const Color(0x29FFFFFF),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Icon(
+                    icon,
+                    size: 24,
+                    color: isDanger
+                        ? CupertinoColors.systemRed
+                        : CupertinoColors.white,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  label,
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: isDanger
+                        ? CupertinoColors.systemRed
+                        : CupertinoColors.white,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
+
+        Widget actionGrid(List<Widget> tiles) {
+          return LayoutBuilder(
+            builder: (context, constraints) {
+              const crossSpacing = 12.0;
+              const runSpacing = 14.0;
+              final itemWidth = (constraints.maxWidth - crossSpacing * 3) / 4;
+
+              return Wrap(
+                spacing: crossSpacing,
+                runSpacing: runSpacing,
+                children: [
+                  for (final tile in tiles) SizedBox(width: itemWidth, child: tile),
+                ],
+              );
+            },
+          );
+        }
+
+        Widget speedChip(double rate) {
+          final selected = (currentPlaybackRate - rate).abs() < 0.001;
+          final label = '${rate.toStringAsFixed(2)}x';
+          return CupertinoButton(
+            minimumSize: Size.zero,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            onPressed: () async {
+              await _setPlaybackRate(rate);
+            },
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 160),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: selected
+                    ? CupertinoColors.white
+                    : const Color(0x29000000),
+                borderRadius: BorderRadius.circular(10),
+              ),
               child: Text(
                 label,
                 style: TextStyle(
-                  color: destructive
-                      ? CupertinoColors.systemRed
-                      : CupertinoColors.black,
-                  fontSize: 16,
+                  color: selected
+                      ? CupertinoColors.black
+                      : CupertinoColors.white,
+                  fontSize: 15,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -393,68 +485,84 @@ class VideoTabRecomendPageState extends State<VideoTabRecomendPage>
           );
         }
 
-        return Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              item.title,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                color: CupertinoColors.black,
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
+        return SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                item.title,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: CupertinoColors.white,
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
-            ),
-            const SizedBox(height: 8),
-            const SizedBox(
-              height: 1,
-              width: double.infinity,
-              child: ColoredBox(color: Color(0xFFE5E5EA)),
-            ),
-            actionButton(
-              label: isFavorite ? '取消喜欢' : '喜欢',
-              onPressed: () => _toggleFavorite(item),
-            ),
-            actionButton(
-              label: '稍后再看',
-              onPressed: () => _saveWatchLater(item),
-            ),
-            actionButton(
-              label: '复制链接',
-              onPressed: () => _copyShareText(item),
-            ),
-            actionButton(
-              label: '离线缓存',
-              onPressed: () => _saveOfflineCache(item),
-            ),
-            actionButton(
-              label: '0.75x 播放',
-              onPressed: () => _setPlaybackRate(0.75),
-            ),
-            actionButton(
-              label: '1.00x 播放',
-              onPressed: () => _setPlaybackRate(1.0),
-            ),
-            actionButton(
-              label: '1.25x 播放',
-              onPressed: () => _setPlaybackRate(1.25),
-            ),
-            actionButton(
-              label: '1.50x 播放',
-              onPressed: () => _setPlaybackRate(1.5),
-            ),
-            actionButton(
-              label: '2.00x 播放',
-              onPressed: () => _setPlaybackRate(2.0),
-            ),
-            actionButton(
-              label: '不感兴趣',
-              destructive: true,
-              onPressed: () => _markNotInterested(item),
-            ),
-          ],
+              const SizedBox(height: 10),
+              const SizedBox(
+                height: 1,
+                width: double.infinity,
+                child: ColoredBox(color: Color(0x33FFFFFF)),
+              ),
+              const SizedBox(height: 24),
+              sectionTitle('快捷操作'),
+              const SizedBox(height: 12),
+              actionGrid([
+                actionTile(
+                  icon: isFavorite
+                      ? CupertinoIcons.heart_slash_fill
+                      : CupertinoIcons.heart_fill,
+                  label: isFavorite ? '取消喜欢' : '喜欢',
+                  onPressed: () => _toggleFavorite(item),
+                ),
+                actionTile(
+                  icon: CupertinoIcons.time,
+                  label: '稍后再看',
+                  onPressed: () => _saveWatchLater(item),
+                ),
+                actionTile(
+                  icon: CupertinoIcons.link,
+                  label: '复制链接',
+                  onPressed: () => _copyShareText(item),
+                ),
+                actionTile(
+                  icon: CupertinoIcons.cloud_download,
+                  label: '离线缓存',
+                  onPressed: () => _saveOfflineCache(item),
+                ),
+              ]),
+              const SizedBox(height: 24),
+              sectionTitle('播放设置'),
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                decoration: BoxDecoration(
+                  color: const Color(0x29FFFFFF),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      for (final rate in speedOptions) speedChip(rate),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+              sectionTitle('内容管理'),
+              const SizedBox(height: 12),
+              actionGrid([
+                actionTile(
+                  icon: CupertinoIcons.hand_thumbsdown_fill,
+                  label: '不感兴趣',
+                  isDanger: true,
+                  onPressed: () => _markNotInterested(item),
+                ),
+              ]),
+            ],
+          ),
         );
       },
     );
@@ -709,6 +817,94 @@ class VideoTabRecomendPageState extends State<VideoTabRecomendPage>
       }
     } finally {
       _isAutoSkippingUnsupported = false;
+    }
+  }
+
+  void _onTopPullOffsetChanged(double offset) {
+    if (_isPaging || _activeIndex != 0) {
+      if (_pullRefreshIndicatorOffset != 0 && mounted) {
+        setState(() {
+          _pullRefreshIndicatorOffset = 0;
+        });
+      }
+      return;
+    }
+
+    final positiveOffset = offset > 0 ? offset : 0.0;
+    final nextOffset = positiveOffset > _pullRefreshIndicatorMaxOffset
+        ? _pullRefreshIndicatorMaxOffset
+        : positiveOffset;
+
+    if ((nextOffset - _pullRefreshIndicatorOffset).abs() < 0.5) {
+      return;
+    }
+
+    if (mounted) {
+      setState(() {
+        _pullRefreshIndicatorOffset = nextOffset;
+      });
+    }
+  }
+
+  Future<void> _refreshFromTop() async {
+    if (_isPaging) {
+      return;
+    }
+
+    final requestGeneration = ++_requestGeneration;
+    _isPaging = true;
+    _hasMore = true;
+    _nextPullNum = 1;
+    if (mounted) {
+      setState(() {
+        _isLoading = true;
+      });
+    }
+
+    try {
+      final items = await _fetchPage(pullNum: 1);
+      if (!mounted) {
+        return;
+      }
+      if (requestGeneration != _requestGeneration) {
+        return;
+      }
+
+      final filteredItems = _filterBlockedVideos(items);
+      final hasMore = items.isNotEmpty;
+      final nextPullNum = hasMore ? 2 : 1;
+
+      if (!_isFeedVisibleInTab) {
+        _cacheExplicitTabState(
+          items: filteredItems,
+          activeIndex: 0,
+          nextPullNum: nextPullNum,
+          hasMore: hasMore,
+        );
+        _hasMore = hasMore;
+        _nextPullNum = nextPullNum;
+        _didAutoPlayFirst = false;
+        return;
+      }
+
+      _nextPullNum = nextPullNum;
+      _hasMore = hasMore;
+
+      _items = filteredItems;
+      _activeIndex = 0;
+      _videoManager.setSources(_buildVideoSources(filteredItems));
+      _didAutoPlayFirst = false;
+
+      if (_pageController.hasClients) {
+        _pageController.jumpToPage(0);
+      }
+    } finally {
+      if (mounted && requestGeneration == _requestGeneration) {
+        setState(() {
+          _isLoading = false;
+        });
+        _isPaging = false;
+      }
     }
   }
 
@@ -989,6 +1185,15 @@ class VideoTabRecomendPageState extends State<VideoTabRecomendPage>
     final shortVideoState = store?.state.shortVideo;
     final preloadPagesCount = shortVideoState?.preloadPagesCount ?? 2;
     final keepWindow = shortVideoState?.keepWindow ?? 1;
+    final canRefreshByPull = !_isLoading && _activeIndex == 0;
+    final shouldRefreshByRelease =
+        canRefreshByPull &&
+        _pullRefreshIndicatorOffset >= _pullRefreshTriggerOffset;
+    final indicatorOpacity = _isLoading
+        ? 1.0
+        : (_pullRefreshIndicatorOffset / _pullRefreshTriggerOffset)
+            .clamp(0.0, 1.0)
+            .toDouble();
     VideoManager.instance.keepWindow = keepWindow;
 
     if (_isFeedVisibleInTab && !_didAutoPlayFirst && items.isNotEmpty) {
@@ -1041,6 +1246,8 @@ class VideoTabRecomendPageState extends State<VideoTabRecomendPage>
                       RepaintBoundary(
                         child: ShortVideoPlayerWrapper(
                           controller: controller,
+                          progressBarBottomOffset:
+                              52 + MediaQuery.of(context).viewPadding.bottom,
                           fit: shortVideoState?.videoFitMode == 'cover' 
                               ? BoxFit.cover 
                               : BoxFit.contain,
@@ -1066,8 +1273,20 @@ class VideoTabRecomendPageState extends State<VideoTabRecomendPage>
                             await _showNextVideo();
                           },
                           onSwipeDown: () async {
+                            if (index == 0) {
+                              if (_pullRefreshIndicatorOffset > 0 && mounted) {
+                                setState(() {
+                                  _pullRefreshIndicatorOffset = 0;
+                                });
+                              }
+                              await _refreshFromTop();
+                              return;
+                            }
                             await _showPreviousVideo();
                           },
+                          onVerticalDragOffsetChanged: index == 0
+                              ? _onTopPullOffsetChanged
+                              : null,
                         ),
                       ),
                       RepaintBoundary(
@@ -1087,6 +1306,89 @@ class VideoTabRecomendPageState extends State<VideoTabRecomendPage>
                           },
                         ),
                       ),
+                      if (index == 0)
+                        Positioned(
+                          top: MediaQuery.of(context).padding.top + 12,
+                          left: 0,
+                          right: 0,
+                          child: AbsorbPointer(
+                            absorbing: true,
+                            child: AnimatedSlide(
+                              duration: const Duration(milliseconds: 180),
+                              curve: Curves.easeOutCubic,
+                              offset: Offset(
+                                0,
+                                (_isLoading || _pullRefreshIndicatorOffset > 0)
+                                    ? 0
+                                    : -1.2,
+                              ),
+                              child: AnimatedOpacity(
+                                duration: const Duration(milliseconds: 120),
+                                opacity: indicatorOpacity,
+                                child: Center(
+                                  child: AnimatedContainer(
+                                    duration: const Duration(milliseconds: 120),
+                                    curve: Curves.easeOut,
+                                    transform: Matrix4.translationValues(
+                                      0,
+                                      _isLoading
+                                          ? 0
+                                          : _pullRefreshIndicatorOffset * 0.38,
+                                      0,
+                                    ),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 14,
+                                      vertical: 8,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xB2181818),
+                                      borderRadius: BorderRadius.circular(999),
+                                      border: Border.all(
+                                        color: const Color(0x33FFFFFF),
+                                        width: 1,
+                                      ),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        if (_isLoading)
+                                          const SizedBox(
+                                            height: 14,
+                                            width: 14,
+                                            child: CupertinoActivityIndicator(
+                                              radius: 7,
+                                              color: CupertinoColors.white,
+                                            ),
+                                          )
+                                        else
+                                          Icon(
+                                            shouldRefreshByRelease
+                                                ? CupertinoIcons.arrow_up
+                                                : CupertinoIcons.arrow_down,
+                                            color: CupertinoColors.white,
+                                            size: 14,
+                                          ),
+                                        const SizedBox(width: 8),
+                                        Text(
+                                          _isLoading
+                                              ? '刷新中...'
+                                              : (shouldRefreshByRelease
+                                                    ? '松手刷新'
+                                                    : '下拉刷新'),
+                                          style: const TextStyle(
+                                            color: CupertinoColors.white,
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
                     ],
                   ),
                 );

@@ -12,6 +12,8 @@ class ShortVideoPlayerWrapper extends StatefulWidget {
     required this.onDoubleTap,
     required this.onSwipeUp,
     required this.onSwipeDown,
+    this.onVerticalDragOffsetChanged,
+    this.progressBarBottomOffset = 0,
     this.fit,
   });
 
@@ -21,6 +23,8 @@ class ShortVideoPlayerWrapper extends StatefulWidget {
   final VoidCallback onDoubleTap;
   final VoidCallback onSwipeUp;
   final VoidCallback onSwipeDown;
+  final ValueChanged<double>? onVerticalDragOffsetChanged;
+  final double progressBarBottomOffset;
   final BoxFit? fit;
 
   @override
@@ -33,6 +37,7 @@ class _ShortVideoPlayerWrapperState extends State<ShortVideoPlayerWrapper> {
   static const double _tabBarHeight = 50;
 
   Offset? _lastDoubleTapPosition;
+  double _verticalDragOffset = 0;
 
   bool _isLandscapeVideo(Size? videoSize) {
     return videoSize != null &&
@@ -94,6 +99,7 @@ class _ShortVideoPlayerWrapperState extends State<ShortVideoPlayerWrapper> {
                   ShortVideoProgressBar(
                     position: controller.position,
                     duration: controller.duration,
+                    bottomOffset: widget.progressBarBottomOffset,
                   ),
                   ValueListenableBuilder<bool>(
                     valueListenable: controller.isPlaying,
@@ -180,8 +186,22 @@ class _ShortVideoPlayerWrapperState extends State<ShortVideoPlayerWrapper> {
           onTap: widget.onSingleTap,
           onLongPress: widget.onLongPress,
           onSecondaryTap: widget.onLongPress,
+          onVerticalDragStart: (_) {
+            _verticalDragOffset = 0;
+            widget.onVerticalDragOffsetChanged?.call(0);
+          },
+          onVerticalDragUpdate: (details) {
+            final delta = details.primaryDelta;
+            if (delta == null) {
+              return;
+            }
+            _verticalDragOffset += delta;
+            widget.onVerticalDragOffsetChanged?.call(_verticalDragOffset);
+          },
           onVerticalDragEnd: (details) {
             final velocity = details.primaryVelocity;
+            _verticalDragOffset = 0;
+            widget.onVerticalDragOffsetChanged?.call(0);
             if (velocity == null) {
               return;
             }
@@ -193,6 +213,10 @@ class _ShortVideoPlayerWrapperState extends State<ShortVideoPlayerWrapper> {
             if (velocity >= _swipeVelocityThreshold) {
               widget.onSwipeDown();
             }
+          },
+          onVerticalDragCancel: () {
+            _verticalDragOffset = 0;
+            widget.onVerticalDragOffsetChanged?.call(0);
           },
           onDoubleTapDown: (details) {
             _lastDoubleTapPosition = details.localPosition;

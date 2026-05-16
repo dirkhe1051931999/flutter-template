@@ -26,11 +26,13 @@ class VideoTopTabs extends StatefulWidget {
     required this.items,
     this.initialIndex = 0,
     this.onIndexChanged,
+    this.onTapManage,
   });
 
   final List<VideoTopTabItem> items;
   final int initialIndex;
   final VideoTopTabChanged? onIndexChanged;
+  final VoidCallback? onTapManage;
 
   @override
   State<VideoTopTabs> createState() => _VideoTopTabsState();
@@ -151,59 +153,79 @@ class _VideoTopTabsState extends State<VideoTopTabs> {
         RepaintBoundary(
           child: SizedBox(
             height: _barHeight,
-            child: ScrollConfiguration(
-              behavior: const CupertinoScrollBehavior().copyWith(
-                dragDevices: _dragDevices,
-              ),
-              child: ValueListenableBuilder<int>(
-                valueListenable: _currentIndexNotifier,
-                builder: (context, currentIndex, _) {
-                  return ListView.builder(
-                    controller: _tabScrollController,
-                    scrollDirection: Axis.horizontal,
-                    physics: const BouncingScrollPhysics(),
-                    padding: const EdgeInsets.symmetric(horizontal: 10),
-                    itemCount: widget.items.length,
-                    itemBuilder: (context, index) {
-                      final item = widget.items[index];
-                      final isActive = index == currentIndex;
+            child: Row(
+              children: [
+                Expanded(
+                  child: ScrollConfiguration(
+                    behavior: const CupertinoScrollBehavior().copyWith(
+                      dragDevices: _dragDevices,
+                    ),
+                    child: ValueListenableBuilder<int>(
+                      valueListenable: _currentIndexNotifier,
+                      builder: (context, currentIndex, _) {
+                        return ListView.builder(
+                          controller: _tabScrollController,
+                          scrollDirection: Axis.horizontal,
+                          physics: const BouncingScrollPhysics(),
+                          padding: const EdgeInsets.symmetric(horizontal: 10),
+                          itemCount: widget.items.length,
+                          itemBuilder: (context, index) {
+                            final item = widget.items[index];
+                            final isActive = index == currentIndex;
 
-                      return CupertinoButton(
-                        padding: const EdgeInsets.symmetric(horizontal: 12),
-                        minimumSize: Size.zero,
-                        onPressed: () => _onTapTab(index),
-                        child: DecoratedBox(
-                          decoration: BoxDecoration(
-                            border: Border(
-                              bottom: BorderSide(
-                                color: isActive
-                                    ? CupertinoColors.white
-                                    : CupertinoColors.transparent,
-                                width: 2,
+                            return CupertinoButton(
+                              padding: const EdgeInsets.symmetric(horizontal: 12),
+                              minimumSize: Size.zero,
+                              onPressed: () => _onTapTab(index),
+                              child: DecoratedBox(
+                                decoration: BoxDecoration(
+                                  border: Border(
+                                    bottom: BorderSide(
+                                      color: isActive
+                                          ? CupertinoColors.white
+                                          : CupertinoColors.transparent,
+                                      width: 2,
+                                    ),
+                                  ),
+                                ),
+                                child: Padding(
+                                  padding: const EdgeInsets.only(bottom: 6),
+                                  child: Text(
+                                    item.label,
+                                    style: TextStyle(
+                                      color: isActive
+                                          ? CupertinoColors.white
+                                          : const Color(0xB3FFFFFF),
+                                      fontSize: isActive ? 18 : 16,
+                                      fontWeight: isActive
+                                          ? FontWeight.w700
+                                          : FontWeight.w500,
+                                    ),
+                                  ),
+                                ),
                               ),
-                            ),
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.only(bottom: 6),
-                            child: Text(
-                              item.label,
-                              style: TextStyle(
-                                color: isActive
-                                    ? CupertinoColors.white
-                                    : const Color(0xB3FFFFFF),
-                                fontSize: isActive ? 18 : 16,
-                                fontWeight: isActive
-                                    ? FontWeight.w700
-                                    : FontWeight.w500,
-                              ),
-                            ),
-                          ),
-                        ),
-                      );
-                    },
-                  );
-                },
-              ),
+                            );
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                ),
+                if (widget.onTapManage != null)
+                  Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: CupertinoButton(
+                      padding: const EdgeInsets.all(6),
+                      minimumSize: Size.zero,
+                      onPressed: widget.onTapManage,
+                      child: const Icon(
+                        CupertinoIcons.add,
+                        color: CupertinoColors.white,
+                        size: 20,
+                      ),
+                    ),
+                  ),
+              ],
             ),
           ),
         ),

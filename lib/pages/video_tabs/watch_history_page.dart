@@ -186,42 +186,45 @@ class _ShortVideoWatchHistoryPageState extends State<ShortVideoWatchHistoryPage>
                           )
                         : CustomScrollView(
                             slivers: [
-                              for (final section in visibleSections) ...[
-                                SliverPersistentHeader(
-                                  pinned: true,
-                                  delegate: _ShortVideoHistoryHeaderDelegate(
-                                    height: 30,
-                                    label: section.dateLabel,
-                                  ),
-                                ),
-                                SliverPadding(
-                                  padding: const EdgeInsets.fromLTRB(4, 0, 4, 10),
-                                  sliver: SliverGrid(
-                                    delegate: SliverChildBuilderDelegate(
-                                      (context, index) {
-                                        final entry = section.entries[index];
-                                        return _HistoryGridItem(
-                                          entry: entry,
-                                          onTap: () {
-                                            _openHistoryPlayPage(entry);
-                                          },
-                                          onLongPress: () {
-                                            _deleteSingle(entry.videoId);
-                                          },
-                                        );
-                                      },
-                                      childCount: section.entries.length,
+                              for (final section in visibleSections)
+                                SliverMainAxisGroup(
+                                  slivers: [
+                                    SliverPersistentHeader(
+                                      pinned: true,
+                                      delegate: _ShortVideoHistoryHeaderDelegate(
+                                        height: 30,
+                                        label: section.dateLabel,
+                                      ),
                                     ),
-                                    gridDelegate:
-                                        const SliverGridDelegateWithFixedCrossAxisCount(
-                                      crossAxisCount: _gridCrossAxisCount,
-                                      crossAxisSpacing: _gridGap,
-                                      mainAxisSpacing: _gridGap,
-                                      childAspectRatio: 0.62,
+                                    SliverPadding(
+                                      padding: const EdgeInsets.fromLTRB(4, 0, 4, 10),
+                                      sliver: SliverGrid(
+                                        delegate: SliverChildBuilderDelegate(
+                                          (context, index) {
+                                            final entry = section.entries[index];
+                                            return _HistoryGridItem(
+                                              entry: entry,
+                                              onTap: () {
+                                                _openHistoryPlayPage(entry);
+                                              },
+                                              onLongPress: () {
+                                                _deleteSingle(entry.videoId);
+                                              },
+                                            );
+                                          },
+                                          childCount: section.entries.length,
+                                        ),
+                                        gridDelegate:
+                                            const SliverGridDelegateWithFixedCrossAxisCount(
+                                          crossAxisCount: _gridCrossAxisCount,
+                                          crossAxisSpacing: _gridGap,
+                                          mainAxisSpacing: _gridGap,
+                                          childAspectRatio: 0.62,
+                                        ),
+                                      ),
                                     ),
-                                  ),
+                                  ],
                                 ),
-                              ],
                             ],
                           ),
                   ),
