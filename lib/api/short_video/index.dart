@@ -1,5 +1,7 @@
 import 'package:dio/dio.dart';
+import 'package:oolaf_flutted/model/short_video/danmaku_item.dart';
 import 'package:oolaf_flutted/store/short_video/state.dart';
+import 'package:oolaf_flutted/utils/danmu_data.dart';
 import 'package:oolaf_flutted/utils/helper.dart';
 import 'package:oolaf_flutted/utils/request.dart';
 
@@ -114,6 +116,10 @@ Future<List<ShortVideoItem>> getShortVideoPage({
     customLogger.log(stackTrace);
     return const <ShortVideoItem>[];
   }
+}
+
+Future<List<DanmakuItem>> getDanmaku(String videoId) async {
+  return generateMockDanmakuItems(videoId);
 }
 
 List<ShortVideoItem> _extractShortVideoItems(dynamic responseData) {

@@ -27,6 +27,12 @@ class ShortVideoState {
     required this.preloadPagesCount,
     required this.keepWindow,
     required this.videoFitMode,
+    required this.danmakuEnabled,
+    required this.danmakuOpacity,
+    required this.danmakuFontScale,
+    required this.danmakuFontWeight,
+    required this.danmakuSpeed,
+    required this.danmakuArea,
   });
 
   final bool isLoading;
@@ -38,6 +44,12 @@ class ShortVideoState {
   final int preloadPagesCount;
   final int keepWindow;
   final String videoFitMode;
+  final bool danmakuEnabled;
+  final double danmakuOpacity;
+  final double danmakuFontScale;
+  final int danmakuFontWeight;
+  final double danmakuSpeed;
+  final double danmakuArea;
 
   factory ShortVideoState.initial() {
     return const ShortVideoState(
@@ -50,6 +62,12 @@ class ShortVideoState {
       preloadPagesCount: 2,
       keepWindow: 1,
       videoFitMode: 'cover',
+      danmakuEnabled: true,
+      danmakuOpacity: 0.82,
+      danmakuFontScale: 1.0,
+      danmakuFontWeight: 600,
+      danmakuSpeed: 1.0,
+      danmakuArea: 0.7,
     );
   }
 
@@ -63,6 +81,12 @@ class ShortVideoState {
     int? preloadPagesCount,
     int? keepWindow,
     String? videoFitMode,
+    bool? danmakuEnabled,
+    double? danmakuOpacity,
+    double? danmakuFontScale,
+    int? danmakuFontWeight,
+    double? danmakuSpeed,
+    double? danmakuArea,
   }) {
     return ShortVideoState(
       isLoading: isLoading ?? this.isLoading,
@@ -74,6 +98,12 @@ class ShortVideoState {
       preloadPagesCount: preloadPagesCount ?? this.preloadPagesCount,
       keepWindow: keepWindow ?? this.keepWindow,
       videoFitMode: videoFitMode ?? this.videoFitMode,
+      danmakuEnabled: danmakuEnabled ?? this.danmakuEnabled,
+      danmakuOpacity: danmakuOpacity ?? this.danmakuOpacity,
+      danmakuFontScale: danmakuFontScale ?? this.danmakuFontScale,
+      danmakuFontWeight: danmakuFontWeight ?? this.danmakuFontWeight,
+      danmakuSpeed: danmakuSpeed ?? this.danmakuSpeed,
+      danmakuArea: danmakuArea ?? this.danmakuArea,
     );
   }
 }

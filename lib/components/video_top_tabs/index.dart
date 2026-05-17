@@ -26,12 +26,14 @@ class VideoTopTabs extends StatefulWidget {
     required this.items,
     this.initialIndex = 0,
     this.onIndexChanged,
+    this.onTapSearch,
     this.onTapManage,
   });
 
   final List<VideoTopTabItem> items;
   final int initialIndex;
   final VideoTopTabChanged? onIndexChanged;
+  final VoidCallback? onTapSearch;
   final VoidCallback? onTapManage;
 
   @override
@@ -211,18 +213,35 @@ class _VideoTopTabsState extends State<VideoTopTabs> {
                     ),
                   ),
                 ),
-                if (widget.onTapManage != null)
+                if (widget.onTapSearch != null || widget.onTapManage != null)
                   Padding(
                     padding: const EdgeInsets.only(right: 8),
-                    child: CupertinoButton(
-                      padding: const EdgeInsets.all(6),
-                      minimumSize: Size.zero,
-                      onPressed: widget.onTapManage,
-                      child: const Icon(
-                        CupertinoIcons.add,
-                        color: CupertinoColors.white,
-                        size: 20,
-                      ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (widget.onTapSearch != null)
+                          CupertinoButton(
+                            padding: const EdgeInsets.all(6),
+                            minimumSize: Size.zero,
+                            onPressed: widget.onTapSearch,
+                            child: const Icon(
+                              CupertinoIcons.search,
+                              color: CupertinoColors.white,
+                              size: 19,
+                            ),
+                          ),
+                        if (widget.onTapManage != null)
+                          CupertinoButton(
+                            padding: const EdgeInsets.all(6),
+                            minimumSize: Size.zero,
+                            onPressed: widget.onTapManage,
+                            child: const Icon(
+                              CupertinoIcons.add,
+                              color: CupertinoColors.white,
+                              size: 20,
+                            ),
+                          ),
+                      ],
                     ),
                   ),
               ],

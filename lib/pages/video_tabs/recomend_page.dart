@@ -4,8 +4,10 @@ import 'package:flutter_redux/flutter_redux.dart';
 import 'package:oolaf_flutted/api/short_video/index.dart';
 import 'package:oolaf_flutted/components/app_sheet/index.dart';
 import 'package:oolaf_flutted/components/short_video/comment_sheet.dart';
+import 'package:oolaf_flutted/components/short_video/danmaku_overlay.dart';
 import 'package:oolaf_flutted/components/short_video/interaction_overlay.dart';
 import 'package:oolaf_flutted/components/short_video/short_video_player_wrapper.dart';
+import 'package:oolaf_flutted/model/short_video/danmaku_item.dart';
 import 'package:oolaf_flutted/router/route_observer.dart';
 import 'package:oolaf_flutted/store/index.dart';
 import 'package:oolaf_flutted/store/short_video/action.dart';
@@ -66,6 +68,9 @@ class VideoTabRecomendPageState extends State<VideoTabRecomendPage>
   Set<String> _blockedVideoIds = const <String>{};
   int _lastProgressPersistAtMillis = 0;
   double _pullRefreshIndicatorOffset = 0;
+  final Map<String, List<DanmakuItem>> _danmakuCache =
+      <String, List<DanmakuItem>>{};
+  final Set<String> _danmakuLoadingVideoIds = <String>{};
 
   OolafVideoController? _activeStatusObservedController;
   VoidCallback? _activeStatusListener;
@@ -76,6 +81,18 @@ class VideoTabRecomendPageState extends State<VideoTabRecomendPage>
   String? _lastAutoNextTriggeredVideoId;
 
   bool get _isChannelFeed => widget.channelRequest != null;
+
+  ShortVideoItem? get currentActiveItem {
+    if (_items.isEmpty || _activeIndex < 0 || _activeIndex >= _items.length) {
+      return null;
+    }
+    return _items[_activeIndex];
+  }
+
+  Future<void> pauseForSearchEntry() async {
+    await _persistActivePlaybackProgress();
+    await _videoManager.pauseAll();
+  }
 
   String get _videoManagerOwnerKey {
     final request = widget.channelRequest;
@@ -142,6 +159,12 @@ class VideoTabRecomendPageState extends State<VideoTabRecomendPage>
       preloadPagesCount: latest.preloadPagesCount,
       keepWindow: latest.keepWindow,
       videoFitMode: latest.videoFitMode,
+      danmakuEnabled: latest.danmakuEnabled,
+      danmakuOpacity: latest.danmakuOpacity,
+      danmakuFontScale: latest.danmakuFontScale,
+      danmakuFontWeight: latest.danmakuFontWeight,
+      danmakuSpeed: latest.danmakuSpeed,
+      danmakuArea: latest.danmakuArea,
     );
   }
 
@@ -261,6 +284,44 @@ class VideoTabRecomendPageState extends State<VideoTabRecomendPage>
     await Clipboard.setData(
       ClipboardData(text: '${item.title}\n${item.videoUrl}'),
     );
+  }
+
+  Future<void> _prefetchDanmakuForIndex(int index) async {
+    if (index < 0 || index >= _items.length) {
+      return;
+    }
+    final item = _items[index];
+    final videoId = item.id;
+    if (videoId.isEmpty) {
+      return;
+    }
+    if (_danmakuCache.containsKey(videoId) ||
+        _danmakuLoadingVideoIds.contains(videoId)) {
+      return;
+    }
+
+    _danmakuLoadingVideoIds.add(videoId);
+    try {
+      final items = await getDanmaku(videoId);
+      if (!mounted) {
+        return;
+      }
+      _danmakuCache[videoId] = items;
+      setState(() {});
+    } finally {
+      _danmakuLoadingVideoIds.remove(videoId);
+    }
+  }
+
+  Future<void> _prefetchDanmakuAroundActive() async {
+    final current = _activeIndex;
+    await _prefetchDanmakuForIndex(current);
+    await _prefetchDanmakuForIndex(current + 1);
+  }
+
+  void _clearDanmakuCacheForCurrentFeed() {
+    _danmakuCache.clear();
+    _danmakuLoadingVideoIds.clear();
   }
 
   Future<void> _loadBlockedState() async {
@@ -852,6 +913,7 @@ class VideoTabRecomendPageState extends State<VideoTabRecomendPage>
     }
 
     final requestGeneration = ++_requestGeneration;
+    _clearDanmakuCacheForCurrentFeed();
     _isPaging = true;
     _hasMore = true;
     _nextPullNum = 1;
@@ -894,6 +956,7 @@ class VideoTabRecomendPageState extends State<VideoTabRecomendPage>
       _activeIndex = 0;
       _videoManager.setSources(_buildVideoSources(filteredItems));
       _didAutoPlayFirst = false;
+      _prefetchDanmakuAroundActive();
 
       if (_pageController.hasClients) {
         _pageController.jumpToPage(0);
@@ -916,6 +979,7 @@ class VideoTabRecomendPageState extends State<VideoTabRecomendPage>
     final activeItem = _items[index];
 
     _activeIndex = index;
+    _prefetchDanmakuAroundActive();
     await _recordWatchHistoryIfEnabled(activeItem);
     _lastAutoNextTriggeredVideoId = null;
     _videoManager.setSources(
@@ -974,6 +1038,7 @@ class VideoTabRecomendPageState extends State<VideoTabRecomendPage>
     }
 
     final requestGeneration = ++_requestGeneration;
+    _clearDanmakuCacheForCurrentFeed();
     _isPaging = true;
     _hasMore = true;
     _nextPullNum = _initialPullNum;
@@ -1015,6 +1080,7 @@ class VideoTabRecomendPageState extends State<VideoTabRecomendPage>
       _activeIndex = 0;
       _videoManager.setSources(_buildVideoSources(filteredItems));
       _didAutoPlayFirst = false;
+      _prefetchDanmakuAroundActive();
     } finally {
       if (mounted && requestGeneration == _requestGeneration) {
         setState(() {
@@ -1074,6 +1140,7 @@ class VideoTabRecomendPageState extends State<VideoTabRecomendPage>
 
       _items = merged;
       _videoManager.setSources(_buildVideoSources(merged));
+      _prefetchDanmakuForIndex(_activeIndex + 1);
       if (mounted) {
         setState(() {});
       }
@@ -1287,6 +1354,22 @@ class VideoTabRecomendPageState extends State<VideoTabRecomendPage>
                           onVerticalDragOffsetChanged: index == 0
                               ? _onTopPullOffsetChanged
                               : null,
+                        ),
+                      ),
+                      RepaintBoundary(
+                        child: ShortVideoDanmakuOverlay(
+                          videoId: item.id,
+                          title: item.title,
+                          source: item.source ?? '',
+                          controller: controller,
+                          items: _danmakuCache[item.id],
+                          enabled:
+                              index == _activeIndex && (shortVideoState?.danmakuEnabled ?? true),
+                          opacity: shortVideoState?.danmakuOpacity ?? 0.82,
+                          fontScale: shortVideoState?.danmakuFontScale ?? 1.0,
+                          fontWeight: shortVideoState?.danmakuFontWeight ?? 600,
+                          speed: shortVideoState?.danmakuSpeed ?? 1.0,
+                          areaRatio: shortVideoState?.danmakuArea ?? 0.7,
                         ),
                       ),
                       RepaintBoundary(

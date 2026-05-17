@@ -7,6 +7,7 @@ import 'package:oolaf_flutted/pages/video_tabs/index.dart';
 import 'package:oolaf_flutted/pages/video_tabs/recomend_page.dart';
 import 'package:oolaf_flutted/pages/video_tabs/short_video_channel_manage_page.dart';
 import 'package:oolaf_flutted/pages/video_tabs/short_video_collection_page.dart';
+import 'package:oolaf_flutted/pages/video_tabs/short_video_search_page.dart';
 import 'package:oolaf_flutted/pages/video_tabs/watch_history_page.dart';
 import 'package:oolaf_flutted/pages/video_tabs/short_video_offline_cache_page.dart';
 import 'package:oolaf_flutted/store/index.dart';
@@ -20,6 +21,7 @@ import 'package:oolaf_flutted/utils/short_video_playback_progress_persistence.da
 import 'package:oolaf_flutted/utils/short_video_watch_history_persistence.dart';
 import 'package:oolaf_flutted/utils/short_video_channel_order_persistence.dart';
 import 'package:oolaf_flutted/utils/short_video_preferences_persistence.dart';
+import 'package:oolaf_flutted/utils/short_video_search_history_persistence.dart';
 import 'package:oolaf_flutted/utils/video_manager.dart';
 
 class ShortVideoPage extends StatefulWidget {
@@ -133,6 +135,26 @@ class _ShortVideoPageState extends State<ShortVideoPage> {
     );
   }
 
+  Future<void> _openSearchPage() async {
+    final activeState = _keyOfTopTab(_activeHomeTopTabIndex)?.currentState;
+    await activeState?.pauseForSearchEntry();
+    if (!mounted) {
+      return;
+    }
+    final activeItem = activeState?.currentActiveItem;
+    final seedTitle = activeItem?.title ?? '热门短视频';
+    final seedSource = activeItem?.source;
+
+    await Navigator.of(context).push<void>(
+      CupertinoPageRoute<void>(
+        builder: (_) => ShortVideoSearchPage(
+          seedTitle: seedTitle,
+          seedSource: seedSource,
+        ),
+      ),
+    );
+  }
+
   Future<void> _scheduleEnsureTopTabLoaded(
     int index, {
     required VideoTopTabChangeSource source,
@@ -243,6 +265,12 @@ class _ShortVideoPageState extends State<ShortVideoPage> {
         preloadPagesCount: snapshot.preloadPagesCount,
         keepWindow: snapshot.keepWindow,
         videoFitMode: snapshot.videoFitMode,
+        danmakuEnabled: snapshot.danmakuEnabled,
+        danmakuOpacity: snapshot.danmakuOpacity,
+        danmakuFontScale: snapshot.danmakuFontScale,
+        danmakuFontWeight: snapshot.danmakuFontWeight,
+        danmakuSpeed: snapshot.danmakuSpeed,
+        danmakuArea: snapshot.danmakuArea,
       ),
     );
   }
@@ -268,6 +296,7 @@ class _ShortVideoPageState extends State<ShortVideoPage> {
                     items: _homeTabs,
                     initialIndex: _activeHomeTopTabIndex,
                     onIndexChanged: _onHomeTopTabChanged,
+                    onTapSearch: _openSearchPage,
                     onTapManage: _openChannelManagePage,
                   ),
                 ),
@@ -327,6 +356,7 @@ class _ShortVideoProfilePageState extends State<_ShortVideoProfilePage> {
     await ShortVideoCollectionPersistence.watchLater.clearAll();
     await ShortVideoBlockedPersistence.clearAll();
     await ShortVideoPlaybackProgressPersistence.clearAll();
+    await ShortVideoSearchHistoryPersistence.clearAll();
     await VideoManager.instance.disposeAll();
 
     if (!mounted) {
@@ -338,7 +368,7 @@ class _ShortVideoProfilePageState extends State<_ShortVideoProfilePage> {
       builder: (context) {
         return CupertinoAlertDialog(
           title: const Text('清理完成'),
-          content: const Text('本地缓存、收藏、稍后再看与历史记录已清空。'),
+          content: const Text('本地缓存、收藏、稍后再看、历史记录与搜索历史已清空。'),
           actions: [
             CupertinoDialogAction(
               onPressed: () {
@@ -559,6 +589,12 @@ class _ShortVideoSettingsPageState extends State<_ShortVideoSettingsPage> {
       preloadPagesCount: latest.preloadPagesCount,
       keepWindow: latest.keepWindow,
       videoFitMode: latest.videoFitMode,
+      danmakuEnabled: latest.danmakuEnabled,
+      danmakuOpacity: latest.danmakuOpacity,
+      danmakuFontScale: latest.danmakuFontScale,
+      danmakuFontWeight: latest.danmakuFontWeight,
+      danmakuSpeed: latest.danmakuSpeed,
+      danmakuArea: latest.danmakuArea,
     );
   }
 
@@ -597,6 +633,42 @@ class _ShortVideoSettingsPageState extends State<_ShortVideoSettingsPage> {
     await _saveLatestPreferences();
   }
 
+  Future<void> _setDanmakuEnabled(bool value) async {
+    final store = StoreProvider.of<AppState>(context, listen: false);
+    store.dispatch(ShortVideoSetDanmakuEnabledAction(value));
+    await _saveLatestPreferences();
+  }
+
+  Future<void> _setDanmakuOpacity(double value) async {
+    final store = StoreProvider.of<AppState>(context, listen: false);
+    store.dispatch(ShortVideoSetDanmakuOpacityAction(value.clamp(0.2, 1.0)));
+    await _saveLatestPreferences();
+  }
+
+  Future<void> _setDanmakuFontScale(double value) async {
+    final store = StoreProvider.of<AppState>(context, listen: false);
+    store.dispatch(ShortVideoSetDanmakuFontScaleAction(value.clamp(0.85, 1.4)));
+    await _saveLatestPreferences();
+  }
+
+  Future<void> _setDanmakuFontWeight(int value) async {
+    final store = StoreProvider.of<AppState>(context, listen: false);
+    store.dispatch(ShortVideoSetDanmakuFontWeightAction(value));
+    await _saveLatestPreferences();
+  }
+
+  Future<void> _setDanmakuSpeed(double value) async {
+    final store = StoreProvider.of<AppState>(context, listen: false);
+    store.dispatch(ShortVideoSetDanmakuSpeedAction(value.clamp(0.75, 1.5)));
+    await _saveLatestPreferences();
+  }
+
+  Future<void> _setDanmakuArea(double value) async {
+    final store = StoreProvider.of<AppState>(context, listen: false);
+    store.dispatch(ShortVideoSetDanmakuAreaAction(value.clamp(0.35, 1.0)));
+    await _saveLatestPreferences();
+  }
+
   String _preloadLabel(ShortVideoState state) {
     final preload = state.preloadPagesCount;
     final keep = state.keepWindow;
@@ -614,6 +686,67 @@ class _ShortVideoSettingsPageState extends State<_ShortVideoSettingsPage> {
 
   String _fitModeLabel(ShortVideoState state) {
     return state.videoFitMode == 'cover' ? '填充' : '完整';
+  }
+
+  Widget _buildDanmakuSliderCard({
+    required String title,
+    required String valueText,
+    required double value,
+    required double min,
+    required double max,
+    required int divisions,
+    required ValueChanged<double> onChanged,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: CupertinoColors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0xFFE9E9ED)),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(12, 10, 12, 8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      title,
+                      style: const TextStyle(
+                        color: Color(0xFF1C1C1E),
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  Text(
+                    valueText,
+                    style: const TextStyle(
+                      color: Color(0xFF8E8E93),
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              CupertinoSlider(
+                value: value,
+                min: min,
+                max: max,
+                divisions: divisions,
+                activeColor: CupertinoColors.activeBlue,
+                thumbColor: CupertinoColors.white,
+                onChanged: onChanged,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -747,8 +880,109 @@ class _ShortVideoSettingsPageState extends State<_ShortVideoSettingsPage> {
                         ),
                       ),
                     ),
+                    ],
+                ),
+                CupertinoListSection(
+                  margin: const EdgeInsets.only(top: 12),
+                  backgroundColor: const Color(0xFFF4F5F7),
+                  separatorColor: const Color(0xFFF5F5F5),
+                  header: const Text('\u5f39\u5e55\u603b\u63a7'),
+                  children: [
+                    CupertinoListTile(
+                      title: const Text('\u5f39\u5e55\u5f00\u5173'),
+                      additionalInfo: Text(
+                        shortVideoState.danmakuEnabled ? '已开启' : '已关闭',
+                      ),
+                      trailing: CupertinoSwitch(
+                        value: shortVideoState.danmakuEnabled,
+                        onChanged: _setDanmakuEnabled,
+                      ),
+                    ),
                   ],
                 ),
+                if (shortVideoState.danmakuEnabled) ...[
+                  CupertinoListSection(
+                    margin: const EdgeInsets.only(top: 12),
+                    backgroundColor: const Color(0xFFF4F5F7),
+                    separatorColor: const Color(0xFFF5F5F5),
+                    header: const Text('外观设置'),
+                    children: [
+                      CupertinoListTile(
+                        title: const Text('弹幕粗细'),
+                        additionalInfo: Text(
+                          shortVideoState.danmakuFontWeight >= 700 ? '加粗' : '常规',
+                        ),
+                        trailing: SizedBox(
+                          width: 156,
+                          child: CupertinoSlidingSegmentedControl<int>(
+                            groupValue:
+                                shortVideoState.danmakuFontWeight >= 700 ? 700 : 600,
+                            children: const {
+                              600: Padding(
+                                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                child: Text('常规'),
+                              ),
+                              700: Padding(
+                                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                child: Text('加粗'),
+                              ),
+                            },
+                            onValueChanged: (value) {
+                              if (value == null) {
+                                return;
+                              }
+                              _setDanmakuFontWeight(value);
+                            },
+                          ),
+                        ),
+                      ),
+                      _buildDanmakuSliderCard(
+                        title: '弹幕透明度',
+                        valueText: '${(shortVideoState.danmakuOpacity * 100).round()}%',
+                        value: shortVideoState.danmakuOpacity,
+                        min: 0.2,
+                        max: 1.0,
+                        divisions: 16,
+                        onChanged: _setDanmakuOpacity,
+                      ),
+                      _buildDanmakuSliderCard(
+                        title: '弹幕字号',
+                        valueText: '${shortVideoState.danmakuFontScale.toStringAsFixed(2)}x',
+                        value: shortVideoState.danmakuFontScale,
+                        min: 0.85,
+                        max: 1.4,
+                        divisions: 11,
+                        onChanged: _setDanmakuFontScale,
+                      ),
+                    ],
+                  ),
+                  CupertinoListSection(
+                    margin: const EdgeInsets.only(top: 12),
+                    backgroundColor: const Color(0xFFF4F5F7),
+                    separatorColor: const Color(0xFFF5F5F5),
+                    header: const Text('显示范围与节奏'),
+                    children: [
+                      _buildDanmakuSliderCard(
+                        title: '弹幕速度',
+                        valueText: '${shortVideoState.danmakuSpeed.toStringAsFixed(2)}x',
+                        value: shortVideoState.danmakuSpeed,
+                        min: 0.75,
+                        max: 1.5,
+                        divisions: 15,
+                        onChanged: _setDanmakuSpeed,
+                      ),
+                      _buildDanmakuSliderCard(
+                        title: '弹幕显示区域',
+                        valueText: '${(shortVideoState.danmakuArea * 100).round()}%',
+                        value: shortVideoState.danmakuArea,
+                        min: 0.35,
+                        max: 1.0,
+                        divisions: 13,
+                        onChanged: _setDanmakuArea,
+                      ),
+                    ],
+                  ),
+                ],
               ],
             ),
           ),

@@ -64,6 +64,54 @@ AppState shortVideoReducer(AppState state, AppAction action) {
     );
   }
 
+  if (action is ShortVideoSetDanmakuEnabledAction) {
+    return state.copyWith(
+      shortVideo: current.copyWith(
+        danmakuEnabled: action.enabled,
+      ),
+    );
+  }
+
+  if (action is ShortVideoSetDanmakuOpacityAction) {
+    return state.copyWith(
+      shortVideo: current.copyWith(
+        danmakuOpacity: action.value,
+      ),
+    );
+  }
+
+  if (action is ShortVideoSetDanmakuFontScaleAction) {
+    return state.copyWith(
+      shortVideo: current.copyWith(
+        danmakuFontScale: action.value,
+      ),
+    );
+  }
+
+  if (action is ShortVideoSetDanmakuFontWeightAction) {
+    return state.copyWith(
+      shortVideo: current.copyWith(
+        danmakuFontWeight: action.value,
+      ),
+    );
+  }
+
+  if (action is ShortVideoSetDanmakuSpeedAction) {
+    return state.copyWith(
+      shortVideo: current.copyWith(
+        danmakuSpeed: action.value,
+      ),
+    );
+  }
+
+  if (action is ShortVideoSetDanmakuAreaAction) {
+    return state.copyWith(
+      shortVideo: current.copyWith(
+        danmakuArea: action.value,
+      ),
+    );
+  }
+
   if (action is ShortVideoRestorePreferencesAction) {
     return state.copyWith(
       shortVideo: current.copyWith(
@@ -73,6 +121,12 @@ AppState shortVideoReducer(AppState state, AppAction action) {
         preloadPagesCount: action.preloadPagesCount,
         keepWindow: action.keepWindow,
         videoFitMode: action.videoFitMode,
+        danmakuEnabled: action.danmakuEnabled,
+        danmakuOpacity: action.danmakuOpacity,
+        danmakuFontScale: action.danmakuFontScale,
+        danmakuFontWeight: action.danmakuFontWeight,
+        danmakuSpeed: action.danmakuSpeed,
+        danmakuArea: action.danmakuArea,
       ),
     );
   }

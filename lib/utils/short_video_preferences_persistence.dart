@@ -10,6 +10,12 @@ class ShortVideoPreferencesSnapshot {
     required this.preloadPagesCount,
     required this.keepWindow,
     required this.videoFitMode,
+    required this.danmakuEnabled,
+    required this.danmakuOpacity,
+    required this.danmakuFontScale,
+    required this.danmakuFontWeight,
+    required this.danmakuSpeed,
+    required this.danmakuArea,
   });
 
   final bool recordWatchHistory;
@@ -18,6 +24,12 @@ class ShortVideoPreferencesSnapshot {
   final int preloadPagesCount;
   final int keepWindow;
   final String videoFitMode;
+  final bool danmakuEnabled;
+  final double danmakuOpacity;
+  final double danmakuFontScale;
+  final int danmakuFontWeight;
+  final double danmakuSpeed;
+  final double danmakuArea;
 }
 
 class ShortVideoPreferencesPersistence {
@@ -32,6 +44,12 @@ class ShortVideoPreferencesPersistence {
     required int preloadPagesCount,
     required int keepWindow,
     required String videoFitMode,
+    required bool danmakuEnabled,
+    required double danmakuOpacity,
+    required double danmakuFontScale,
+    required int danmakuFontWeight,
+    required double danmakuSpeed,
+    required double danmakuArea,
   }) async {
     final prefs = await SharedPreferences.getInstance();
     final data = <String, dynamic>{
@@ -41,6 +59,12 @@ class ShortVideoPreferencesPersistence {
       'preloadPagesCount': preloadPagesCount,
       'keepWindow': keepWindow,
       'videoFitMode': videoFitMode,
+      'danmakuEnabled': danmakuEnabled,
+      'danmakuOpacity': danmakuOpacity,
+      'danmakuFontScale': danmakuFontScale,
+      'danmakuFontWeight': danmakuFontWeight,
+      'danmakuSpeed': danmakuSpeed,
+      'danmakuArea': danmakuArea,
     };
     await prefs.setString(_key, jsonEncode(data));
   }
@@ -63,6 +87,12 @@ class ShortVideoPreferencesPersistence {
       final preloadPagesCountRaw = decoded['preloadPagesCount'];
       final keepWindowRaw = decoded['keepWindow'];
       final videoFitModeRaw = decoded['videoFitMode'];
+      final danmakuEnabledRaw = decoded['danmakuEnabled'];
+      final danmakuOpacityRaw = decoded['danmakuOpacity'];
+      final danmakuFontScaleRaw = decoded['danmakuFontScale'];
+      final danmakuFontWeightRaw = decoded['danmakuFontWeight'];
+      final danmakuSpeedRaw = decoded['danmakuSpeed'];
+      final danmakuAreaRaw = decoded['danmakuArea'];
       return ShortVideoPreferencesSnapshot(
         recordWatchHistory: recordRaw is bool ? recordRaw : true,
         autoPlayNextVideo: autoPlayRaw is bool ? autoPlayRaw : true,
@@ -70,6 +100,14 @@ class ShortVideoPreferencesPersistence {
         preloadPagesCount: preloadPagesCountRaw is int ? preloadPagesCountRaw : 2,
         keepWindow: keepWindowRaw is int ? keepWindowRaw : 1,
         videoFitMode: videoFitModeRaw is String ? videoFitModeRaw : 'cover',
+        danmakuEnabled: danmakuEnabledRaw is bool ? danmakuEnabledRaw : true,
+        danmakuOpacity:
+            danmakuOpacityRaw is num ? danmakuOpacityRaw.toDouble() : 0.82,
+        danmakuFontScale:
+            danmakuFontScaleRaw is num ? danmakuFontScaleRaw.toDouble() : 1.0,
+        danmakuFontWeight: danmakuFontWeightRaw is int ? danmakuFontWeightRaw : 600,
+        danmakuSpeed: danmakuSpeedRaw is num ? danmakuSpeedRaw.toDouble() : 1.0,
+        danmakuArea: danmakuAreaRaw is num ? danmakuAreaRaw.toDouble() : 0.7,
       );
     } catch (_) {
       return null;

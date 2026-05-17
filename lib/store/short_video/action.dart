@@ -52,6 +52,36 @@ class ShortVideoSetVideoFitModeAction extends AppAction {
   final String mode;
 }
 
+class ShortVideoSetDanmakuEnabledAction extends AppAction {
+  const ShortVideoSetDanmakuEnabledAction(this.enabled);
+  final bool enabled;
+}
+
+class ShortVideoSetDanmakuOpacityAction extends AppAction {
+  const ShortVideoSetDanmakuOpacityAction(this.value);
+  final double value;
+}
+
+class ShortVideoSetDanmakuFontScaleAction extends AppAction {
+  const ShortVideoSetDanmakuFontScaleAction(this.value);
+  final double value;
+}
+
+class ShortVideoSetDanmakuFontWeightAction extends AppAction {
+  const ShortVideoSetDanmakuFontWeightAction(this.value);
+  final int value;
+}
+
+class ShortVideoSetDanmakuSpeedAction extends AppAction {
+  const ShortVideoSetDanmakuSpeedAction(this.value);
+  final double value;
+}
+
+class ShortVideoSetDanmakuAreaAction extends AppAction {
+  const ShortVideoSetDanmakuAreaAction(this.value);
+  final double value;
+}
+
 class ShortVideoRestorePreferencesAction extends AppAction {
   const ShortVideoRestorePreferencesAction({
     required this.recordWatchHistory,
@@ -60,6 +90,12 @@ class ShortVideoRestorePreferencesAction extends AppAction {
     required this.preloadPagesCount,
     required this.keepWindow,
     required this.videoFitMode,
+    required this.danmakuEnabled,
+    required this.danmakuOpacity,
+    required this.danmakuFontScale,
+    required this.danmakuFontWeight,
+    required this.danmakuSpeed,
+    required this.danmakuArea,
   });
 
   final bool recordWatchHistory;
@@ -68,4 +104,10 @@ class ShortVideoRestorePreferencesAction extends AppAction {
   final int preloadPagesCount;
   final int keepWindow;
   final String videoFitMode;
+  final bool danmakuEnabled;
+  final double danmakuOpacity;
+  final double danmakuFontScale;
+  final int danmakuFontWeight;
+  final double danmakuSpeed;
+  final double danmakuArea;
 }
