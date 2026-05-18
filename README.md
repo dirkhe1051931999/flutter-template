@@ -1,61 +1,66 @@
-# Flutter quickstart
+# flutter-template server (Koa2 scaffold)
 
-1
+This repository now contains a Koa2 + TypeScript backend scaffold for migrating DTLive Laravel APIs.
 
-## Features
+## What is included
 
-- State Management: Redux ✅
-- Dio encapsulation (or wrapping) ✅
-  - Error handling
-  - Logging
-  - Request cancellation
-  - Dynamic Headers
-  - Response data processing
-  - File upload and download
-  - Persistent Cookies
-  - Token refresh
-  - Request queue and concurrency control
-- Fluro for route management ✅
+- Koa2 application skeleton with middleware pipeline
+- MySQL connection pool setup (`mysql2`)
+- DTLive-compatible API placeholders
+- Health check endpoint
+- Environment variable template
 
-## Dependencies
+## Endpoints (placeholder)
 
-```yaml
-dependencies:
-  flutter:
-    sdk: flutter
+- `GET /health`
+- `POST /api/get_channel`
+- `POST /api/section_list`
+- `POST /api/content_detail`
+- `POST /api/content_by_channel`
+- `POST /api/add_continue_watching`
+- `POST /api/add_remove_like`
+- `POST /api/add_remove_bookmark`
 
-  # The following adds the Cupertino Icons font to your application.
-  # Use with the CupertinoIcons class for iOS style icons.
-  cupertino_icons: ^1.0.2
-  dio: ^5.3.1
-  logger: ^2.0.1
-  cookie_jar: ^4.0.8
-  dio_cookie_manager: ^3.1.0
-  path_provider: ^2.0.15
-  fluro: ^2.0.5
-  redux: ^5.0.0
-  flutter_redux: ^0.10.0
-  intl: ^0.18.1
-  flutter_screenutil: ^5.8.4
-  shared_preferences: ^2.2.0
-  crypto: ^3.0.3
-  device_info_plus: ^9.0.2
-  package_info_plus: ^4.0.2
-```
+## Quick start
 
-## Getting Started
+1. Install dependencies:
 
 ```bash
-# install package
-flutter pub get
-# run
-flutter run
-# build
-flutter build [platform]  # e.g., flutter build ios or flutter build apk
-# change app launcher icon
-flutter pub run flutter_launcher_icons:main
-# change app bunldId or appname
-flutter pub global activate rename
-flutter pub global run rename --bundleId com.flutter.template
-flutter pub global run rename --appname "Flutter Template"
+npm install
 ```
+
+2. Create env file:
+
+```bash
+copy .env.example .env
+```
+
+3. Run dev server:
+
+```bash
+npm run dev
+```
+
+4. Build for production:
+
+```bash
+npm run build
+npm run start
+```
+
+## Quality tools
+
+```bash
+npm run lint
+npm run lint:fix
+npm run format
+npm run format:check
+```
+
+## Next step
+
+Implement the placeholders by porting behavior from:
+
+- `DTLive/ServerCode/admin_panel/routes/api.php`
+- `DTLive/ServerCode/admin_panel/app/Http/Controllers/Api/HomeController.php`
+- `DTLive/ServerCode/admin_panel/app/Models/Common.php`
