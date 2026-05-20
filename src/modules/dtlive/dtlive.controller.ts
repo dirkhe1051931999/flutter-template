@@ -5,12 +5,21 @@ import { DtliveService } from './dtlive.service';
 type BodyPayload = Record<string, unknown>;
 
 function getBodyPayload(ctx: Context): BodyPayload {
-  const requestWithBody = ctx.request as typeof ctx.request & { body?: unknown };
-  if (!requestWithBody.body || typeof requestWithBody.body !== 'object') {
-    return {};
+  const payload: BodyPayload = {};
+  const queryParams = ctx.query as Record<string, string | string[] | undefined>;
+  for (const [key, value] of Object.entries(queryParams)) {
+    payload[key] = Array.isArray(value) ? (value[0] ?? '') : (value ?? '');
   }
 
-  return requestWithBody.body as BodyPayload;
+  const requestWithBody = ctx.request as typeof ctx.request & { body?: unknown };
+  if (!requestWithBody.body || typeof requestWithBody.body !== 'object') {
+    return payload;
+  }
+
+  return {
+    ...payload,
+    ...(requestWithBody.body as BodyPayload),
+  };
 }
 
 export class DtliveController {

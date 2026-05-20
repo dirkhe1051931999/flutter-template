@@ -1,0 +1,13 @@
+<div class="ios-card">
+  <form method="get" action="/producer/shorts/<%= payload.typeId %>" class="ios-search">
+    <input name="input_search" value="<%= payload.inputSearch %>" placeholder="Search by name" />
+    <select name="input_status">
+      <option value="all" <%= payload.inputStatus === 'all' ? 'selected' : '' %>>All Status</option>
+      <option value="0" <%= payload.inputStatus === '0' ? 'selected' : '' %>>Hide</option>
+      <option value="1" <%= payload.inputStatus === '1' ? 'selected' : '' %>>Show</option>
+    </select>
+    <div></div>
+    <div></div>
+    <button type="submit" class="ios-primary">Apply</button>
+  </form>
+</div>

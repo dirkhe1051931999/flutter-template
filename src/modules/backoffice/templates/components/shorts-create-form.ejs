@@ -1,0 +1,31 @@
+<div class="ios-card">
+  <details>
+    <summary style="cursor:pointer; font-weight:700; color:#0f172a;">+ Add new shorts</summary>
+    <form method="post" action="/producer/shorts/save" class="ios-stack" style="margin-top:12px;">
+      <input type="hidden" name="type_id" value="<%= payload.typeId %>" />
+      <div class="ios-grid-2">
+        <div><label class="ios-label">Name</label><input name="name" placeholder="Name" required /></div>
+        <div><label class="ios-label">Video Type</label><select name="video_type" required><option value="">Select type</option><option value="8">8 - Shorts</option></select></div>
+      </div>
+      <div class="ios-grid-3">
+        <div><label class="ios-label">Category IDs</label><input name="category_id" placeholder="1,2" required /></div>
+        <div><label class="ios-label">Language IDs</label><input name="language_id" placeholder="1,2" required /></div>
+        <div><label class="ios-label">Cast IDs</label><input name="cast_id" placeholder="1,2" /></div>
+      </div>
+      <div class="ios-grid-2">
+        <div><label class="ios-label">Thumbnail URL</label><input name="thumbnail" placeholder="https://..." /></div>
+        <div><label class="ios-label">Trailer Type</label><input name="trailer_type" value="external" /></div>
+      </div>
+      <div class="ios-grid-2">
+        <div><label class="ios-label">Trailer URL</label><input name="trailer_url" placeholder="https://..." /></div>
+        <div><label class="ios-label">Description</label><input name="description" placeholder="Description" /></div>
+      </div>
+      <div class="ios-grid-3">
+        <div><label class="ios-label">is_title</label><select name="is_title"><option value="0" selected>0</option><option value="1">1</option></select></div>
+        <div><label class="ios-label">is_comment</label><select name="is_comment"><option value="0">0</option><option value="1" selected>1</option></select></div>
+        <div><label class="ios-label">is_like</label><select name="is_like"><option value="0">0</option><option value="1" selected>1</option></select></div>
+      </div>
+      <button type="submit" class="ios-primary">Save Shorts</button>
+    </form>
+  </details>
+</div>

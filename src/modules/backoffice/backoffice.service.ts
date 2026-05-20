@@ -603,13 +603,53 @@ export class BackofficeService {
       throw new Error('price and rent_day are required when is_rent = 1');
     }
 
+    const categoryId = this.toCsv(body.category_id);
+    const languageId = this.toCsv(body.language_id);
+    if (!categoryId) {
+      throw new Error('category_id is required');
+    }
+    if (!languageId) {
+      throw new Error('language_id is required');
+    }
+
+    const videoUploadType = String(body.video_upload_type ?? '').trim();
+    if (!videoUploadType) {
+      throw new Error('video_upload_type is required');
+    }
+
+    const subtitleType = String(body.subtitle_type ?? '').trim();
+    if (!subtitleType) {
+      throw new Error('subtitle_type is required');
+    }
+
+    const isServerVideo = videoUploadType === 'server_video';
+    const video320Server = String(body.video_320 ?? '').trim();
+    const video320Url = String(body.video_url_320 ?? body.video_320 ?? '').trim();
+    const video480Value = String(body.video_480 ?? body.video_url_480 ?? '').trim();
+    const video720Value = String(body.video_720 ?? body.video_url_720 ?? '').trim();
+    const video1080Value = String(body.video_1080 ?? body.video_url_1080 ?? '').trim();
+
+    if (isServerVideo) {
+      if (!video320Server) {
+        throw new Error('video_320 is required');
+      }
+    } else if (!video320Url) {
+      if (videoUploadType === 'live_stream_url') {
+        throw new Error('video_url_320 is required for live_stream_url');
+      }
+      if (videoUploadType === 'vdocipher_id') {
+        throw new Error('video_url_320 is required for vdocipher_id');
+      }
+      throw new Error('video_url_320 is required');
+    }
+
     return {
       id: Number(body.id ?? 0),
       type_id: typeId,
       video_type: videoType,
       channel_id: Number.isFinite(channelId) ? channelId : 0,
-      category_id: this.toCsv(body.category_id),
-      language_id: this.toCsv(body.language_id),
+      category_id: categoryId,
+      language_id: languageId,
       cast_id: this.toCsv(body.cast_id),
       name,
       thumbnail: String(body.thumbnail ?? '').trim(),
@@ -618,20 +658,20 @@ export class BackofficeService {
       release_date: String(body.release_date ?? '').trim(),
       is_premium: Number(body.is_premium ?? 0),
       is_title: Number(body.is_title ?? 0),
-      is_download: Number(body.is_download ?? 0),
+      is_download: isServerVideo ? Number(body.is_download ?? 0) : 0,
       is_comment: Number(body.is_comment ?? 0),
       is_like: Number(body.is_like ?? 0),
       is_rent: isRent,
       price: isRent === 1 ? price : 0,
       rent_day: isRent === 1 ? rentDay : 0,
-      video_upload_type: String(body.video_upload_type ?? 'external').trim() || 'external',
-      video_320: String(body.video_320 ?? '').trim(),
-      video_480: String(body.video_480 ?? '').trim(),
-      video_720: String(body.video_720 ?? '').trim(),
-      video_1080: String(body.video_1080 ?? '').trim(),
+      video_upload_type: videoUploadType,
+      video_320: isServerVideo ? video320Server : video320Url,
+      video_480: video480Value,
+      video_720: video720Value,
+      video_1080: video1080Value,
       trailer_type: String(body.trailer_type ?? 'external').trim() || 'external',
       trailer_url: String(body.trailer_url ?? '').trim(),
-      subtitle_type: String(body.subtitle_type ?? 'external').trim() || 'external',
+      subtitle_type: subtitleType,
       subtitle_1: String(body.subtitle_1 ?? '').trim(),
       subtitle_2: String(body.subtitle_2 ?? '').trim(),
       subtitle_3: String(body.subtitle_3 ?? '').trim(),

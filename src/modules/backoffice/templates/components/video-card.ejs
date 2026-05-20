@@ -1,0 +1,81 @@
+<%
+  const cover = item.landscape || item.thumbnail || '';
+  const videoUploadType = item.video_upload_type || 'external';
+  const statusBadge = item.status === 1 ? '<span class="ios-badge ios-badge-green">Show</span>' : '<span class="ios-badge ios-badge-rose">Hide</span>';
+  const premiumBadge = item.is_premium === 1 ? '<span class="ios-badge ios-badge-blue">Premium</span>' : '<span class="ios-badge ios-badge-blue">Free</span>';
+  const rentBadge = item.is_rent === 1 ? '<span class="ios-badge ios-badge-rose">Rent</span>' : '<span class="ios-badge ios-badge-green">No Rent</span>';
+  const rentClass = item.is_rent === 1 ? 'ios-rent show' : 'ios-rent';
+  const releaseTypeOptions = payload.releasesTypes.map((typeItem) => `<option value="${typeItem.id}">${typeItem.name}</option>`).join('');
+  const channelOptions = payload.channels.map((channelItem) => `<option value="${channelItem.id}">${channelItem.name}</option>`).join('');
+  const badgesHtml = `${statusBadge}${premiumBadge}${rentBadge}<span class="ios-badge ios-badge-blue">Type ${item.video_type}</span>`;
+  const actionsHtml = `
+    <form method="post" action="/producer/video-status">
+      <input type="hidden" name="id" value="${item.id}" />
+      <input type="hidden" name="type_id" value="${payload.typeId}" />
+      <button type="submit" class="ios-secondary">${item.status === 1 ? 'Set Hide' : 'Set Show'}</button>
+    </form>
+    <form method="post" action="/producer/video/delete/${item.id}/${payload.typeId}">
+      <button type="submit" class="ios-danger" onclick="return confirm('Delete this video?')">Delete</button>
+    </form>
+  `;
+  const releaseHtml = `
+    <form method="post" action="/producer/video/releases" class="ios-grid-2" style="margin-bottom:10px;">
+      <input type="hidden" name="id" value="${item.id}" />
+      <select name="type_id">${releaseTypeOptions}</select>
+      <select name="channel_id"><option value="0">No Channel</option>${channelOptions}</select>
+      <button type="submit" class="ios-secondary" style="grid-column:1/-1;">Release To Target</button>
+    </form>
+  `;
+  const editHtml = `
+    <details>
+      <summary>Edit details</summary>
+      <form method="post" action="/producer/video/update/${item.id}" class="ios-stack" data-rent-form>
+        <input type="hidden" name="type_id" value="${payload.typeId}" />
+        <input type="hidden" name="video_type" value="${item.video_type}" />
+        <div class="ios-grid-2">
+          <div><label class="ios-label">Name</label><input name="name" value="${item.name}" required /></div>
+          <div><label class="ios-label">Release Date</label><input name="release_date" value="${item.release_date || ''}" placeholder="YYYY-MM-DD" /></div>
+        </div>
+        <div class="ios-grid-3">
+          <div><label class="ios-label">Category IDs</label><input name="category_id" value="${item.category_id || ''}" placeholder="1,2" /></div>
+          <div><label class="ios-label">Language IDs</label><input name="language_id" value="${item.language_id || ''}" placeholder="1,2" /></div>
+          <div><label class="ios-label">Cast IDs</label><input name="cast_id" value="${item.cast_id || ''}" placeholder="1,2" /></div>
+        </div>
+        <div class="ios-grid-2">
+          <div><label class="ios-label">Thumbnail URL</label><input name="thumbnail" value="${item.thumbnail || ''}" /></div>
+          <div><label class="ios-label">Landscape URL</label><input name="landscape" value="${item.landscape || ''}" /></div>
+        </div>
+        <div><label class="ios-label">Description</label><input name="description" value="${item.description || ''}" /></div>
+        <div class="ios-grid-3">
+          <div><label class="ios-label">Video Upload Type</label><input name="video_upload_type" value="${videoUploadType}" /></div>
+          <div><label class="ios-label">video_320 / URL</label><input name="video_320" value="${item.video_320 || ''}" /></div>
+          <div><label class="ios-label">Channel ID</label><input name="channel_id" value="${item.channel_id}" /></div>
+        </div>
+        <div class="ios-grid-3">
+          <div><label class="ios-label">is_premium</label><select name="is_premium"><option value="0" ${item.is_premium === 0 ? 'selected' : ''}>0</option><option value="1" ${item.is_premium === 1 ? 'selected' : ''}>1</option></select></div>
+          <div><label class="ios-label">is_title</label><select name="is_title"><option value="0" ${item.is_title === 0 ? 'selected' : ''}>0</option><option value="1" ${item.is_title === 1 ? 'selected' : ''}>1</option></select></div>
+          <div><label class="ios-label">is_download</label><select name="is_download"><option value="0" ${item.is_download === 0 ? 'selected' : ''}>0</option><option value="1" ${item.is_download === 1 ? 'selected' : ''}>1</option></select></div>
+        </div>
+        <div class="ios-grid-3">
+          <div><label class="ios-label">is_comment</label><select name="is_comment"><option value="0" ${item.is_comment === 0 ? 'selected' : ''}>0</option><option value="1" ${item.is_comment === 1 ? 'selected' : ''}>1</option></select></div>
+          <div><label class="ios-label">is_like</label><select name="is_like"><option value="0" ${item.is_like === 0 ? 'selected' : ''}>0</option><option value="1" ${item.is_like === 1 ? 'selected' : ''}>1</option></select></div>
+          <div><label class="ios-label">is_rent</label><select name="is_rent" data-rent-toggle><option value="0" ${item.is_rent === 0 ? 'selected' : ''}>0</option><option value="1" ${item.is_rent === 1 ? 'selected' : ''}>1</option></select></div>
+        </div>
+        <div class="ios-grid-2 ${rentClass}" data-rent-fields>
+          <div><label class="ios-label">price</label><input name="price" value="${item.price}" /></div>
+          <div><label class="ios-label">rent_day</label><input name="rent_day" value="${item.rent_day}" /></div>
+        </div>
+        <button type="submit" class="ios-primary">Save Changes</button>
+      </form>
+    </details>
+  `;
+%>
+<%- include('./content-card-base', {
+  cover,
+  title: item.name || '-',
+  meta: `ID #${item.id} · Release ${formatDateDMY(item.release_date)}`,
+  badgesHtml,
+  actionsHtml,
+  releaseHtml,
+  editHtml,
+}) %>

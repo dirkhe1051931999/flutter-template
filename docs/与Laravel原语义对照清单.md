@@ -7,6 +7,7 @@
 - 已完成
 - 半完成
 - 未完成
+- 有意偏离
 
 本清单重点关注：
 
@@ -16,6 +17,19 @@
 - 发布流转
 - 文件字段处理
 - 搜索 / 自动填充逻辑
+
+### 模块对照模板（执行时统一口径）
+
+每个模块都按以下维度更新，避免“状态有结论、但无法执行”：
+
+- 路由覆盖（入口、方法、参数语义）
+- 校验规则（必填、分支、归属、跨实体一致性）
+- 写操作链路（创建/更新/删除/状态/发布/排序）
+- 文件字段链路（上传、回填、旧文件清理）
+- 查询与展示（筛选、详情、搜索、自动填充）
+- 权限边界（admin/producer/checkadmin）
+- 当前状态（已完成/半完成/未完成/有意偏离）
+- 下一步（缺口、落点文件、验收标准）
 
 ---
 
@@ -134,11 +148,15 @@
 - `shorts-episode/add / edit`
   - 同上。
 
-### 缺失或不等价
+### 有意偏离
 
 - Laravel Producer 路由中 **没有** `shorts/releases`。
-  - 当前 Koa2 增加了 `/producer/shorts/releases`。
-  - 这说明 Koa2 当前对 shorts 的发布流转是**扩展语义**，需要后续确认是否要保留，还是改为完全对齐 Laravel。
+  - 当前 Koa2 增加了 `/producer/shorts/releases`，并且本项目策略为**保留增强**。
+  - 偏离说明：
+    - 类型：业务增强（非 Laravel 等价能力）
+    - 当前决策：保留
+    - 风险：后续与 Laravel 对照时容易被误判为“遗漏/错误”
+    - 治理：始终在本清单保留“有意偏离”标记，必要时支持配置化关闭
 
 ---
 
@@ -231,9 +249,11 @@
 
 ### 半完成
 
-- **校验规则不完全等价**
-  - Laravel `store`/`update` 对 `video_upload_type`、`subtitle_type`、`video_url_320`、`live_stream_url`、`vdocipher_id` 有更细规则。
-  - Koa2 目前只覆盖了主干校验，没有完整复刻 `live_stream_url / vdocipher_id / video_url_320` 这些分支校验。
+- **校验规则仍有差异，但主分支已补齐**
+  - 本轮已补齐：`video_upload_type`/`subtitle_type` 必填、`video_type=6` 的 `channel_id` 校验、`is_rent=1` 的 `price/rent_day` 校验。
+  - 本轮已补齐：`video_upload_type` 分支（`server_video` 必填 `video_320`；`live_stream_url`/`vdocipher_id`/其他外链 必填 `video_url_320`）。
+  - 本轮已补齐：非 `server_video` 场景强制 `is_download=0`，与 Laravel 行为保持一致。
+  - 剩余差异：Laravel 的文件上传对象、TMDB 回填与旧文件删除链路尚未等价。
 
 - **文件字段处理不等价**
   - Laravel 处理：
@@ -539,46 +559,24 @@
 - Laravel 文件上传 / 存储 / 删除链路的 Koa2 等价实现
 - Laravel 多语言消息体系的等价迁移
 
+## 6.4 有意偏离
+
+- Producer Shorts：保留 `/producer/shorts/releases` 增强路由（Laravel 原路由不存在）
+
 ---
 
-## 七、下一步优先建议
+## 七、Top 10 可执行缺口（按优先级）
 
-### 优先级 P1
-
-- **补一份 Producer 主链“字段级语义对照”**
-  - Video
-  - TV Show
-  - Shorts
-  - TV Show Episode
-  - Shorts Episode
-
-目标：逐字段标注
-
-- Laravel 使用了什么字段
-- Koa2 当前是否读写
-- 是否存在真实库偏差
-
-### 优先级 P2
-
-- **决定 Shorts Release 是否保留**
-  - 若坚持 Laravel 等价，应移除/隐藏 `shorts/releases`
-  - 若作为业务增强保留，需要在清单中明确“偏离 Laravel，但为有意扩展”
-
-### 优先级 P3
-
-- **补 Admin 内容管理线**
-  - 先从 Admin Video / TV Show / Shorts 的 add/edit/delete/details 开始
-  - 再补 Admin Episode
-
-### 优先级 P4
-
-- **补文件处理兼容层**
-  - 这是目前 Koa2 与 Laravel 语义差距最大的部分之一
-  - 包括：
-    - 文件上传接收
-    - URL/TMDB 回填
-    - 存储类型分支
-    - 旧文件删除
+1. Producer Video：补齐 `video_upload_type / subtitle_type / live_stream_url / vdocipher_id` 分支校验并形成验收样例。
+2. Producer TV Show：补齐文件字段链路（上传/回填/旧文件清理）并更新详情语义对照。
+3. Producer TV Show Episode：补齐多清晰度与字幕文件链路语义（含更新时旧文件处理）。
+4. Producer Shorts：继续去 TV Show 化，收敛页面字段到真实 shorts 语义。
+5. Producer Shorts Episode：补齐与 Laravel 的命名/校验分支差异并固定回归用例。
+6. Producer Rent Transaction：逐字段核验列表与汇总语义（`transaction_status`、内容名解析等）。
+7. Producer Withdrawal：核对 `updateOrCreate` 语义差异并明确是否需要兼容实现。
+8. Admin Video / TV Show / Shorts：补齐 add/edit/details/delete/release，不再停留在列表 + toggle。
+9. Admin Episode（TV Show / Shorts）：落地真实管理页，替换现有占位页。
+10. 通用文件链路：建立统一文件兼容层（上传、URL/TMDB 回填、删除旧文件）并在清单记录模块覆盖率。
 
 ---
 
@@ -587,7 +585,7 @@
 后续每完成一项补齐，都在本文件中同步：
 
 - 更新模块状态
-- 更新“已完成 / 半完成 / 未完成”分类
-- 在对应模块下追加“本轮已补齐项”
+- 更新“已完成 / 半完成 / 未完成 / 有意偏离”分类
+- 在对应模块下追加“本轮已补齐项 / 剩余缺口 / 验收结果”
 
-当前版本：`v1`（基线路由与语义盘点）
+当前版本：`v2`（可执行对照结构 + 有意偏离治理）

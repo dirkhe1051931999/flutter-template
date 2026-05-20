@@ -1,0 +1,20 @@
+<div class="ios-card">
+  <form method="get" action="/producer/video/<%= payload.typeId %>" class="ios-search">
+    <input name="input_search" value="<%= payload.inputSearch %>" placeholder="Search by name" />
+    <select name="input_rent">
+      <option value="0" <%= payload.inputRent === '0' ? 'selected' : '' %>>All Rent</option>
+      <option value="1" <%= payload.inputRent === '1' ? 'selected' : '' %>>Rent Only</option>
+    </select>
+    <select name="input_premium">
+      <option value="all" <%= payload.inputPremium === 'all' ? 'selected' : '' %>>All Premium</option>
+      <option value="0" <%= payload.inputPremium === '0' ? 'selected' : '' %>>Free</option>
+      <option value="1" <%= payload.inputPremium === '1' ? 'selected' : '' %>>Premium</option>
+    </select>
+    <select name="input_status">
+      <option value="all" <%= payload.inputStatus === 'all' ? 'selected' : '' %>>All Status</option>
+      <option value="0" <%= payload.inputStatus === '0' ? 'selected' : '' %>>Hide</option>
+      <option value="1" <%= payload.inputStatus === '1' ? 'selected' : '' %>>Show</option>
+    </select>
+    <button type="submit" class="ios-primary">Apply</button>
+  </form>
+</div>

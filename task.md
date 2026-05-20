@@ -86,16 +86,32 @@
 - 复查列表页内嵌表单与独立编辑入口的合理性
 
 ## 8. 与 Laravel 原语义逐项对照补齐
-- 对照 `routes/admin.php`、`routes/producer.php` 梳理缺失模块
-- 对照 Laravel Controller 核对：
+- 冻结对照基线：`routes/admin.php`、`routes/producer.php` + 对应 Controller
+- 对每个模块统一按以下维度核对并落文档：
+  - 路由覆盖
   - 校验规则
-  - 删除级联行为
-  - 发布流转
-  - 文件字段处理
-  - 搜索/自动填充逻辑
-- 输出一份“已完成 / 半完成 / 未完成”对照清单并持续更新
+  - 写操作链路（增改删/状态/发布/排序）
+  - 文件字段链路（上传/回填/旧文件清理）
+  - 搜索/自动填充
+  - 权限边界（admin/producer/checkadmin）
+- 输出并持续维护“已完成 / 半完成 / 未完成 / 有意偏离”清单
+- 明确保留增强项（如 `shorts/releases`）并在清单中标注“有意偏离 + 治理策略”
+- 每轮迭代同步：本轮已补齐项 / 剩余缺口 / 验收结果
 
 ## 9. 最终目标定义
-- 先把 Producer 主链做成真正可用闭环
-- 再补齐 Admin 内容管理线
-- 最后再做更细的 Laravel 语义等价收尾
+
+### 9.1 里程碑 M1：对照清单可执行化（P0）
+- 完成对照清单模板统一、状态统一、偏离治理区块
+- 产出 Top 缺口优先级，作为后续实施队列
+
+### 9.2 里程碑 M2：Producer 主链可用闭环（P1）
+- Video / TV Show / Shorts / Episode / Rent / Withdrawal 主链完成语义收口
+- 重点完成校验分支、归属校验、状态/发布/排序、核心页面语义
+
+### 9.3 里程碑 M3：Admin 内容管理线闭环（P2）
+- Admin Video / TV Show / Shorts / Episode 补齐 add/edit/details/delete/release/sort
+- 确保 admin 端具备完整运营动作，不再停留在列表+toggle
+
+### 9.4 里程碑 M4：细粒度等价与偏离治理（P3）
+- 文件字段链路（上传/存储/旧文件清理）持续补齐
+- 保留增强能力但持续标注“有意偏离”，并记录回滚条件

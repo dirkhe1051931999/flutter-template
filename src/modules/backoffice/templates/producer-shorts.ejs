@@ -1,0 +1,30 @@
+<%- include('./components/video-theme') %>
+
+<%- include('./components/producer-page-header', {
+  pageTitle: 'Shorts',
+  description: 'Manage shorts content with the same componentized workflow.'
+}) %>
+
+<div class="ios-shell">
+  <%- include('./components/producer-studio-hero', {
+    payload,
+    heroTitle: 'Producer Shorts Studio',
+    heroSubtitle: 'Unified card layout for shorts creation and management.'
+  }) %>
+
+  <% if (message) { %>
+    <div class="msg"><%= message %></div>
+  <% } %>
+
+  <%- include('./components/shorts-filter-bar', { payload }) %>
+  <%- include('./components/shorts-create-form', { payload }) %>
+
+  <div class="ios-list">
+    <% if (payload.items.length === 0) { %>
+      <div class="ios-card ios-empty"><strong>No shorts yet</strong><div style="margin-top:6px;">Create your first shorts content or adjust filters.</div></div>
+    <% } %>
+    <% payload.items.forEach((item) => { %>
+      <%- include('./components/shorts-card', { payload, item }) %>
+    <% }) %>
+  </div>
+</div>

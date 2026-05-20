@@ -89,8 +89,14 @@ function formatBackofficeErrorMessage(error: unknown, fallback: string): string 
     'show_id is required': '请选择所属内容。',
     'season_id is required': '请选择有效的季。',
     'name is required': '名称不能为空。',
+    'category_id is required': '请至少选择一个分类。',
+    'language_id is required': '请至少选择一个语言。',
+    'video_upload_type is required': '请选择视频上传类型。',
     'subtitle_type is required': '请选择字幕类型。',
     'video_320 is required': '请填写或上传主视频地址。',
+    'video_url_320 is required': '请填写主视频地址。',
+    'video_url_320 is required for live_stream_url': '直播流地址不能为空。',
+    'video_url_320 is required for vdocipher_id': 'VdoCipher ID 不能为空。',
     'channel_id is required': '请选择频道。',
     'channel_id is required for channel content': '当前内容类型需要绑定频道，请先选择频道。',
     'price and rent_day are required when is_rent = 1': '开启租赁后，请同时填写价格和租赁天数。',
@@ -208,8 +214,10 @@ backofficeRouter.get('/admin/video', async (ctx: Context) => {
   }
 
   const items = await service.getAdminVideos();
+  const queryMessage = ctx.query?.message;
+  const message = typeof queryMessage === 'string' ? queryMessage : '';
   ctx.type = 'html';
-  ctx.body = renderAdminVideoPage(items);
+  ctx.body = renderAdminVideoPage(items, message);
 });
 
 backofficeRouter.post('/admin/video/toggle', async (ctx: Context) => {
@@ -229,9 +237,9 @@ backofficeRouter.post('/admin/video/toggle', async (ctx: Context) => {
 
   try {
     await service.toggleAdminVideoStatus(id);
-    const items = await service.getAdminVideos();
-    ctx.type = 'html';
-    ctx.body = renderAdminVideoPage(items, 'Video status changed.');
+    ctx.status = 303;
+    ctx.redirect(`/admin/video?message=${encodeURIComponent('Video status changed.')}`);
+    return;
   } catch (error) {
     const message = getRouteErrorMessage(error, '操作失败，请稍后重试。');
     ctx.status = 400;

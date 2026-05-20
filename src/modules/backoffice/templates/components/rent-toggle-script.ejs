@@ -1,0 +1,21 @@
+<script>
+  (function () {
+    var forms = document.querySelectorAll('[data-rent-form]');
+    forms.forEach(function (form) {
+      var toggle = form.querySelector('[data-rent-toggle]');
+      var fields = form.querySelector('[data-rent-fields]');
+      if (!toggle || !fields) {
+        return;
+      }
+      var sync = function () {
+        if (String(toggle.value) === '1') {
+          fields.classList.add('show');
+        } else {
+          fields.classList.remove('show');
+        }
+      };
+      toggle.addEventListener('change', sync);
+      sync();
+    });
+  })();
+</script>

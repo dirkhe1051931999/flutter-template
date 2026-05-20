@@ -1,0 +1,69 @@
+<%
+  const cover = item.landscape || item.thumbnail || '';
+  const statusBadge = item.status === 1 ? '<span class="ios-badge ios-badge-green">Show</span>' : '<span class="ios-badge ios-badge-rose">Hide</span>';
+  const titleBadge = item.is_title === 1 ? '<span class="ios-badge ios-badge-blue">Title</span>' : '<span class="ios-badge ios-badge-blue">Normal</span>';
+  const releaseTypeOptions = payload.releasesTypes.map((typeItem) => `<option value="${typeItem.id}">${typeItem.name}</option>`).join('');
+  const channelOptions = payload.channels.map((channelItem) => `<option value="${channelItem.id}">${channelItem.name}</option>`).join('');
+  const badgesHtml = `${statusBadge}${titleBadge}`;
+  const actionsHtml = `
+    <a class="ios-secondary" style="display:inline-flex; align-items:center; justify-content:center; min-width:120px; border-radius:12px; padding:10px 12px;" href="/producer/shorts-episode/${item.id}/${payload.typeId}">Episodes</a>
+    <form method="post" action="/producer/shorts-status">
+      <input type="hidden" name="id" value="${item.id}" />
+      <input type="hidden" name="type_id" value="${payload.typeId}" />
+      <button type="submit" class="ios-secondary">${item.status === 1 ? 'Set Hide' : 'Set Show'}</button>
+    </form>
+    <form method="post" action="/producer/shorts/delete/${item.id}/${payload.typeId}">
+      <button type="submit" class="ios-danger" onclick="return confirm('Delete this shorts content?')">Delete</button>
+    </form>
+  `;
+  const releaseHtml = `
+    <form method="post" action="/producer/shorts/releases" class="ios-grid-2" style="margin-bottom:10px;">
+      <input type="hidden" name="id" value="${item.id}" />
+      <select name="type_id">${releaseTypeOptions}</select>
+      <select name="channel_id"><option value="0">No Channel</option>${channelOptions}</select>
+      <button type="submit" class="ios-secondary" style="grid-column:1/-1;">Release To Target</button>
+    </form>
+  `;
+  const editHtml = `
+    <details>
+      <summary>Edit details</summary>
+      <form method="post" action="/producer/shorts/update/${item.id}" class="ios-stack">
+        <input type="hidden" name="type_id" value="${payload.typeId}" />
+        <input type="hidden" name="video_type" value="${item.video_type}" />
+        <div class="ios-grid-2">
+          <div><label class="ios-label">Name</label><input name="name" value="${item.name}" required /></div>
+          <div><label class="ios-label">Thumbnail URL</label><input name="thumbnail" value="${item.thumbnail || ''}" /></div>
+        </div>
+        <div class="ios-grid-3">
+          <div><label class="ios-label">Category IDs</label><input name="category_id" value="${item.category_id || ''}" placeholder="1,2" /></div>
+          <div><label class="ios-label">Language IDs</label><input name="language_id" value="${item.language_id || ''}" placeholder="1,2" /></div>
+          <div><label class="ios-label">Cast IDs</label><input name="cast_id" value="${item.cast_id || ''}" placeholder="1,2" /></div>
+        </div>
+        <div class="ios-grid-2">
+          <div><label class="ios-label">Description</label><input name="description" value="${item.description || ''}" /></div>
+          <div><label class="ios-label">Trailer URL</label><input name="trailer_url" value="${item.trailer_url || ''}" /></div>
+        </div>
+        <div class="ios-grid-3">
+          <div><label class="ios-label">Trailer Type</label><input name="trailer_type" value="${item.trailer_type || 'external'}" /></div>
+          <div><label class="ios-label">is_title</label><select name="is_title"><option value="0" ${item.is_title === 0 ? 'selected' : ''}>0</option><option value="1" ${item.is_title === 1 ? 'selected' : ''}>1</option></select></div>
+          <div><label class="ios-label">is_comment</label><select name="is_comment"><option value="0" ${item.is_comment === 0 ? 'selected' : ''}>0</option><option value="1" ${item.is_comment === 1 ? 'selected' : ''}>1</option></select></div>
+        </div>
+        <div class="ios-grid-3">
+          <div><label class="ios-label">is_like</label><select name="is_like"><option value="0" ${item.is_like === 0 ? 'selected' : ''}>0</option><option value="1" ${item.is_like === 1 ? 'selected' : ''}>1</option></select></div>
+          <div></div>
+          <div></div>
+        </div>
+        <button type="submit" class="ios-primary">Save Changes</button>
+      </form>
+    </details>
+  `;
+%>
+<%- include('./content-card-base', {
+  cover,
+  title: item.name || '-',
+  meta: `ID #${item.id} · Video Type ${item.video_type}`,
+  badgesHtml,
+  actionsHtml,
+  releaseHtml,
+  editHtml,
+}) %>

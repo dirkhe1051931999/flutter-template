@@ -1,0 +1,33 @@
+<%- include('./components/video-theme') %>
+
+<%- include('./components/producer-page-header', {
+  pageTitle: 'Video',
+  description: 'Manage producer video content, release targets, and publishing state with richer controls.'
+}) %>
+
+<div class="ios-shell">
+  <%- include('./components/producer-studio-hero', {
+    payload,
+    heroTitle: 'Producer Video Studio',
+    heroSubtitle: 'Componentized EJS view with lower-contrast visual style.'
+  }) %>
+
+  <% if (message) { %>
+    <div class="msg"><%= message %></div>
+  <% } %>
+
+  <%- include('./components/video-filter-bar', { payload }) %>
+
+  <%- include('./components/video-create-form', { payload }) %>
+
+  <div class="ios-list">
+    <% if (payload.items.length === 0) { %>
+      <div class="ios-card ios-empty"><strong>No videos yet</strong><div style="margin-top:6px;">Create your first video or adjust the filters above.</div></div>
+    <% } %>
+    <% payload.items.forEach((item) => { %>
+      <%- include('./components/video-card', { payload, item, formatDateDMY }) %>
+    <% }) %>
+  </div>
+</div>
+
+<%- include('./components/rent-toggle-script') %>

@@ -1,48 +1,18 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import ejs from 'ejs';
+
+const layoutTemplatePath = path.resolve(process.cwd(), 'src/modules/backoffice/templates/layout.ejs');
+const layoutTemplate = fs.readFileSync(layoutTemplatePath, 'utf8');
+const producerVideoTemplatePath = path.resolve(process.cwd(), 'src/modules/backoffice/templates/producer-video.ejs');
+const producerVideoTemplate = fs.readFileSync(producerVideoTemplatePath, 'utf8');
+const producerTvShowTemplatePath = path.resolve(process.cwd(), 'src/modules/backoffice/templates/producer-tvshow.ejs');
+const producerTvShowTemplate = fs.readFileSync(producerTvShowTemplatePath, 'utf8');
+const producerShortsTemplatePath = path.resolve(process.cwd(), 'src/modules/backoffice/templates/producer-shorts.ejs');
+const producerShortsTemplate = fs.readFileSync(producerShortsTemplatePath, 'utf8');
+
 function pageTemplate(title: string, body: string): string {
-  return `<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>${title}</title>
-  <style>
-    body { font-family: Arial, sans-serif; background:#f5f6f8; margin:0; }
-    .container { max-width: 980px; margin: 40px auto; padding: 0 20px; }
-    .card { background: #fff; border-radius: 12px; box-shadow: 0 4px 18px rgba(0,0,0,.06); padding: 24px; }
-    h1 { margin-top: 0; }
-    h3 { margin-top: 0; }
-    .grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; }
-    .metric { padding: 14px; border:1px solid #e9ebee; border-radius: 10px; }
-    .metric .label { color:#6b7280; font-size: 12px; }
-    .metric .value { font-size: 20px; font-weight: 700; margin-top: 6px; }
-    input, select { width:100%; box-sizing:border-box; padding:10px; border:1px solid #d0d5dd; border-radius: 8px; margin-bottom: 10px; background:#fff; }
-    button { width:100%; padding:10px; border:none; border-radius: 8px; background:#1f2937; color:#fff; cursor:pointer; }
-    .topbar { display:flex; justify-content:space-between; align-items:center; margin-bottom: 16px; }
-    a { color:#2563eb; text-decoration:none; }
-    .msg { margin-bottom:16px; padding:12px 14px; border-radius:10px; border:1px solid #fecaca; background:#fef2f2; color:#991b1b; }
-    .badge { display:inline-block; padding:3px 8px; border-radius:999px; font-size:12px; font-weight:700; }
-    .badge-success { background:#dcfce7; color:#166534; }
-    .badge-danger { background:#fee2e2; color:#991b1b; }
-    .badge-primary { background:#dbeafe; color:#1e3a8a; }
-    .navlinks { margin-bottom:12px; color:#6b7280; display:flex; flex-wrap:wrap; gap:8px; }
-    .muted { color:#6b7280; font-size:14px; }
-    .section-note { margin-top:8px; color:#6b7280; font-size:13px; }
-    .empty { text-align:center; color:#6b7280; padding:18px 12px; }
-    .action-group { display:flex; flex-wrap:wrap; gap:8px; align-items:flex-start; }
-    .action-group form, .action-group details, .action-group a { margin:0; }
-    .topbar-actions { display:flex; align-items:center; gap:12px; flex-wrap:wrap; justify-content:flex-end; }
-    .action-link { display:inline-flex; align-items:center; justify-content:center; min-width:110px; padding:10px 12px; border-radius:8px; background:#eef2ff; color:#1e3a8a; }
-    details.inline-editor { display:inline-block; min-width:320px; background:#f8fafc; border:1px solid #e5e7eb; border-radius:8px; padding:8px 10px; }
-    details.inline-editor summary { cursor:pointer; font-weight:700; color:#1f2937; }
-    details.inline-editor form { margin-top:10px; width:280px; }
-    table td { vertical-align:top; padding:10px 8px; border-top:1px solid #eef2f7; }
-    table th { padding:10px 8px; }
-  </style>
-</head>
-<body>
-  <div class="container">${body}</div>
-</body>
-</html>`;
+  return ejs.render(layoutTemplate, { title, body });
 }
 
 function renderTopbarActions(primaryHref: string, primaryLabel: string): string {
@@ -836,151 +806,19 @@ export function renderProducerVideoPage(
   },
   message = '',
 ): string {
-  const msgHtml = message ? `<div class="msg">${message}</div>` : '';
-  const channelOptions = payload.channels
-    .map((item) => `<option value="${item.id}">${item.name}</option>`)
-    .join('');
-  const videoTypeOptions = renderSelectOptions([1], {
-    1: '1 - Movies',
-  });
-  const releaseTypeOptions = payload.releasesTypes
-    .map((item) => `<option value="${item.id}">${item.name}</option>`)
-    .join('');
-
-  const rowsHtml = payload.items
-    .map(
-      (item) => `<tr>
-        <td>${item.id}</td>
-        <td>${item.name || '-'}</td>
-        <td>${item.video_type}</td>
-        <td>${item.is_premium === 1 ? 'Premium' : 'Free'}</td>
-        <td>${item.is_rent === 1 ? 'Rent' : 'No'}</td>
-        <td>${item.status === 1 ? '<span class="badge badge-success">Show</span>' : '<span class="badge badge-danger">Hide</span>'}</td>
-        <td>${formatDateDMY(item.release_date)}</td>
-        <td>
-          <div class="action-group">
-            <details class="inline-editor">
-              <summary>Edit</summary>
-              <form method="post" action="/producer/video/update/${item.id}">
-                <input type="hidden" name="type_id" value="${payload.typeId}" />
-                <input type="hidden" name="video_type" value="${item.video_type}" />
-                <input name="name" value="${item.name}" placeholder="Name" required />
-                <input name="category_id" value="${item.category_id || ''}" placeholder="Category IDs: 1,2" />
-                <input name="language_id" value="${item.language_id || ''}" placeholder="Language IDs: 1,2" />
-                <input name="cast_id" value="${item.cast_id || ''}" placeholder="Cast IDs: 1,2" />
-                <input name="thumbnail" value="${item.thumbnail || ''}" placeholder="Thumbnail" />
-                <input name="landscape" value="${item.landscape || ''}" placeholder="Landscape" />
-                <input name="release_date" value="${item.release_date || ''}" placeholder="YYYY-MM-DD" />
-                <input name="video_upload_type" value="${item.video_upload_type || 'external'}" placeholder="video_upload_type" />
-                <input name="video_320" value="${item.video_320 || ''}" placeholder="video_320" />
-                <input name="description" value="${item.description || ''}" placeholder="Description" />
-                <input name="is_premium" value="${item.is_premium}" placeholder="is_premium" />
-                <input name="is_title" value="${item.is_title}" placeholder="is_title" />
-                <input name="is_download" value="${item.is_download}" placeholder="is_download" />
-                <input name="is_comment" value="${item.is_comment}" placeholder="is_comment" />
-                <input name="is_like" value="${item.is_like}" placeholder="is_like" />
-                <input name="is_rent" value="${item.is_rent}" placeholder="is_rent" />
-                <input name="price" value="${item.price}" placeholder="price" />
-                <input name="rent_day" value="${item.rent_day}" placeholder="rent_day" />
-                <input name="channel_id" value="${item.channel_id}" placeholder="channel_id" />
-                <button type="submit">Save Changes</button>
-              </form>
-            </details>
-            <form method="post" action="/producer/video-status" style="width:120px;">
-              <input type="hidden" name="id" value="${item.id}" />
-              <input type="hidden" name="type_id" value="${payload.typeId}" />
-              <button type="submit">Toggle</button>
-            </form>
-            <form method="post" action="/producer/video/releases" style="width:240px;">
-              <input type="hidden" name="id" value="${item.id}" />
-              <select name="type_id">${releaseTypeOptions}</select>
-              <select name="channel_id"><option value="0">No Channel</option>${channelOptions}</select>
-              <button type="submit">Release</button>
-            </form>
-            <form method="post" action="/producer/video/delete/${item.id}/${payload.typeId}" style="width:120px;">
-              <button type="submit">Delete</button>
-            </form>
-          </div>
-        </td>
-      </tr>`,
-    )
-    .join('');
-  const rows = rowsHtml || renderEmptyRow(8, 'No videos yet', 'Create your first video or adjust the search filters.');
-
   return pageTemplate(
     'Video',
-    `${renderPageHeader('Video', '/producer/dashboard', 'Back Dashboard', ['Producer', 'Content', 'Video'], 'Manage producer video content, release targets, and basic publishing state from one place.')}
-     ${msgHtml}
-     <div class="card" style="margin-bottom:16px;">
-       <form method="get" action="/producer/video/${payload.typeId}" style="display:grid; grid-template-columns:1.5fr 1fr 1fr 1fr auto; gap:10px;">
-         <input name="input_search" value="${payload.inputSearch}" placeholder="Search" />
-         <select name="input_rent">
-           <option value="0" ${payload.inputRent === '0' ? 'selected' : ''}>All Rent</option>
-           <option value="1" ${payload.inputRent === '1' ? 'selected' : ''}>Rent Only</option>
-         </select>
-         <select name="input_premium">
-           <option value="all" ${payload.inputPremium === 'all' ? 'selected' : ''}>All Premium</option>
-           <option value="0" ${payload.inputPremium === '0' ? 'selected' : ''}>Free</option>
-           <option value="1" ${payload.inputPremium === '1' ? 'selected' : ''}>Premium</option>
-         </select>
-         <select name="input_status">
-           <option value="all" ${payload.inputStatus === 'all' ? 'selected' : ''}>All Status</option>
-           <option value="0" ${payload.inputStatus === '0' ? 'selected' : ''}>Hide</option>
-           <option value="1" ${payload.inputStatus === '1' ? 'selected' : ''}>Show</option>
-         </select>
-         <button type="submit">Search</button>
-       </form>
-     </div>
-     <div class="card" style="margin-bottom:16px;">
-       <h3>Add Video</h3>
-       <div class="section-note">Use the create form for new content. Use the row-level Edit action for small corrections.</div>
-       <form method="post" action="/producer/video/save">
-         <input type="hidden" name="type_id" value="${payload.typeId}" />
-         <input name="name" placeholder="Name" required />
-         <select name="video_type" required>
-           <option value="">Select video type</option>
-           ${videoTypeOptions}
-         </select>
-         <input name="channel_id" placeholder="channel_id" />
-         <input name="category_id" placeholder="Category IDs: 1,2" required />
-         <input name="language_id" placeholder="Language IDs: 1,2" required />
-         <input name="cast_id" placeholder="Cast IDs: 1,2" />
-         <input name="thumbnail" placeholder="Thumbnail" />
-         <input name="landscape" placeholder="Landscape" />
-         <input name="description" placeholder="Description" />
-         <input name="release_date" placeholder="YYYY-MM-DD" />
-         <input name="video_upload_type" value="external" placeholder="video_upload_type" />
-         <input name="video_320" placeholder="video_320" required />
-         <input name="video_480" placeholder="video_480" />
-         <input name="video_720" placeholder="video_720" />
-         <input name="video_1080" placeholder="video_1080" />
-         <input name="trailer_type" value="external" placeholder="trailer_type" />
-         <input name="trailer_url" placeholder="trailer_url" />
-         <input name="subtitle_type" value="external" placeholder="subtitle_type" />
-         <input name="subtitle_1" placeholder="subtitle_1" />
-         <input name="subtitle_2" placeholder="subtitle_2" />
-         <input name="subtitle_3" placeholder="subtitle_3" />
-         <input name="subtitle_lang_1" placeholder="subtitle_lang_1" />
-         <input name="subtitle_lang_2" placeholder="subtitle_lang_2" />
-         <input name="subtitle_lang_3" placeholder="subtitle_lang_3" />
-         <input name="is_premium" value="0" placeholder="is_premium" required />
-         <input name="is_title" value="0" placeholder="is_title" required />
-         <input name="is_download" value="0" placeholder="is_download" required />
-         <input name="is_comment" value="1" placeholder="is_comment" required />
-         <input name="is_like" value="1" placeholder="is_like" required />
-         <input name="is_rent" value="0" placeholder="is_rent" required />
-         <input name="price" value="0" placeholder="price" />
-         <input name="rent_day" value="0" placeholder="rent_day" />
-         <button type="submit">Save</button>
-       </form>
-     </div>
-     <div class="card">
-       <h3>Video List</h3>
-       <table style="width:100%; border-collapse:collapse;">
-         <thead><tr><th align="left">#</th><th align="left">Name</th><th align="left">Video Type</th><th align="left">Premium</th><th align="left">Rent</th><th align="left">Status</th><th align="left">Release Date</th><th align="left">Actions</th></tr></thead>
-         <tbody>${rows}</tbody>
-       </table>
-     </div>`,
+    ejs.render(
+      producerVideoTemplate,
+      {
+        payload,
+        message,
+        formatDateDMY,
+      },
+      {
+        filename: producerVideoTemplatePath,
+      },
+    ),
   );
 }
 
@@ -1017,128 +855,19 @@ export function renderProducerTvShowPage(
   },
   message = '',
 ): string {
-  const msgHtml = message ? `<div class="msg">${message}</div>` : '';
-  const channelOptions = payload.channels
-    .map((item) => `<option value="${item.id}">${item.name}</option>`)
-    .join('');
-  const videoTypeOptions = renderSelectOptions([2], {
-    2: '2 - TV Shows',
-  });
-  const releaseTypeOptions = payload.releasesTypes
-    .map((item) => `<option value="${item.id}">${item.name}</option>`)
-    .join('');
-
-  const rowsHtml = payload.items
-    .map(
-      (item) => `<tr>
-        <td>${item.id}</td>
-        <td>${item.name || '-'}</td>
-        <td>${item.video_type}</td>
-        <td>${item.is_rent === 1 ? 'Rent' : 'No'}</td>
-        <td>${item.status === 1 ? '<span class="badge badge-success">Show</span>' : '<span class="badge badge-danger">Hide</span>'}</td>
-        <td>${formatDateDMY(item.release_date)}</td>
-        <td>
-          <div class="action-group">
-            <a class="action-link" href="/producer/tvshow-episode/${item.id}/${payload.typeId}">Episodes</a>
-            <details class="inline-editor">
-              <summary>Edit</summary>
-              <form method="post" action="/producer/tvshow/update/${item.id}">
-                <input type="hidden" name="type_id" value="${payload.typeId}" />
-                <input type="hidden" name="video_type" value="${item.video_type}" />
-                <input name="name" value="${item.name}" placeholder="Name" required />
-                <input name="category_id" value="${item.category_id || ''}" placeholder="Category IDs: 1,2" />
-                <input name="language_id" value="${item.language_id || ''}" placeholder="Language IDs: 1,2" />
-                <input name="cast_id" value="${item.cast_id || ''}" placeholder="Cast IDs: 1,2" />
-                <input name="thumbnail" value="${item.thumbnail || ''}" placeholder="Thumbnail" />
-                <input name="landscape" value="${item.landscape || ''}" placeholder="Landscape" />
-                <input name="description" value="${item.description || ''}" placeholder="Description" />
-                <input name="release_date" value="${item.release_date || ''}" placeholder="YYYY-MM-DD" />
-                <input name="is_title" value="${item.is_title}" placeholder="is_title" />
-                <input name="is_comment" value="${item.is_comment}" placeholder="is_comment" />
-                <input name="is_like" value="${item.is_like}" placeholder="is_like" />
-                <input name="is_rent" value="${item.is_rent}" placeholder="is_rent" />
-                <input name="price" value="${item.price}" placeholder="price" />
-                <input name="rent_day" value="${item.rent_day}" placeholder="rent_day" />
-                <input name="channel_id" value="${item.channel_id}" placeholder="channel_id" />
-                <button type="submit">Save Changes</button>
-              </form>
-            </details>
-            <form method="post" action="/producer/tvshow-status" style="width:120px;">
-              <input type="hidden" name="id" value="${item.id}" />
-              <input type="hidden" name="type_id" value="${payload.typeId}" />
-              <button type="submit">Toggle</button>
-            </form>
-            <form method="post" action="/producer/tvshow/releases" style="width:240px;">
-              <input type="hidden" name="id" value="${item.id}" />
-              <select name="type_id">${releaseTypeOptions}</select>
-              <select name="channel_id"><option value="0">No Channel</option>${channelOptions}</select>
-              <button type="submit">Release</button>
-            </form>
-            <form method="post" action="/producer/tvshow/delete/${item.id}/${payload.typeId}" style="width:120px;">
-              <button type="submit">Delete</button>
-            </form>
-          </div>
-        </td>
-      </tr>`,
-    )
-    .join('');
-  const rows = rowsHtml || renderEmptyRow(7, 'No TV shows yet', 'Create your first show or change the filter conditions.');
-
   return pageTemplate(
     'TV Show',
-    `${renderPageHeader('TV Show', '/producer/dashboard', 'Back Dashboard', ['Producer', 'Content', 'TV Show'], 'Use episodes, release targets, and publishing actions from a cleaner action area.')}
-     ${msgHtml}
-     <div class="card" style="margin-bottom:16px;">
-       <form method="get" action="/producer/tvshow/${payload.typeId}" style="display:grid; grid-template-columns:1.5fr 1fr 1fr auto; gap:10px;">
-         <input name="input_search" value="${payload.inputSearch}" placeholder="Search" />
-         <select name="input_rent">
-           <option value="0" ${payload.inputRent === '0' ? 'selected' : ''}>All Rent</option>
-           <option value="1" ${payload.inputRent === '1' ? 'selected' : ''}>Rent Only</option>
-         </select>
-         <select name="input_status">
-           <option value="all" ${payload.inputStatus === 'all' ? 'selected' : ''}>All Status</option>
-           <option value="0" ${payload.inputStatus === '0' ? 'selected' : ''}>Hide</option>
-           <option value="1" ${payload.inputStatus === '1' ? 'selected' : ''}>Show</option>
-         </select>
-         <button type="submit">Search</button>
-       </form>
-     </div>
-     <div class="card" style="margin-bottom:16px;">
-       <h3>Add TV Show</h3>
-       <div class="section-note">Create new shows here. For existing rows, use Episodes, Edit, Release, or Toggle actions from the table.</div>
-       <form method="post" action="/producer/tvshow/save">
-         <input type="hidden" name="type_id" value="${payload.typeId}" />
-         <input name="name" placeholder="Name" required />
-         <select name="video_type" required>
-           <option value="">Select video type</option>
-           ${videoTypeOptions}
-         </select>
-         <input name="channel_id" placeholder="channel_id" />
-         <input name="category_id" placeholder="Category IDs: 1,2" required />
-         <input name="language_id" placeholder="Language IDs: 1,2" required />
-         <input name="cast_id" placeholder="Cast IDs: 1,2" />
-         <input name="thumbnail" placeholder="Thumbnail" />
-         <input name="landscape" placeholder="Landscape" />
-         <input name="trailer_type" value="external" placeholder="trailer_type" />
-         <input name="trailer_url" placeholder="trailer_url" />
-         <input name="description" placeholder="Description" />
-         <input name="release_date" placeholder="YYYY-MM-DD" />
-         <input name="is_title" value="0" placeholder="is_title" required />
-         <input name="is_comment" value="1" placeholder="is_comment" required />
-         <input name="is_like" value="1" placeholder="is_like" required />
-         <input name="is_rent" value="0" placeholder="is_rent" required />
-         <input name="price" value="0" placeholder="price" />
-         <input name="rent_day" value="0" placeholder="rent_day" />
-         <button type="submit">Save</button>
-       </form>
-     </div>
-     <div class="card">
-       <h3>TV Show List</h3>
-       <table style="width:100%; border-collapse:collapse;">
-         <thead><tr><th align="left">#</th><th align="left">Name</th><th align="left">Video Type</th><th align="left">Rent</th><th align="left">Status</th><th align="left">Release Date</th><th align="left">Actions</th></tr></thead>
-         <tbody>${rows}</tbody>
-       </table>
-     </div>`,
+    ejs.render(
+      producerTvShowTemplate,
+      {
+        payload,
+        message,
+        formatDateDMY,
+      },
+      {
+        filename: producerTvShowTemplatePath,
+      },
+    ),
   );
 }
 
@@ -1159,6 +888,7 @@ export function renderProducerTvShowEpisodePage(
       description: string;
       is_premium: number;
       is_title: number;
+      is_download: number;
       total_view: number;
       status: number;
       sort_order: number;
@@ -1322,110 +1052,18 @@ export function renderProducerShortsPage(
   },
   message = '',
 ): string {
-  const msgHtml = message ? `<div class="msg">${message}</div>` : '';
-  const channelOptions = payload.channels
-    .map((item) => `<option value="${item.id}">${item.name}</option>`)
-    .join('');
-  const videoTypeOptions = renderSelectOptions([8], {
-    8: '8 - Shorts',
-  });
-  const releaseTypeOptions = payload.releasesTypes
-    .map((item) => `<option value="${item.id}">${item.name}</option>`)
-    .join('');
-
-  const rowsHtml = payload.items
-    .map(
-      (item) => `<tr>
-        <td>${item.id}</td>
-        <td>${item.name || '-'}</td>
-        <td>${item.video_type}</td>
-        <td>${item.status === 1 ? '<span class="badge badge-success">Show</span>' : '<span class="badge badge-danger">Hide</span>'}</td>
-        <td>
-          <div class="action-group">
-            <a class="action-link" href="/producer/shorts-episode/${item.id}/${payload.typeId}">Episodes</a>
-            <details class="inline-editor">
-              <summary>Edit</summary>
-              <form method="post" action="/producer/shorts/update/${item.id}">
-                <input type="hidden" name="type_id" value="${payload.typeId}" />
-                <input type="hidden" name="video_type" value="${item.video_type}" />
-                <input name="name" value="${item.name}" placeholder="Name" required />
-                <input name="category_id" value="${item.category_id || ''}" placeholder="Category IDs: 1,2" />
-                <input name="language_id" value="${item.language_id || ''}" placeholder="Language IDs: 1,2" />
-                <input name="cast_id" value="${item.cast_id || ''}" placeholder="Cast IDs: 1,2" />
-                <input name="thumbnail" value="${item.thumbnail || ''}" placeholder="Thumbnail" />
-                <input name="description" value="${item.description || ''}" placeholder="Description" />
-                <input name="is_title" value="${item.is_title}" placeholder="is_title" />
-                <input name="is_comment" value="${item.is_comment}" placeholder="is_comment" />
-                <input name="is_like" value="${item.is_like}" placeholder="is_like" />
-                <button type="submit">Save Changes</button>
-              </form>
-            </details>
-            <form method="post" action="/producer/shorts-status" style="width:120px;">
-              <input type="hidden" name="id" value="${item.id}" />
-              <input type="hidden" name="type_id" value="${payload.typeId}" />
-              <button type="submit">Toggle</button>
-            </form>
-            <form method="post" action="/producer/shorts/releases" style="width:240px;">
-              <input type="hidden" name="id" value="${item.id}" />
-              <select name="type_id">${releaseTypeOptions}</select>
-              <select name="channel_id"><option value="0">No Channel</option>${channelOptions}</select>
-              <button type="submit">Release</button>
-            </form>
-            <form method="post" action="/producer/shorts/delete/${item.id}/${payload.typeId}" style="width:120px;">
-              <button type="submit">Delete</button>
-            </form>
-          </div>
-        </td>
-      </tr>`,
-    )
-    .join('');
-  const rows = rowsHtml || renderEmptyRow(5, 'No shorts yet', 'Create shorts content first, then continue with episode management if needed.');
-
   return pageTemplate(
     'Shorts',
-    `${renderPageHeader('Shorts', '/producer/dashboard', 'Back Dashboard', ['Producer', 'Content', 'Shorts'], 'Shorts keep a lighter schema, so the list now emphasizes actions over inline field noise.')}
-     ${msgHtml}
-     <div class="card" style="margin-bottom:16px;">
-       <form method="get" action="/producer/shorts/${payload.typeId}" style="display:grid; grid-template-columns:1.5fr 1fr auto; gap:10px;">
-         <input name="input_search" value="${payload.inputSearch}" placeholder="Search" />
-         <select name="input_status">
-           <option value="all" ${payload.inputStatus === 'all' ? 'selected' : ''}>All Status</option>
-           <option value="0" ${payload.inputStatus === '0' ? 'selected' : ''}>Hide</option>
-           <option value="1" ${payload.inputStatus === '1' ? 'selected' : ''}>Show</option>
-         </select>
-         <button type="submit">Search</button>
-       </form>
-     </div>
-     <div class="card" style="margin-bottom:16px;">
-       <h3>Add Shorts</h3>
-       <div class="section-note">Use this form for new shorts. Existing rows keep their actions compact inside the list.</div>
-       <form method="post" action="/producer/shorts/save">
-         <input type="hidden" name="type_id" value="${payload.typeId}" />
-         <input name="name" placeholder="Name" required />
-         <select name="video_type" required>
-           <option value="">Select video type</option>
-           ${videoTypeOptions}
-         </select>
-         <input name="category_id" placeholder="Category IDs: 1,2" required />
-         <input name="language_id" placeholder="Language IDs: 1,2" required />
-         <input name="cast_id" placeholder="Cast IDs: 1,2" />
-         <input name="thumbnail" placeholder="Thumbnail" />
-         <input name="trailer_type" value="external" placeholder="trailer_type" />
-         <input name="trailer_url" placeholder="trailer_url" />
-         <input name="description" placeholder="Description" />
-         <input name="is_title" value="0" placeholder="is_title" required />
-         <input name="is_comment" value="1" placeholder="is_comment" required />
-         <input name="is_like" value="1" placeholder="is_like" required />
-         <button type="submit">Save</button>
-       </form>
-     </div>
-     <div class="card">
-       <h3>Shorts List</h3>
-       <table style="width:100%; border-collapse:collapse;">
-         <thead><tr><th align="left">#</th><th align="left">Name</th><th align="left">Video Type</th><th align="left">Status</th><th align="left">Actions</th></tr></thead>
-         <tbody>${rows}</tbody>
-       </table>
-     </div>`,
+    ejs.render(
+      producerShortsTemplate,
+      {
+        payload,
+        message,
+      },
+      {
+        filename: producerShortsTemplatePath,
+      },
+    ),
   );
 }
 

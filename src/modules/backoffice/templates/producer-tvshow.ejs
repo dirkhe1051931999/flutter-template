@@ -1,0 +1,32 @@
+<%- include('./components/video-theme') %>
+
+<%- include('./components/producer-page-header', {
+  pageTitle: 'TV Show',
+  description: 'Manage TV shows with the same componentized workflow used by Video.'
+}) %>
+
+<div class="ios-shell">
+  <%- include('./components/producer-studio-hero', {
+    payload,
+    heroTitle: 'Producer TV Show Studio',
+    heroSubtitle: 'Unified card layout for create, search, and quick show actions.'
+  }) %>
+
+  <% if (message) { %>
+    <div class="msg"><%= message %></div>
+  <% } %>
+
+  <%- include('./components/tvshow-filter-bar', { payload }) %>
+  <%- include('./components/tvshow-create-form', { payload }) %>
+
+  <div class="ios-list">
+    <% if (payload.items.length === 0) { %>
+      <div class="ios-card ios-empty"><strong>No TV shows yet</strong><div style="margin-top:6px;">Create your first TV show or adjust the filters above.</div></div>
+    <% } %>
+    <% payload.items.forEach((item) => { %>
+      <%- include('./components/tvshow-card', { payload, item, formatDateDMY }) %>
+    <% }) %>
+  </div>
+</div>
+
+<%- include('./components/rent-toggle-script') %>
