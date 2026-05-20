@@ -30,6 +30,7 @@ function pageTemplate(title: string, body: string): string {
     .empty { text-align:center; color:#6b7280; padding:18px 12px; }
     .action-group { display:flex; flex-wrap:wrap; gap:8px; align-items:flex-start; }
     .action-group form, .action-group details, .action-group a { margin:0; }
+    .topbar-actions { display:flex; align-items:center; gap:12px; flex-wrap:wrap; justify-content:flex-end; }
     .action-link { display:inline-flex; align-items:center; justify-content:center; min-width:110px; padding:10px 12px; border-radius:8px; background:#eef2ff; color:#1e3a8a; }
     details.inline-editor { display:inline-block; min-width:320px; background:#f8fafc; border:1px solid #e5e7eb; border-radius:8px; padding:8px 10px; }
     details.inline-editor summary { cursor:pointer; font-weight:700; color:#1f2937; }
@@ -44,10 +45,20 @@ function pageTemplate(title: string, body: string): string {
 </html>`;
 }
 
+function renderTopbarActions(primaryHref: string, primaryLabel: string): string {
+  return `<div class="topbar-actions"><a href="/docs">/docs</a><a href="${primaryHref}">${primaryLabel}</a></div>`;
+}
+
 function renderPageHeader(title: string, backHref: string, backLabel: string, links: string[] = [], description = ''): string {
   const nav = links.length > 0 ? `<div class="navlinks">${links.join('<span>/</span>')}</div>` : '';
   const desc = description ? `<div class="muted" style="margin-bottom:16px;">${description}</div>` : '';
-  return `<div class="topbar"><div><h1>${title}</h1>${nav}</div><a href="${backHref}">${backLabel}</a></div>${desc}`;
+  return `<div class="topbar"><div><h1>${title}</h1>${nav}</div>${renderTopbarActions(backHref, backLabel)}</div>${desc}`;
+}
+
+function renderSelectOptions(options: number[], labels?: Record<number, string>): string {
+  return options
+    .map((value) => `<option value="${value}">${labels?.[value] ?? value}</option>`)
+    .join('');
 }
 
 function renderEmptyRow(colspan: number, title: string, description: string): string {
@@ -301,11 +312,11 @@ export function renderAdminAvatarPage(
 
   return pageTemplate(
     'Admin Avatar',
-    `<div class="topbar"><h1>Admin Avatar</h1><a href="/admin/dashboard">Back Dashboard</a></div>
+    `<div class="topbar"><h1>Admin Avatar</h1>${renderTopbarActions('/admin/dashboard', 'Back Dashboard')}</div>
      ${msgHtml}
      <div class="card" style="margin-bottom:16px;">
        <h3>Create Avatar</h3>
-       <form method="post" action="/admin/avatar">
+       <form method="post" action="/admin/avatar/save">
          <input name="name" placeholder="Name" required />
          <input name="image" placeholder="Image filename" />
          <button type="submit">Create</button>
@@ -360,11 +371,11 @@ export function renderAdminTypePage(
 
   return pageTemplate(
     'Admin Type',
-    `<div class="topbar"><h1>Admin Type</h1><a href="/admin/dashboard">Back Dashboard</a></div>
+    `<div class="topbar"><h1>Admin Type</h1>${renderTopbarActions('/admin/dashboard', 'Back Dashboard')}</div>
      ${msgHtml}
      <div class="card" style="margin-bottom:16px;">
        <h3>Create Type</h3>
-       <form method="post" action="/admin/type">
+       <form method="post" action="/admin/type/save">
          <input name="name" placeholder="Name" required />
          <input name="type" placeholder="Type number" required />
          <input name="icon" placeholder="Icon filename" />
@@ -413,11 +424,11 @@ export function renderAdminSeasonPage(
 
   return pageTemplate(
     'Admin Season',
-    `<div class="topbar"><h1>Admin Season</h1><a href="/admin/dashboard">Back Dashboard</a></div>
+    `<div class="topbar"><h1>Admin Season</h1>${renderTopbarActions('/admin/dashboard', 'Back Dashboard')}</div>
      ${msgHtml}
      <div class="card" style="margin-bottom:16px;">
        <h3>Create Season</h3>
-       <form method="post" action="/admin/season">
+       <form method="post" action="/admin/season/save">
          <input name="name" placeholder="Name" required />
          <button type="submit">Create</button>
        </form>
@@ -469,11 +480,11 @@ export function renderAdminLanguagePage(
 
   return pageTemplate(
     'Admin Language',
-    `<div class="topbar"><h1>Admin Language</h1><a href="/admin/dashboard">Back Dashboard</a></div>
+    `<div class="topbar"><h1>Admin Language</h1>${renderTopbarActions('/admin/dashboard', 'Back Dashboard')}</div>
      ${msgHtml}
      <div class="card" style="margin-bottom:16px;">
        <h3>Create Language</h3>
-       <form method="post" action="/admin/language">
+       <form method="post" action="/admin/language/save">
          <input name="name" placeholder="Name" required />
          <input name="image" placeholder="Image filename" />
          <button type="submit">Create</button>
@@ -508,7 +519,7 @@ export function renderAdminDashboard(userName: string, stats: Record<string, num
 
   return pageTemplate(
     'Admin Dashboard',
-    `<div class="topbar"><h1>Admin Dashboard</h1><a href="/admin/logout">Logout</a></div>
+    `<div class="topbar"><h1>Admin Dashboard</h1>${renderTopbarActions('/admin/logout', 'Logout')}</div>
      <div style="margin-bottom:12px;"><a href="/admin/profile">Profile</a> | <a href="/admin/type">Type</a> | <a href="/admin/category">Category</a> | <a href="/admin/language">Language</a> | <a href="/admin/season">Season</a> | <a href="/admin/avatar">Avatar</a> | <a href="/admin/channel">Channel</a> | <a href="/admin/video">Video</a> | <a href="/admin/tvshow">TV Show</a> | <a href="/admin/shorts">Shorts</a> | <a href="/admin/episode">Episodes</a></div>
      <div class="card"><p>Welcome, ${userName}</p><div class="grid">${metrics}</div></div>`,
   );
@@ -517,7 +528,7 @@ export function renderAdminDashboard(userName: string, stats: Record<string, num
 export function renderAdminContentPlaceholderPage(title: string, message: string): string {
   return pageTemplate(
     title,
-    `<div class="topbar"><h1>${title}</h1><a href="/admin/dashboard">Back Dashboard</a></div>
+    `<div class="topbar"><h1>${title}</h1>${renderTopbarActions('/admin/dashboard', 'Back Dashboard')}</div>
      <div class="card"><p>${message}</p></div>`,
   );
 }
@@ -566,7 +577,7 @@ export function renderAdminVideoPage(
 
   return pageTemplate(
     'Admin Video',
-    `<div class="topbar"><h1>Admin Video</h1><a href="/admin/dashboard">Back Dashboard</a></div>
+    `<div class="topbar"><h1>Admin Video</h1>${renderTopbarActions('/admin/dashboard', 'Back Dashboard')}</div>
      ${msgHtml}
      <div class="card">
        <table style="width:100%; border-collapse:collapse;">
@@ -619,7 +630,7 @@ export function renderAdminTvShowPage(
 
   return pageTemplate(
     'Admin TV Show',
-    `<div class="topbar"><h1>Admin TV Show</h1><a href="/admin/dashboard">Back Dashboard</a></div>
+    `<div class="topbar"><h1>Admin TV Show</h1>${renderTopbarActions('/admin/dashboard', 'Back Dashboard')}</div>
      ${msgHtml}
      <div class="card">
        <table style="width:100%; border-collapse:collapse;">
@@ -669,7 +680,7 @@ export function renderAdminShortsPage(
 
   return pageTemplate(
     'Admin Shorts',
-    `<div class="topbar"><h1>Admin Shorts</h1><a href="/admin/dashboard">Back Dashboard</a></div>
+    `<div class="topbar"><h1>Admin Shorts</h1>${renderTopbarActions('/admin/dashboard', 'Back Dashboard')}</div>
      ${msgHtml}
      <div class="card">
        <table style="width:100%; border-collapse:collapse;">
@@ -683,7 +694,7 @@ export function renderAdminShortsPage(
 export function renderAdminEpisodeHubPage(): string {
   return pageTemplate(
     'Admin Episodes',
-    `<div class="topbar"><h1>Admin Episodes</h1><a href="/admin/dashboard">Back Dashboard</a></div>
+    `<div class="topbar"><h1>Admin Episodes</h1>${renderTopbarActions('/admin/dashboard', 'Back Dashboard')}</div>
      <div class="card" style="margin-bottom:16px;">
        <h3>Episode Management</h3>
        <p>Select the content line you want to manage. The detailed admin episode modules are the next migration step.</p>
@@ -734,7 +745,7 @@ export function renderProducerDashboard(
 
   return pageTemplate(
     'Producer Dashboard',
-    `<div class="topbar"><h1>Producer Dashboard</h1><a href="/producer/logout">Logout</a></div>
+    `<div class="topbar"><h1>Producer Dashboard</h1>${renderTopbarActions('/producer/logout', 'Logout')}</div>
      <div style="margin-bottom:12px;"><a href="/producer/profile">Profile</a> | <a href="/producer/channel">Channel</a> | ${videoLink}${tvShowLink}${shortsLink}<a href="/producer/rent-transaction">Rent Transactions</a> | <a href="/producer/withdrawal">Withdrawal</a> | <a href="/producer/change-password">Change Password</a></div>
      <div class="card"><p>Welcome, ${userName}</p><div class="grid">${metrics}</div></div>`,
   );
@@ -761,7 +772,7 @@ export function renderProducerChannelPage(
 
   return pageTemplate(
     'Channel',
-    `<div class="topbar"><h1>Channel</h1><a href="/producer/dashboard">Back Dashboard</a></div>
+    `<div class="topbar"><h1>Channel</h1>${renderTopbarActions('/producer/dashboard', 'Back Dashboard')}</div>
      <div class="card" style="margin-bottom:16px;">
        <form method="get" action="/producer/channel" style="display:grid; grid-template-columns:1fr auto; gap:10px;">
          <input name="input_search" value="${payload.inputSearch}" placeholder="Search" />
@@ -829,6 +840,9 @@ export function renderProducerVideoPage(
   const channelOptions = payload.channels
     .map((item) => `<option value="${item.id}">${item.name}</option>`)
     .join('');
+  const videoTypeOptions = renderSelectOptions([1], {
+    1: '1 - Movies',
+  });
   const releaseTypeOptions = payload.releasesTypes
     .map((item) => `<option value="${item.id}">${item.name}</option>`)
     .join('');
@@ -923,7 +937,10 @@ export function renderProducerVideoPage(
        <form method="post" action="/producer/video/save">
          <input type="hidden" name="type_id" value="${payload.typeId}" />
          <input name="name" placeholder="Name" required />
-         <input name="video_type" placeholder="video_type (1/5/6/7)" required />
+         <select name="video_type" required>
+           <option value="">Select video type</option>
+           ${videoTypeOptions}
+         </select>
          <input name="channel_id" placeholder="channel_id" />
          <input name="category_id" placeholder="Category IDs: 1,2" required />
          <input name="language_id" placeholder="Language IDs: 1,2" required />
@@ -1004,6 +1021,9 @@ export function renderProducerTvShowPage(
   const channelOptions = payload.channels
     .map((item) => `<option value="${item.id}">${item.name}</option>`)
     .join('');
+  const videoTypeOptions = renderSelectOptions([2], {
+    2: '2 - TV Shows',
+  });
   const releaseTypeOptions = payload.releasesTypes
     .map((item) => `<option value="${item.id}">${item.name}</option>`)
     .join('');
@@ -1089,7 +1109,10 @@ export function renderProducerTvShowPage(
        <form method="post" action="/producer/tvshow/save">
          <input type="hidden" name="type_id" value="${payload.typeId}" />
          <input name="name" placeholder="Name" required />
-         <input name="video_type" placeholder="video_type (2/5/6/7)" required />
+         <select name="video_type" required>
+           <option value="">Select video type</option>
+           ${videoTypeOptions}
+         </select>
          <input name="channel_id" placeholder="channel_id" />
          <input name="category_id" placeholder="Category IDs: 1,2" required />
          <input name="language_id" placeholder="Language IDs: 1,2" required />
@@ -1136,7 +1159,6 @@ export function renderProducerTvShowEpisodePage(
       description: string;
       is_premium: number;
       is_title: number;
-      is_download: number;
       total_view: number;
       status: number;
       sort_order: number;
@@ -1304,6 +1326,9 @@ export function renderProducerShortsPage(
   const channelOptions = payload.channels
     .map((item) => `<option value="${item.id}">${item.name}</option>`)
     .join('');
+  const videoTypeOptions = renderSelectOptions([8], {
+    8: '8 - Shorts',
+  });
   const releaseTypeOptions = payload.releasesTypes
     .map((item) => `<option value="${item.id}">${item.name}</option>`)
     .join('');
@@ -1377,7 +1402,10 @@ export function renderProducerShortsPage(
        <form method="post" action="/producer/shorts/save">
          <input type="hidden" name="type_id" value="${payload.typeId}" />
          <input name="name" placeholder="Name" required />
-         <input name="video_type" placeholder="video_type" required />
+         <select name="video_type" required>
+           <option value="">Select video type</option>
+           ${videoTypeOptions}
+         </select>
          <input name="category_id" placeholder="Category IDs: 1,2" required />
          <input name="language_id" placeholder="Language IDs: 1,2" required />
          <input name="cast_id" placeholder="Cast IDs: 1,2" />
@@ -1550,7 +1578,7 @@ export function renderProducerWithdrawalPage(
 
   return pageTemplate(
     'Withdrawal Request',
-    `<div class="topbar"><h1>Withdrawal Request</h1><a href="/producer/dashboard">Back Dashboard</a></div>
+    `<div class="topbar"><h1>Withdrawal Request</h1>${renderTopbarActions('/producer/dashboard', 'Back Dashboard')}</div>
      ${msgHtml}
      <div class="card" style="margin-bottom:16px;">
        <h3>Add Withdrawal Request</h3>
@@ -1630,7 +1658,7 @@ export function renderProducerRentTransactionPage(
 
   return pageTemplate(
     'Rent Transaction',
-    `<div class="topbar"><h1>Rent Transaction</h1><a href="/producer/dashboard">Back Dashboard</a></div>
+    `<div class="topbar"><h1>Rent Transaction</h1>${renderTopbarActions('/producer/dashboard', 'Back Dashboard')}</div>
      <div class="card" style="margin-bottom:16px;">
        <p style="margin:0;"><b>Year:</b> Commission ${formatAmount(payload.currencyCode, payload.summary.year.totalCommission)} | Producer Earnings ${formatAmount(payload.currencyCode, payload.summary.year.totalProducerEarning)}</p>
        <p style="margin:8px 0 0;"><b>Month:</b> Commission ${formatAmount(payload.currencyCode, payload.summary.month.totalCommission)} | Producer Earnings ${formatAmount(payload.currencyCode, payload.summary.month.totalProducerEarning)}</p>
@@ -1667,7 +1695,7 @@ export function renderAdminProfilePage(
 
   return pageTemplate(
     'Admin Profile',
-    `<div class="topbar"><h1>Admin Profile</h1><a href="/admin/dashboard">Back Dashboard</a></div>
+    `<div class="topbar"><h1>Admin Profile</h1>${renderTopbarActions('/admin/dashboard', 'Back Dashboard')}</div>
      <div class="card" style="margin-bottom:16px;">
        <h3>Profile</h3>
        ${profileMsgHtml}
@@ -1700,7 +1728,7 @@ export function renderProducerProfilePage(
 
   return pageTemplate(
     'Producer Profile',
-    `<div class="topbar"><h1>Producer Profile</h1><a href="/producer/dashboard">Back Dashboard</a></div>
+    `<div class="topbar"><h1>Producer Profile</h1>${renderTopbarActions('/producer/dashboard', 'Back Dashboard')}</div>
      <div class="card">
        ${msgHtml}
        <form method="post" action="/producer/profile">
@@ -1720,7 +1748,7 @@ export function renderProducerChangePasswordPage(profileId: number, message = ''
 
   return pageTemplate(
     'Producer Change Password',
-    `<div class="topbar"><h1>Producer Change Password</h1><a href="/producer/dashboard">Back Dashboard</a></div>
+    `<div class="topbar"><h1>Producer Change Password</h1>${renderTopbarActions('/producer/dashboard', 'Back Dashboard')}</div>
      <div class="card">
        ${msgHtml}
        <form method="post" action="/producer/change-password">

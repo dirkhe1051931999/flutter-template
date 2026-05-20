@@ -23,6 +23,28 @@ type ApiDoc = {
   authFailureExample: string;
 };
 
+function escapeHtml(value: string): string {
+  return value
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
+}
+
+function parseExampleObject(input: string): Record<string, unknown> {
+  try {
+    const parsed = JSON.parse(input) as unknown;
+    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+      return parsed as Record<string, unknown>;
+    }
+  } catch {
+    return {};
+  }
+
+  return {};
+}
+
 const apiDocs: ApiDoc[] = [
   {
     slug: 'get_channel',
@@ -333,6 +355,13 @@ function renderLayout(title: string, body: string): string {
     .topbar { display:flex; justify-content:space-between; align-items:flex-start; gap:16px; margin-bottom:14px; }
     .link-group { display:flex; gap:10px; flex-wrap:wrap; }
     .link-btn { display:inline-flex; align-items:center; justify-content:center; min-width:110px; padding:10px 12px; border-radius:8px; background:#eef2ff; color:#1e3a8a; }
+    .debug-grid { display:grid; gap:14px; }
+    .debug-field { display:grid; gap:8px; }
+    .debug-label { font-weight:700; color:#111827; }
+    .debug-grid input { width:100%; box-sizing:border-box; padding:10px 12px; border:1px solid #d1d5db; border-radius:10px; font:inherit; }
+    .debug-action-row { display:flex; justify-content:flex-start; }
+    .debug-submit { padding:10px 16px; border:none; border-radius:10px; background:#111827; color:#fff; cursor:pointer; font:inherit; }
+    .debug-submit:disabled { opacity:.6; cursor:not-allowed; }
   </style>
 </head>
 <body>
@@ -446,6 +475,46 @@ function renderErrorRows(items: Array<{ code: number; meaning: string }>): strin
     .join('');
 }
 
+function renderRequestDebugger(doc: ApiDoc): string {
+  const exampleObject = parseExampleObject(doc.requestExample);
+  const fieldRows = doc.fields.length === 0
+    ? `<div class="muted">该接口无需业务参数，将直接提交空 JSON 对象。</div>`
+    : doc.fields
+        .map((field) => {
+          const exampleValue = exampleObject[field.name];
+          const defaultValue = exampleValue === undefined || exampleValue === null ? '' : String(exampleValue);
+
+          return `<label class="debug-field">
+            <div class="debug-label"><code>${field.name}</code> <span class="muted">${field.type}${field.required ? ' · 必填' : ' · 可选'}</span></div>
+            <input data-param-name="${escapeHtml(field.name)}" data-param-type="${escapeHtml(field.type)}" placeholder="${escapeHtml(field.description)}" value="${escapeHtml(defaultValue)}" />
+          </label>`;
+        })
+        .join('');
+
+  return `<div class="card">
+    <h2>请求调试</h2>
+    <div class="muted" style="margin-bottom:14px;">按参数一行一个填写，点击发送后会直接请求当前接口并展示返回结果。</div>
+    <div class="debug-grid" data-doc-debugger data-endpoint="${escapeHtml(doc.path)}" data-method="${doc.method}">
+      <label class="debug-field">
+        <div class="debug-label"><code>Api-Token</code> <span class="muted">请求头</span></div>
+        <input data-api-token placeholder="请输入 Api-Token" />
+      </label>
+      ${fieldRows}
+      <div class="debug-action-row">
+        <button type="button" class="debug-submit">发送请求</button>
+      </div>
+      <div>
+        <div class="debug-label">请求体预览</div>
+        <pre class="debug-request">{}</pre>
+      </div>
+      <div>
+        <div class="debug-label">响应结果</div>
+        <pre class="debug-response">点击“发送请求”后查看结果</pre>
+      </div>
+    </div>
+  </div>`;
+}
+
 function renderDocsDetailPage(doc: ApiDoc): string {
   return renderLayout(
     `${doc.title} - DTLive API Docs`,
@@ -483,6 +552,7 @@ function renderDocsDetailPage(doc: ApiDoc): string {
       <h2>请求 JSON 示例</h2>
       <pre>${doc.requestExample}</pre>
     </div>
+    ${renderRequestDebugger(doc)}
     <div class="card">
       <h2>成功响应 JSON 示例</h2>
       <pre>${doc.successExample}</pre>
@@ -504,7 +574,94 @@ function renderDocsDetailPage(doc: ApiDoc): string {
     <div class="card">
       <h2>鉴权失败示例</h2>
       <pre>${doc.authFailureExample}</pre>
-    </div>`,
+    </div>
+    <script>
+      (() => {
+        const debuggers = document.querySelectorAll('[data-doc-debugger]');
+
+        const parseValue = (rawValue, type) => {
+          const value = rawValue.trim();
+          if (value.length === 0) {
+            return undefined;
+          }
+          if (type === 'number') {
+            const parsed = Number(value);
+            return Number.isNaN(parsed) ? value : parsed;
+          }
+          if (type === 'boolean') {
+            return value === 'true' || value === '1';
+          }
+          return value;
+        };
+
+        debuggers.forEach((root) => {
+          const endpoint = root.getAttribute('data-endpoint') || '';
+          const method = root.getAttribute('data-method') || 'POST';
+          const tokenInput = root.querySelector('[data-api-token]');
+          const submitButton = root.querySelector('.debug-submit');
+          const requestPreview = root.querySelector('.debug-request');
+          const responsePreview = root.querySelector('.debug-response');
+          const paramInputs = Array.from(root.querySelectorAll('[data-param-name]'));
+
+          const buildPayload = () => {
+            const payload = {};
+            paramInputs.forEach((input) => {
+              const name = input.getAttribute('data-param-name') || '';
+              const type = input.getAttribute('data-param-type') || 'string';
+              const value = parseValue(input.value || '', type);
+              if (value !== undefined && name) {
+                payload[name] = value;
+              }
+            });
+            return payload;
+          };
+
+          const syncPreview = () => {
+            requestPreview.textContent = JSON.stringify(buildPayload(), null, 2);
+          };
+
+          paramInputs.forEach((input) => input.addEventListener('input', syncPreview));
+          syncPreview();
+
+          submitButton?.addEventListener('click', async () => {
+            const payload = buildPayload();
+            responsePreview.textContent = '请求中...';
+            submitButton.disabled = true;
+
+            try {
+              const response = await fetch(endpoint, {
+                method,
+                headers: {
+                  'Content-Type': 'application/json',
+                  ...(tokenInput?.value ? { 'Api-Token': tokenInput.value } : {}),
+                },
+                body: method === 'GET' ? undefined : JSON.stringify(payload),
+              });
+
+              const text = await response.text();
+              try {
+                const json = JSON.parse(text);
+                responsePreview.textContent = JSON.stringify({
+                  http_status: response.status,
+                  body: json,
+                }, null, 2);
+              } catch {
+                responsePreview.textContent = JSON.stringify({
+                  http_status: response.status,
+                  body: text,
+                }, null, 2);
+              }
+            } catch (error) {
+              responsePreview.textContent = JSON.stringify({
+                error: error instanceof Error ? error.message : String(error),
+              }, null, 2);
+            } finally {
+              submitButton.disabled = false;
+            }
+          });
+        });
+      })();
+    </script>`,
   );
 }
 

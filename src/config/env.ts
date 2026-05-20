@@ -27,7 +27,7 @@ function getBooleanEnv(key: string, fallback: string): boolean {
 
 export const env = {
   nodeEnv: getEnv('NODE_ENV', 'development'),
-  port: getNumberEnv('PORT', '8080'),
+  port: getNumberEnv('PORT', '9002'),
   pageLimit: getNumberEnv('PAGE_LIMIT', '10'),
   apiToken: getEnv('API_TOKEN', ''),
   appBaseUrl: getEnv('APP_BASE_URL', ''),

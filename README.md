@@ -29,6 +29,17 @@ This repository now contains a Koa2 + TypeScript backend scaffold for migrating 
 npm install
 ```
 
+## Local access
+
+- API base URL: `http://localhost:9002`
+- Admin login: `http://localhost:9002/admin/login`
+- Producer login: `http://localhost:9002/producer/login`
+
+## Default backoffice accounts
+
+- Admin: `admin@admin.com` / `Hejian@123`
+- Producer: `producer@test.com` / `123456`
+
 2. Create env file:
 
 ```bash
