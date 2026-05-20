@@ -1,0 +1,88 @@
+@baseUrl = http://localhost:8080
+@apiToken = dtlive-dev-token
+
+### 1) get_channel
+POST {{baseUrl}}/api/get_channel
+Api-Token: {{apiToken}}
+Content-Type: application/json
+
+{}
+
+### 2) section_list
+POST {{baseUrl}}/api/section_list
+Api-Token: {{apiToken}}
+Content-Type: application/json
+
+{
+  "is_home_screen": 1,
+  "type_id": 0,
+  "page_no": 1,
+  "user_id": 0,
+  "is_kids_profile": 0
+}
+
+### 3) content_detail
+POST {{baseUrl}}/api/content_detail
+Api-Token: {{apiToken}}
+Content-Type: application/json
+
+{
+  "type_id": 1,
+  "video_type": 1,
+  "video_id": 1,
+  "sub_video_type": 0,
+  "user_id": 0,
+  "is_kids_profile": 0
+}
+
+### 4) content_by_channel
+POST {{baseUrl}}/api/content_by_channel
+Api-Token: {{apiToken}}
+Content-Type: application/json
+
+{
+  "channel_id": 1,
+  "page_no": 1,
+  "user_id": 0,
+  "is_kids_profile": 0
+}
+
+### 5) add_continue_watching
+POST {{baseUrl}}/api/add_continue_watching
+Api-Token: {{apiToken}}
+Content-Type: application/json
+
+{
+  "user_id": 1,
+  "is_kids_profile": 0,
+  "video_type": 1,
+  "sub_video_type": 0,
+  "video_id": 1,
+  "episode_id": 0,
+  "stop_time": 33
+}
+
+### 6) add_remove_like
+POST {{baseUrl}}/api/add_remove_like
+Api-Token: {{apiToken}}
+Content-Type: application/json
+
+{
+  "user_id": 1,
+  "video_type": 1,
+  "sub_video_type": 0,
+  "video_id": 1
+}
+
+### 7) add_remove_bookmark
+POST {{baseUrl}}/api/add_remove_bookmark
+Api-Token: {{apiToken}}
+Content-Type: application/json
+
+{
+  "user_id": 1,
+  "is_kids_profile": 0,
+  "video_type": 1,
+  "sub_video_type": 0,
+  "video_id": 1
+}

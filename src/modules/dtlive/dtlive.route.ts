@@ -1,37 +1,36 @@
 import Router from '@koa/router';
 import type { Context } from 'koa';
-import { ok } from '../../core/http/api-response';
+import { DtliveController } from './dtlive.controller';
 
 const dtliveRouter = new Router({ prefix: '/api' });
-
-const TODO_MESSAGE = 'TODO: implement with DTLive-compatible behavior';
+const controller = new DtliveController();
 
 dtliveRouter.post('/get_channel', async (ctx: Context) => {
-  ctx.body = ok(TODO_MESSAGE, []);
+  await controller.getChannel(ctx);
 });
 
 dtliveRouter.post('/section_list', async (ctx: Context) => {
-  ctx.body = ok(TODO_MESSAGE, []);
+  await controller.sectionList(ctx);
 });
 
 dtliveRouter.post('/content_detail', async (ctx: Context) => {
-  ctx.body = ok(TODO_MESSAGE, []);
+  await controller.contentDetail(ctx);
 });
 
 dtliveRouter.post('/content_by_channel', async (ctx: Context) => {
-  ctx.body = ok(TODO_MESSAGE, []);
+  await controller.contentByChannel(ctx);
 });
 
 dtliveRouter.post('/add_continue_watching', async (ctx: Context) => {
-  ctx.body = ok(TODO_MESSAGE);
+  await controller.addContinueWatching(ctx);
 });
 
 dtliveRouter.post('/add_remove_like', async (ctx: Context) => {
-  ctx.body = ok(TODO_MESSAGE);
+  await controller.addRemoveLike(ctx);
 });
 
 dtliveRouter.post('/add_remove_bookmark', async (ctx: Context) => {
-  ctx.body = ok(TODO_MESSAGE);
+  await controller.addRemoveBookmark(ctx);
 });
 
 export { dtliveRouter };
