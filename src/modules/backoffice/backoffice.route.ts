@@ -1,5 +1,6 @@
 import Router from '@koa/router';
 import type { Context } from 'koa';
+import { env } from '../../config/env';
 import { BackofficeService } from './backoffice.service';
 import {
   renderAdminAvatarPage,
@@ -35,6 +36,15 @@ type SessionShape = {
   producerAuth?: { userId: number; userName: string };
 };
 
+type AdminPaginationState = {
+  currentPage: number;
+  totalPages: number;
+  totalRows: number;
+  pageSize: number;
+  startRow: number;
+  endRow: number;
+};
+
 function getSession(ctx: Context): SessionShape {
   return (ctx.session ?? {}) as SessionShape;
 }
@@ -46,6 +56,37 @@ function parseBody(ctx: Context): Record<string, unknown> {
   }
 
   return body as Record<string, unknown>;
+}
+
+function parsePage(value: unknown, fallback = 1): number {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) {
+    return fallback;
+  }
+  return Math.max(1, Math.floor(parsed));
+}
+
+function paginateItems<T>(items: T[], requestedPage: number, pageSize: number): { pageItems: T[]; pagination: AdminPaginationState } {
+  const safePageSize = Math.max(1, pageSize);
+  const totalRows = items.length;
+  const totalPages = Math.max(1, Math.ceil(totalRows / safePageSize));
+  const currentPage = Math.min(Math.max(1, requestedPage), totalPages);
+  const startIndex = (currentPage - 1) * safePageSize;
+  const pageItems = items.slice(startIndex, startIndex + safePageSize);
+  const startRow = totalRows === 0 ? 0 : startIndex + 1;
+  const endRow = Math.min(totalRows, startIndex + pageItems.length);
+
+  return {
+    pageItems,
+    pagination: {
+      currentPage,
+      totalPages,
+      totalRows,
+      pageSize: safePageSize,
+      startRow,
+      endRow,
+    },
+  };
 }
 
 function setSession(ctx: Context, sessionValue: SessionShape): void {
@@ -213,11 +254,13 @@ backofficeRouter.get('/admin/video', async (ctx: Context) => {
     return;
   }
 
+  const query = ctx.query as Record<string, string | undefined>;
+  const requestedPage = parsePage(query.page, 1);
   const items = await service.getAdminVideos();
-  const queryMessage = ctx.query?.message;
-  const message = typeof queryMessage === 'string' ? queryMessage : '';
+  const { pageItems, pagination } = paginateItems(items, requestedPage, env.pageLimit);
+  const message = typeof query.message === 'string' ? query.message : '';
   ctx.type = 'html';
-  ctx.body = renderAdminVideoPage(items, message);
+  ctx.body = renderAdminVideoPage(pageItems, pagination, message);
 });
 
 backofficeRouter.post('/admin/video/toggle', async (ctx: Context) => {
@@ -234,18 +277,20 @@ backofficeRouter.post('/admin/video/toggle', async (ctx: Context) => {
 
   const body = parseBody(ctx);
   const id = Number(body.id ?? 0);
+  const requestedPage = parsePage(body.page, 1);
 
   try {
     await service.toggleAdminVideoStatus(id);
     ctx.status = 303;
-    ctx.redirect(`/admin/video?message=${encodeURIComponent('Video status changed.')}`);
+    ctx.redirect(`/admin/video?page=${requestedPage}&message=${encodeURIComponent('Video status changed.')}`);
     return;
   } catch (error) {
     const message = getRouteErrorMessage(error, '操作失败，请稍后重试。');
     ctx.status = 400;
     const items = await service.getAdminVideos();
+    const { pageItems, pagination } = paginateItems(items, requestedPage, env.pageLimit);
     ctx.type = 'html';
-    ctx.body = renderAdminVideoPage(items, message);
+    ctx.body = renderAdminVideoPage(pageItems, pagination, message);
   }
 });
 
@@ -256,9 +301,13 @@ backofficeRouter.get('/admin/tvshow', async (ctx: Context) => {
     return;
   }
 
+  const query = ctx.query as Record<string, string | undefined>;
+  const requestedPage = parsePage(query.page, 1);
   const items = await service.getAdminTvShows();
+  const { pageItems, pagination } = paginateItems(items, requestedPage, env.pageLimit);
+  const message = typeof query.message === 'string' ? query.message : '';
   ctx.type = 'html';
-  ctx.body = renderAdminTvShowPage(items);
+  ctx.body = renderAdminTvShowPage(pageItems, pagination, message);
 });
 
 backofficeRouter.post('/admin/tvshow/toggle', async (ctx: Context) => {
@@ -275,18 +324,20 @@ backofficeRouter.post('/admin/tvshow/toggle', async (ctx: Context) => {
 
   const body = parseBody(ctx);
   const id = Number(body.id ?? 0);
+  const requestedPage = parsePage(body.page, 1);
 
   try {
     await service.toggleAdminTvShowStatus(id);
-    const items = await service.getAdminTvShows();
-    ctx.type = 'html';
-    ctx.body = renderAdminTvShowPage(items, 'TV show status changed.');
+    ctx.status = 303;
+    ctx.redirect(`/admin/tvshow?page=${requestedPage}&message=${encodeURIComponent('TV show status changed.')}`);
+    return;
   } catch (error) {
     const message = getRouteErrorMessage(error, '状态更新失败，请稍后重试。');
     ctx.status = 400;
     const items = await service.getAdminTvShows();
+    const { pageItems, pagination } = paginateItems(items, requestedPage, env.pageLimit);
     ctx.type = 'html';
-    ctx.body = renderAdminTvShowPage(items, message);
+    ctx.body = renderAdminTvShowPage(pageItems, pagination, message);
   }
 });
 
@@ -297,9 +348,13 @@ backofficeRouter.get('/admin/shorts', async (ctx: Context) => {
     return;
   }
 
+  const query = ctx.query as Record<string, string | undefined>;
+  const requestedPage = parsePage(query.page, 1);
   const items = await service.getAdminShorts();
+  const { pageItems, pagination } = paginateItems(items, requestedPage, env.pageLimit);
+  const message = typeof query.message === 'string' ? query.message : '';
   ctx.type = 'html';
-  ctx.body = renderAdminShortsPage(items);
+  ctx.body = renderAdminShortsPage(pageItems, pagination, message);
 });
 
 backofficeRouter.post('/admin/shorts/toggle', async (ctx: Context) => {
@@ -316,18 +371,20 @@ backofficeRouter.post('/admin/shorts/toggle', async (ctx: Context) => {
 
   const body = parseBody(ctx);
   const id = Number(body.id ?? 0);
+  const requestedPage = parsePage(body.page, 1);
 
   try {
     await service.toggleAdminShortsStatus(id);
-    const items = await service.getAdminShorts();
-    ctx.type = 'html';
-    ctx.body = renderAdminShortsPage(items, 'Shorts status changed.');
+    ctx.status = 303;
+    ctx.redirect(`/admin/shorts?page=${requestedPage}&message=${encodeURIComponent('Shorts status changed.')}`);
+    return;
   } catch (error) {
     const message = getRouteErrorMessage(error, '状态更新失败，请稍后重试。');
     ctx.status = 400;
     const items = await service.getAdminShorts();
+    const { pageItems, pagination } = paginateItems(items, requestedPage, env.pageLimit);
     ctx.type = 'html';
-    ctx.body = renderAdminShortsPage(items, message);
+    ctx.body = renderAdminShortsPage(pageItems, pagination, message);
   }
 });
 
@@ -1319,6 +1376,7 @@ backofficeRouter.get('/producer/video/:typeId', async (ctx: Context) => {
     input_rent: String(query.input_rent ?? '0'),
     input_premium: String(query.input_premium ?? 'all'),
     input_status: String(query.input_status ?? 'all'),
+    page: String(query.page ?? '1'),
   });
 
   ctx.type = 'html';
@@ -1616,6 +1674,7 @@ backofficeRouter.get('/producer/tvshow/:typeId', async (ctx: Context) => {
     input_search: String(query.input_search ?? ''),
     input_rent: String(query.input_rent ?? '0'),
     input_status: String(query.input_status ?? 'all'),
+    page: String(query.page ?? '1'),
   });
 
   ctx.type = 'html';
@@ -2141,6 +2200,7 @@ backofficeRouter.get('/producer/shorts/:typeId', async (ctx: Context) => {
     input_search: String(query.input_search ?? ''),
     input_rent: String(query.input_rent ?? '0'),
     input_status: String(query.input_status ?? 'all'),
+    page: String(query.page ?? '1'),
   });
 
   ctx.type = 'html';

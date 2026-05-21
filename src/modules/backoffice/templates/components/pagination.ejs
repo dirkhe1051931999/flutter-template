@@ -1,0 +1,60 @@
+<%
+  const pager = payload.pagination || {
+    currentPage: 1,
+    totalPages: 1,
+    totalRows: payload.items.length,
+    startRow: payload.items.length > 0 ? 1 : 0,
+    endRow: payload.items.length,
+  };
+  const currentPage = Math.max(1, Number(pager.currentPage || 1));
+  const totalPages = Math.max(1, Number(pager.totalPages || 1));
+  const totalRows = Math.max(0, Number(pager.totalRows || 0));
+  const startRow = Math.max(0, Number(pager.startRow || 0));
+  const endRow = Math.max(0, Number(pager.endRow || 0));
+  const windowSize = 5;
+  let windowStart = Math.max(1, currentPage - Math.floor(windowSize / 2));
+  let windowEnd = Math.min(totalPages, windowStart + windowSize - 1);
+  if (windowEnd - windowStart + 1 < windowSize) {
+    windowStart = Math.max(1, windowEnd - windowSize + 1);
+  }
+
+  const basePath = typeof paginationBasePath === 'string' && paginationBasePath.length > 0
+    ? paginationBasePath
+    : '/producer/video';
+  const defaultQueryState = {
+    input_search: String(payload.inputSearch || ''),
+    input_rent: String(payload.inputRent || '0'),
+    input_premium: String(payload.inputPremium || 'all'),
+    input_status: String(payload.inputStatus || 'all'),
+  };
+  const rawQueryState = typeof paginationQueryState === 'object' && paginationQueryState
+    ? paginationQueryState
+    : defaultQueryState;
+  const queryPairs = Object.entries(rawQueryState).map(([key, value]) => [key, String(value ?? '')]);
+  const toQuery = (page) => queryPairs
+    .map(([key, value]) => `${key}=${encodeURIComponent(value)}`)
+    .concat(`page=${page}`)
+    .join('&');
+  const toHref = (page) => `${basePath}/${payload.typeId}?${toQuery(page)}`;
+%>
+<div class="ios-card ios-pagination-card">
+  <div class="ios-pagination-summary">
+    <% if (totalRows === 0) { %>
+      No videos found.
+    <% } else { %>
+      Showing <strong><%= startRow %></strong>-<strong><%= endRow %></strong> of <strong><%= totalRows %></strong>.
+    <% } %>
+  </div>
+
+  <% if (totalRows > 0) { %>
+    <nav class="ios-pagination-nav" aria-label="Video pagination">
+      <a class="ios-page-btn <%= currentPage <= 1 ? 'is-disabled' : '' %>" href="<%= currentPage <= 1 ? '#' : toHref(currentPage - 1) %>">Prev</a>
+
+      <% for (let page = windowStart; page <= windowEnd; page += 1) { %>
+        <a class="ios-page-btn <%= page === currentPage ? 'is-active' : '' %>" href="<%= toHref(page) %>"><%= page %></a>
+      <% } %>
+
+      <a class="ios-page-btn <%= currentPage >= totalPages ? 'is-disabled' : '' %>" href="<%= currentPage >= totalPages ? '#' : toHref(currentPage + 1) %>">Next</a>
+    </nav>
+  <% } %>
+</div>

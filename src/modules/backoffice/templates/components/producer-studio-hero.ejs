@@ -5,7 +5,7 @@
   </div>
   <div class="ios-chip-row">
     <span class="ios-chip">Type ID <%= payload.typeId %></span>
-    <span class="ios-chip">Items <%= payload.items.length %></span>
+    <span class="ios-chip">Items <%= payload.pagination ? payload.pagination.totalRows : payload.items.length %></span>
     <span class="ios-chip">EJS Components</span>
   </div>
 </div>

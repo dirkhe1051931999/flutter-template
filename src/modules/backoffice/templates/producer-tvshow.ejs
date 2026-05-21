@@ -19,6 +19,16 @@
   <%- include('./components/tvshow-filter-bar', { payload }) %>
   <%- include('./components/tvshow-create-form', { payload }) %>
 
+  <%- include('./components/pagination', {
+    payload,
+    paginationBasePath: '/producer/tvshow',
+    paginationQueryState: {
+      input_search: payload.inputSearch,
+      input_rent: payload.inputRent,
+      input_status: payload.inputStatus
+    }
+  }) %>
+
   <div class="ios-list">
     <% if (payload.items.length === 0) { %>
       <div class="ios-card ios-empty"><strong>No TV shows yet</strong><div style="margin-top:6px;">Create your first TV show or adjust the filters above.</div></div>
@@ -27,6 +37,16 @@
       <%- include('./components/tvshow-card', { payload, item, formatDateDMY }) %>
     <% }) %>
   </div>
+
+  <%- include('./components/pagination', {
+    payload,
+    paginationBasePath: '/producer/tvshow',
+    paginationQueryState: {
+      input_search: payload.inputSearch,
+      input_rent: payload.inputRent,
+      input_status: payload.inputStatus
+    }
+  }) %>
 </div>
 
 <%- include('./components/rent-toggle-script') %>

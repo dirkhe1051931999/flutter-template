@@ -1,0 +1,11 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: flutter-template-app
+    env_file:
+      - .env
+    ports:
+      - "9002:9002"
+    restart: unless-stopped

@@ -155,45 +155,42 @@ export function renderAdminCategoryPage(
     .map(
       (item) => `<tr>
         <td>${item.id}</td>
-        <td>${item.name}</td>
+        <td class="admin-config-name-cell"><div class="admin-config-name" title="${escapeHtmlAttr(item.name || '-')}" data-tooltip="${escapeHtmlAttr(item.name || '-')}">${item.name || '-'}</div></td>
         <td>${item.image || '-'}</td>
-        <td>${item.status === 1 ? 'Show' : 'Hide'}</td>
-        <td>
-          <form method="post" action="/admin/category/update" style="display:inline-block; width:260px;">
-            <input type="hidden" name="id" value="${item.id}" />
-            <input name="name" value="${item.name}" placeholder="Name" required />
-            <input name="image" value="${item.image}" placeholder="Image filename" />
-            <button type="submit">Update</button>
-          </form>
-          <form method="post" action="/admin/category/toggle" style="display:inline-block; width:140px; margin-left:8px;">
-            <input type="hidden" name="id" value="${item.id}" />
-            <button type="submit">Toggle Status</button>
-          </form>
+        <td>${renderAdminConfigStatusTag(item.status, 'Show', 'Hide')}</td>
+        <td class="admin-config-action-cell">
+          <div class="admin-config-action-stack">
+            <form class="admin-config-inline-form" method="post" action="/admin/category/update">
+              <input type="hidden" name="id" value="${item.id}" />
+              <input name="name" value="${escapeHtmlAttr(item.name || '')}" placeholder="Name" required />
+              <input name="image" value="${escapeHtmlAttr(item.image || '')}" placeholder="Image filename" />
+              <button class="admin-config-btn admin-config-btn-primary" type="submit">Update</button>
+            </form>
+            <form method="post" action="/admin/category/toggle">
+              <input type="hidden" name="id" value="${item.id}" />
+              <button class="admin-config-btn admin-config-btn-ghost" type="submit">Toggle Status</button>
+            </form>
+          </div>
         </td>
       </tr>`,
     )
     .join('');
 
-  return pageTemplate(
-    'Admin Category',
-    `<div class="topbar"><h1>Admin Category</h1><a href="/admin/dashboard">Back Dashboard</a></div>
-     ${msgHtml}
-     <div class="card" style="margin-bottom:16px;">
-       <h3>Create Category</h3>
-       <form method="post" action="/admin/category">
-         <input name="name" placeholder="Name" required />
-         <input name="image" placeholder="Image filename" />
-         <button type="submit">Create</button>
-       </form>
-     </div>
-     <div class="card">
-       <h3>Category List</h3>
-       <table style="width:100%; border-collapse:collapse;">
-         <thead><tr><th align="left">ID</th><th align="left">Name</th><th align="left">Image</th><th align="left">Status</th><th align="left">Actions</th></tr></thead>
-         <tbody>${rows}</tbody>
-       </table>
-     </div>`,
-  );
+  return renderAdminConfigPage({
+    title: 'Admin Category',
+    message: msgHtml,
+    introCards: [
+      renderAdminConfigCreateCard('Create Category', '/admin/category', [
+        { name: 'name', placeholder: 'Name', required: true },
+        { name: 'image', placeholder: 'Image filename' },
+      ]),
+      renderAdminConfigSortCard('/admin/category/sortable/save'),
+    ],
+    listTitle: 'Category List',
+    summary: `${categories.length} categories`,
+    headerHtml: '<tr><th align="left">ID</th><th align="left">Name</th><th align="left">Image</th><th align="left">Status</th><th align="left">Actions</th></tr>',
+    bodyHtml: rows || renderAdminConfigEmptyRow(5, 'No category data', 'Create a category first to manage it here.'),
+  });
 }
 
 export function renderAdminChannelPage(
@@ -205,51 +202,48 @@ export function renderAdminChannelPage(
     .map(
       (item) => `<tr>
         <td>${item.id}</td>
-        <td>${item.name}</td>
+        <td class="admin-config-name-cell"><div class="admin-config-name" title="${escapeHtmlAttr(item.name || '-')}" data-tooltip="${escapeHtmlAttr(item.name || '-')}">${item.name || '-'}</div></td>
         <td>${item.portrait_img || '-'}</td>
         <td>${item.landscape_img || '-'}</td>
-        <td>${item.is_title}</td>
-        <td>${item.status === 1 ? 'Show' : 'Hide'}</td>
-        <td>
-          <form method="post" action="/admin/channel/update" style="display:inline-block; width:420px;">
-            <input type="hidden" name="id" value="${item.id}" />
-            <input name="name" value="${item.name}" placeholder="Name" required />
-            <input name="portrait_img" value="${item.portrait_img}" placeholder="Portrait image" />
-            <input name="landscape_img" value="${item.landscape_img}" placeholder="Landscape image" />
-            <input name="is_title" value="${item.is_title}" placeholder="Is title (0/1)" required />
-            <button type="submit">Update</button>
-          </form>
-          <form method="post" action="/admin/channel/toggle" style="display:inline-block; width:140px; margin-left:8px;">
-            <input type="hidden" name="id" value="${item.id}" />
-            <button type="submit">Toggle Status</button>
-          </form>
+        <td>${item.is_title === 1 ? '<span class="admin-config-tag admin-config-tag-blue">Yes</span>' : '<span class="admin-config-tag admin-config-tag-gray">No</span>'}</td>
+        <td>${renderAdminConfigStatusTag(item.status, 'Show', 'Hide')}</td>
+        <td class="admin-config-action-cell">
+          <div class="admin-config-action-stack">
+            <form class="admin-config-inline-form" method="post" action="/admin/channel/update">
+              <input type="hidden" name="id" value="${item.id}" />
+              <input name="name" value="${escapeHtmlAttr(item.name || '')}" placeholder="Name" required />
+              <input name="portrait_img" value="${escapeHtmlAttr(item.portrait_img || '')}" placeholder="Portrait image" />
+              <input name="landscape_img" value="${escapeHtmlAttr(item.landscape_img || '')}" placeholder="Landscape image" />
+              <input name="is_title" value="${item.is_title}" placeholder="Is title (0/1)" required />
+              <button class="admin-config-btn admin-config-btn-primary" type="submit">Update</button>
+            </form>
+            <form method="post" action="/admin/channel/toggle">
+              <input type="hidden" name="id" value="${item.id}" />
+              <button class="admin-config-btn admin-config-btn-ghost" type="submit">Toggle Status</button>
+            </form>
+          </div>
         </td>
       </tr>`,
     )
     .join('');
 
-  return pageTemplate(
-    'Admin Channel',
-    `<div class="topbar"><h1>Admin Channel</h1><a href="/admin/dashboard">Back Dashboard</a></div>
-     ${msgHtml}
-     <div class="card" style="margin-bottom:16px;">
-       <h3>Create Channel</h3>
-       <form method="post" action="/admin/channel">
-         <input name="name" placeholder="Name" required />
-         <input name="portrait_img" placeholder="Portrait image" />
-         <input name="landscape_img" placeholder="Landscape image" />
-         <input name="is_title" placeholder="Is title (0/1)" required />
-         <button type="submit">Create</button>
-       </form>
-     </div>
-     <div class="card">
-       <h3>Channel List</h3>
-       <table style="width:100%; border-collapse:collapse;">
-         <thead><tr><th align="left">ID</th><th align="left">Name</th><th align="left">Portrait</th><th align="left">Landscape</th><th align="left">Is Title</th><th align="left">Status</th><th align="left">Actions</th></tr></thead>
-         <tbody>${rows}</tbody>
-       </table>
-     </div>`,
-  );
+  return renderAdminConfigPage({
+    title: 'Admin Channel',
+    message: msgHtml,
+    introCards: [
+      renderAdminConfigCreateCard('Create Channel', '/admin/channel', [
+        { name: 'name', placeholder: 'Name', required: true },
+        { name: 'portrait_img', placeholder: 'Portrait image' },
+        { name: 'landscape_img', placeholder: 'Landscape image' },
+        { name: 'is_title', placeholder: 'Is title (0/1)', required: true },
+      ]),
+    ],
+    listTitle: 'Channel List',
+    summary: `${channels.length} channels`,
+    headerHtml:
+      '<tr><th align="left">ID</th><th align="left">Name</th><th align="left">Portrait</th><th align="left">Landscape</th><th align="left">Is Title</th><th align="left">Status</th><th align="left">Actions</th></tr>',
+    bodyHtml: rows || renderAdminConfigEmptyRow(7, 'No channel data', 'Create a channel first to manage it here.'),
+  });
 }
 
 export function renderAdminAvatarPage(
@@ -261,52 +255,42 @@ export function renderAdminAvatarPage(
     .map(
       (item) => `<tr>
         <td>${item.id}</td>
-        <td>${item.name}</td>
+        <td class="admin-config-name-cell"><div class="admin-config-name" title="${escapeHtmlAttr(item.name || '-')}" data-tooltip="${escapeHtmlAttr(item.name || '-')}">${item.name || '-'}</div></td>
         <td>${item.image || '-'}</td>
-        <td>${item.status === 1 ? 'Show' : 'Hide'}</td>
-        <td>
-          <form method="post" action="/admin/avatar/update" style="display:inline-block; width:260px;">
-            <input type="hidden" name="id" value="${item.id}" />
-            <input name="name" value="${item.name}" placeholder="Name" required />
-            <input name="image" value="${item.image}" placeholder="Image filename" />
-            <button type="submit">Update</button>
-          </form>
-          <form method="post" action="/admin/avatar/toggle" style="display:inline-block; width:140px; margin-left:8px;">
-            <input type="hidden" name="id" value="${item.id}" />
-            <button type="submit">Toggle Status</button>
-          </form>
+        <td>${renderAdminConfigStatusTag(item.status, 'Show', 'Hide')}</td>
+        <td class="admin-config-action-cell">
+          <div class="admin-config-action-stack">
+            <form class="admin-config-inline-form" method="post" action="/admin/avatar/update">
+              <input type="hidden" name="id" value="${item.id}" />
+              <input name="name" value="${escapeHtmlAttr(item.name || '')}" placeholder="Name" required />
+              <input name="image" value="${escapeHtmlAttr(item.image || '')}" placeholder="Image filename" />
+              <button class="admin-config-btn admin-config-btn-primary" type="submit">Update</button>
+            </form>
+            <form method="post" action="/admin/avatar/toggle">
+              <input type="hidden" name="id" value="${item.id}" />
+              <button class="admin-config-btn admin-config-btn-ghost" type="submit">Toggle Status</button>
+            </form>
+          </div>
         </td>
       </tr>`,
     )
     .join('');
 
-  return pageTemplate(
-    'Admin Avatar',
-    `<div class="topbar"><h1>Admin Avatar</h1>${renderTopbarActions('/admin/dashboard', 'Back Dashboard')}</div>
-     ${msgHtml}
-     <div class="card" style="margin-bottom:16px;">
-       <h3>Create Avatar</h3>
-       <form method="post" action="/admin/avatar/save">
-         <input name="name" placeholder="Name" required />
-         <input name="image" placeholder="Image filename" />
-         <button type="submit">Create</button>
-       </form>
-     </div>
-     <div class="card" style="margin-bottom:16px;">
-       <h3>Save Sort Order</h3>
-       <form method="post" action="/admin/avatar/sortable/save">
-         <input name="ids" placeholder="Example: 5,2,7,1" required />
-         <button type="submit">Save Sort</button>
-       </form>
-     </div>
-     <div class="card">
-       <h3>Avatar List</h3>
-       <table style="width:100%; border-collapse:collapse;">
-         <thead><tr><th align="left">ID</th><th align="left">Name</th><th align="left">Image</th><th align="left">Status</th><th align="left">Actions</th></tr></thead>
-         <tbody>${rows}</tbody>
-       </table>
-     </div>`,
-  );
+  return renderAdminConfigPage({
+    title: 'Admin Avatar',
+    message: msgHtml,
+    introCards: [
+      renderAdminConfigCreateCard('Create Avatar', '/admin/avatar', [
+        { name: 'name', placeholder: 'Name', required: true },
+        { name: 'image', placeholder: 'Image filename' },
+      ]),
+      renderAdminConfigSortCard('/admin/avatar/sortable/save'),
+    ],
+    listTitle: 'Avatar List',
+    summary: `${avatars.length} avatars`,
+    headerHtml: '<tr><th align="left">ID</th><th align="left">Name</th><th align="left">Image</th><th align="left">Status</th><th align="left">Actions</th></tr>',
+    bodyHtml: rows || renderAdminConfigEmptyRow(5, 'No avatar data', 'Create an avatar first to manage it here.'),
+  });
 }
 
 export function renderAdminTypePage(
@@ -318,55 +302,45 @@ export function renderAdminTypePage(
     .map(
       (item) => `<tr>
         <td>${item.id}</td>
-        <td>${item.name}</td>
+        <td class="admin-config-name-cell"><div class="admin-config-name" title="${escapeHtmlAttr(item.name || '-')}" data-tooltip="${escapeHtmlAttr(item.name || '-')}">${item.name || '-'}</div></td>
         <td>${item.type}</td>
         <td>${item.icon || '-'}</td>
-        <td>${item.status === 1 ? 'Show' : 'Hide'}</td>
-        <td>
-          <form method="post" action="/admin/type/update" style="display:inline-block; width:320px;">
-            <input type="hidden" name="id" value="${item.id}" />
-            <input name="name" value="${item.name}" placeholder="Name" required />
-            <input name="type" value="${item.type}" placeholder="Type number" required />
-            <input name="icon" value="${item.icon}" placeholder="Icon filename" />
-            <button type="submit">Update</button>
-          </form>
-          <form method="post" action="/admin/type/toggle" style="display:inline-block; width:140px; margin-left:8px;">
-            <input type="hidden" name="id" value="${item.id}" />
-            <button type="submit">Toggle Status</button>
-          </form>
+        <td>${renderAdminConfigStatusTag(item.status, 'Show', 'Hide')}</td>
+        <td class="admin-config-action-cell">
+          <div class="admin-config-action-stack">
+            <form class="admin-config-inline-form" method="post" action="/admin/type/update">
+              <input type="hidden" name="id" value="${item.id}" />
+              <input name="name" value="${escapeHtmlAttr(item.name || '')}" placeholder="Name" required />
+              <input name="type" value="${item.type}" placeholder="Type number" required />
+              <input name="icon" value="${escapeHtmlAttr(item.icon || '')}" placeholder="Icon filename" />
+              <button class="admin-config-btn admin-config-btn-primary" type="submit">Update</button>
+            </form>
+            <form method="post" action="/admin/type/toggle">
+              <input type="hidden" name="id" value="${item.id}" />
+              <button class="admin-config-btn admin-config-btn-ghost" type="submit">Toggle Status</button>
+            </form>
+          </div>
         </td>
       </tr>`,
     )
     .join('');
 
-  return pageTemplate(
-    'Admin Type',
-    `<div class="topbar"><h1>Admin Type</h1>${renderTopbarActions('/admin/dashboard', 'Back Dashboard')}</div>
-     ${msgHtml}
-     <div class="card" style="margin-bottom:16px;">
-       <h3>Create Type</h3>
-       <form method="post" action="/admin/type/save">
-         <input name="name" placeholder="Name" required />
-         <input name="type" placeholder="Type number" required />
-         <input name="icon" placeholder="Icon filename" />
-         <button type="submit">Create</button>
-       </form>
-     </div>
-     <div class="card" style="margin-bottom:16px;">
-       <h3>Save Sort Order</h3>
-       <form method="post" action="/admin/type/sortable/save">
-         <input name="ids" placeholder="Example: 5,2,7,1" required />
-         <button type="submit">Save Sort</button>
-       </form>
-     </div>
-     <div class="card">
-       <h3>Type List</h3>
-       <table style="width:100%; border-collapse:collapse;">
-         <thead><tr><th align="left">ID</th><th align="left">Name</th><th align="left">Type</th><th align="left">Icon</th><th align="left">Status</th><th align="left">Actions</th></tr></thead>
-         <tbody>${rows}</tbody>
-       </table>
-     </div>`,
-  );
+  return renderAdminConfigPage({
+    title: 'Admin Type',
+    message: msgHtml,
+    introCards: [
+      renderAdminConfigCreateCard('Create Type', '/admin/type', [
+        { name: 'name', placeholder: 'Name', required: true },
+        { name: 'type', placeholder: 'Type number', required: true },
+        { name: 'icon', placeholder: 'Icon filename' },
+      ]),
+      renderAdminConfigSortCard('/admin/type/sortable/save'),
+    ],
+    listTitle: 'Type List',
+    summary: `${types.length} types`,
+    headerHtml: '<tr><th align="left">ID</th><th align="left">Name</th><th align="left">Type</th><th align="left">Icon</th><th align="left">Status</th><th align="left">Actions</th></tr>',
+    bodyHtml: rows || renderAdminConfigEmptyRow(6, 'No type data', 'Create a type first to manage it here.'),
+  });
 }
 
 export function renderAdminSeasonPage(
@@ -378,46 +352,34 @@ export function renderAdminSeasonPage(
     .map(
       (item) => `<tr>
         <td>${item.id}</td>
-        <td>${item.name}</td>
+        <td class="admin-config-name-cell"><div class="admin-config-name" title="${escapeHtmlAttr(item.name || '-')}" data-tooltip="${escapeHtmlAttr(item.name || '-')}">${item.name || '-'}</div></td>
         <td>${item.sort_order}</td>
-        <td>${item.status === 1 ? 'Active' : 'Inactive'}</td>
-        <td>
-          <form method="post" action="/admin/season/update" style="display:inline-block; width:260px;">
-            <input type="hidden" name="id" value="${item.id}" />
-            <input name="name" value="${item.name}" placeholder="Name" required />
-            <button type="submit">Update</button>
-          </form>
+        <td>${renderAdminConfigStatusTag(item.status, 'Active', 'Inactive')}</td>
+        <td class="admin-config-action-cell">
+          <div class="admin-config-action-stack">
+            <form class="admin-config-inline-form" method="post" action="/admin/season/update">
+              <input type="hidden" name="id" value="${item.id}" />
+              <input name="name" value="${escapeHtmlAttr(item.name || '')}" placeholder="Name" required />
+              <button class="admin-config-btn admin-config-btn-primary" type="submit">Update</button>
+            </form>
+          </div>
         </td>
       </tr>`,
     )
     .join('');
 
-  return pageTemplate(
-    'Admin Season',
-    `<div class="topbar"><h1>Admin Season</h1>${renderTopbarActions('/admin/dashboard', 'Back Dashboard')}</div>
-     ${msgHtml}
-     <div class="card" style="margin-bottom:16px;">
-       <h3>Create Season</h3>
-       <form method="post" action="/admin/season/save">
-         <input name="name" placeholder="Name" required />
-         <button type="submit">Create</button>
-       </form>
-     </div>
-     <div class="card" style="margin-bottom:16px;">
-       <h3>Save Sort Order</h3>
-       <form method="post" action="/admin/season/sortable/save">
-         <input name="ids" placeholder="Example: 5,2,7,1" required />
-         <button type="submit">Save Sort</button>
-       </form>
-     </div>
-     <div class="card">
-       <h3>Season List</h3>
-       <table style="width:100%; border-collapse:collapse;">
-         <thead><tr><th align="left">ID</th><th align="left">Name</th><th align="left">Sort Order</th><th align="left">Status</th><th align="left">Actions</th></tr></thead>
-         <tbody>${rows}</tbody>
-       </table>
-     </div>`,
-  );
+  return renderAdminConfigPage({
+    title: 'Admin Season',
+    message: msgHtml,
+    introCards: [
+      renderAdminConfigCreateCard('Create Season', '/admin/season', [{ name: 'name', placeholder: 'Name', required: true }]),
+      renderAdminConfigSortCard('/admin/season/sortable/save'),
+    ],
+    listTitle: 'Season List',
+    summary: `${seasons.length} seasons`,
+    headerHtml: '<tr><th align="left">ID</th><th align="left">Name</th><th align="left">Sort Order</th><th align="left">Status</th><th align="left">Actions</th></tr>',
+    bodyHtml: rows || renderAdminConfigEmptyRow(5, 'No season data', 'Create a season first to manage it here.'),
+  });
 }
 
 export function renderAdminLanguagePage(
@@ -429,43 +391,320 @@ export function renderAdminLanguagePage(
     .map(
       (item) => `<tr>
         <td>${item.id}</td>
-        <td>${item.name}</td>
+        <td class="admin-config-name-cell"><div class="admin-config-name" title="${escapeHtmlAttr(item.name || '-')}" data-tooltip="${escapeHtmlAttr(item.name || '-')}">${item.name || '-'}</div></td>
         <td>${item.image || '-'}</td>
-        <td>${item.status === 1 ? 'Show' : 'Hide'}</td>
-        <td>
-          <form method="post" action="/admin/language/update" style="display:inline-block; width:260px;">
-            <input type="hidden" name="id" value="${item.id}" />
-            <input name="name" value="${item.name}" placeholder="Name" required />
-            <input name="image" value="${item.image}" placeholder="Image filename" />
-            <button type="submit">Update</button>
-          </form>
-          <form method="post" action="/admin/language/toggle" style="display:inline-block; width:140px; margin-left:8px;">
-            <input type="hidden" name="id" value="${item.id}" />
-            <button type="submit">Toggle Status</button>
-          </form>
+        <td>${renderAdminConfigStatusTag(item.status, 'Show', 'Hide')}</td>
+        <td class="admin-config-action-cell">
+          <div class="admin-config-action-stack">
+            <form class="admin-config-inline-form" method="post" action="/admin/language/update">
+              <input type="hidden" name="id" value="${item.id}" />
+              <input name="name" value="${escapeHtmlAttr(item.name || '')}" placeholder="Name" required />
+              <input name="image" value="${escapeHtmlAttr(item.image || '')}" placeholder="Image filename" />
+              <button class="admin-config-btn admin-config-btn-primary" type="submit">Update</button>
+            </form>
+            <form method="post" action="/admin/language/toggle">
+              <input type="hidden" name="id" value="${item.id}" />
+              <button class="admin-config-btn admin-config-btn-ghost" type="submit">Toggle Status</button>
+            </form>
+          </div>
         </td>
       </tr>`,
     )
     .join('');
 
+  return renderAdminConfigPage({
+    title: 'Admin Language',
+    message: msgHtml,
+    introCards: [
+      renderAdminConfigCreateCard('Create Language', '/admin/language', [
+        { name: 'name', placeholder: 'Name', required: true },
+        { name: 'image', placeholder: 'Image filename' },
+      ]),
+      renderAdminConfigSortCard('/admin/language/sortable/save'),
+    ],
+    listTitle: 'Language List',
+    summary: `${languages.length} languages`,
+    headerHtml: '<tr><th align="left">ID</th><th align="left">Name</th><th align="left">Image</th><th align="left">Status</th><th align="left">Actions</th></tr>',
+    bodyHtml: rows || renderAdminConfigEmptyRow(5, 'No language data', 'Create a language first to manage it here.'),
+  });
+}
+
+type AdminConfigInputField = {
+  name: string;
+  placeholder: string;
+  value?: string | number;
+  required?: boolean;
+};
+
+type AdminConfigPageParams = {
+  title: string;
+  message: string;
+  introCards: string[];
+  listTitle: string;
+  summary: string;
+  headerHtml: string;
+  bodyHtml: string;
+};
+
+function renderAdminConfigStyles(): string {
+  return `<style>
+    .admin-config-grid {
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(300px,1fr));
+      gap:16px;
+      margin-bottom:16px;
+    }
+    .admin-config-card {
+      background:#fff;
+      border:1px solid #e5e6eb;
+      border-radius:12px;
+      padding:16px;
+      box-shadow:0 6px 20px rgba(15,35,95,.05);
+    }
+    .admin-config-card h3 {
+      margin:0 0 6px;
+      font-size:16px;
+      color:#1d2129;
+    }
+    .admin-config-card .admin-config-muted {
+      color:#86909c;
+      font-size:13px;
+      margin-bottom:12px;
+    }
+    .admin-config-form-grid {
+      display:grid;
+      gap:10px;
+      grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
+      align-items:end;
+    }
+    .admin-config-form-grid input,
+    .admin-config-inline-form input {
+      height:34px;
+      border:1px solid #d9dadd;
+      border-radius:8px;
+      padding:0 10px;
+      font-size:13px;
+      color:#1d2129;
+      background:#fff;
+      width:100%;
+      min-width:0;
+      box-sizing:border-box;
+    }
+    .admin-config-form-grid input:focus,
+    .admin-config-inline-form input:focus {
+      border-color:#165dff;
+      outline:none;
+      box-shadow:0 0 0 2px rgba(22,93,255,.13);
+    }
+    .admin-config-btn {
+      height:34px;
+      border-radius:8px;
+      border:1px solid transparent;
+      font-size:13px;
+      font-weight:600;
+      cursor:pointer;
+      padding:0 14px;
+      white-space:nowrap;
+    }
+    .admin-config-btn-primary {
+      background:#165dff;
+      border-color:#165dff;
+      color:#fff;
+    }
+    .admin-config-btn-primary:hover { background:#0e42d2; border-color:#0e42d2; }
+    .admin-config-btn-ghost {
+      background:#fff;
+      border-color:#c9cdd4;
+      color:#4e5969;
+    }
+    .admin-config-btn-ghost:hover { border-color:#94a0b8; color:#1d2129; }
+    .admin-config-shell {
+      background:#fff;
+      border:1px solid #e5e6eb;
+      border-radius:12px;
+      overflow:hidden;
+    }
+    .admin-config-toolbar {
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+      padding:14px 16px;
+      border-bottom:1px solid #f2f3f5;
+      background:#fafbfc;
+    }
+    .admin-config-title {
+      margin:0;
+      font-size:15px;
+      color:#1d2129;
+      font-weight:600;
+    }
+    .admin-config-summary {
+      color:#86909c;
+      font-size:13px;
+    }
+    .admin-config-table-wrap {
+      width:100%;
+      overflow-x:auto;
+      overflow-y:visible;
+    }
+    .admin-config-table {
+      width:100%;
+      min-width:1080px;
+      border-collapse:separate;
+      border-spacing:0;
+      table-layout:fixed;
+    }
+    .admin-config-table th {
+      background:#fafbfc;
+      color:#1d2129;
+      font-weight:600;
+      font-size:13px;
+      padding:12px 14px;
+      border-bottom:1px solid #e5e6eb;
+      text-align:left;
+    }
+    .admin-config-table td {
+      padding:14px;
+      border-bottom:1px solid #f2f3f5;
+      color:#1d2129;
+      font-size:14px;
+      vertical-align:top;
+    }
+    .admin-config-table tr:hover td { background:#f7f8fa; }
+    .admin-config-name-cell { position:relative; }
+    .admin-config-name {
+      max-width:260px;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      font-weight:500;
+      color:#1d2129;
+      position:relative;
+      cursor:default;
+    }
+    .admin-config-name[data-tooltip]:hover::after {
+      content:attr(data-tooltip);
+      position:absolute;
+      left:0;
+      top:calc(100% + 8px);
+      z-index:30;
+      max-width:420px;
+      padding:8px 10px;
+      border-radius:6px;
+      background:#1d2129;
+      color:#fff;
+      font-size:12px;
+      line-height:1.5;
+      white-space:normal;
+      word-break:break-word;
+      box-shadow:0 8px 24px rgba(0,0,0,.2);
+      pointer-events:none;
+    }
+    .admin-config-tag {
+      display:inline-flex;
+      align-items:center;
+      padding:3px 10px;
+      border-radius:999px;
+      font-size:12px;
+      line-height:1.2;
+      font-weight:600;
+    }
+    .admin-config-tag-success { background:#e8ffea; color:#00b42a; }
+    .admin-config-tag-danger { background:#ffece8; color:#f53f3f; }
+    .admin-config-tag-blue { background:#e8f3ff; color:#165dff; }
+    .admin-config-tag-gray { background:#f2f3f5; color:#4e5969; }
+    .admin-config-action-cell { width:420px; }
+    .admin-config-action-stack {
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+    }
+    .admin-config-inline-form {
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(120px,1fr)) auto;
+      gap:8px;
+      align-items:center;
+    }
+    .admin-config-empty {
+      text-align:center;
+      color:#86909c;
+      padding:24px;
+    }
+    .admin-config-empty strong {
+      color:#4e5969;
+      display:block;
+      margin-bottom:6px;
+    }
+    @media (max-width:900px) {
+      .admin-config-inline-form {
+        grid-template-columns:1fr;
+      }
+      .admin-config-action-cell { width:320px; }
+    }
+  </style>`;
+}
+
+function renderAdminConfigStatusTag(status: number, activeLabel: string, inactiveLabel: string): string {
+  return status === 1
+    ? `<span class="admin-config-tag admin-config-tag-success">${activeLabel}</span>`
+    : `<span class="admin-config-tag admin-config-tag-danger">${inactiveLabel}</span>`;
+}
+
+function renderAdminConfigInputs(fields: AdminConfigInputField[]): string {
+  return fields
+    .map((field) => {
+      const valueAttr =
+        field.value === undefined ? '' : ` value="${escapeHtmlAttr(String(field.value))}"`;
+      return `<input name="${field.name}"${valueAttr} placeholder="${field.placeholder}"${field.required ? ' required' : ''} />`;
+    })
+    .join('');
+}
+
+function renderAdminConfigCreateCard(title: string, action: string, fields: AdminConfigInputField[]): string {
+  return `<div class="admin-config-card">
+    <h3>${title}</h3>
+    <div class="admin-config-muted">Use the same compact input pattern for all admin config records.</div>
+    <form class="admin-config-form-grid" method="post" action="${action}">
+      ${renderAdminConfigInputs(fields)}
+      <button class="admin-config-btn admin-config-btn-primary" type="submit">Create</button>
+    </form>
+  </div>`;
+}
+
+function renderAdminConfigSortCard(action: string): string {
+  return `<div class="admin-config-card">
+    <h3>Save Sort Order</h3>
+    <div class="admin-config-muted">Input IDs in order, separated by commas. Example: 5,2,7,1</div>
+    <form class="admin-config-form-grid" method="post" action="${action}">
+      <input name="ids" placeholder="Example: 5,2,7,1" required />
+      <button class="admin-config-btn admin-config-btn-primary" type="submit">Save Sort</button>
+    </form>
+  </div>`;
+}
+
+function renderAdminConfigEmptyRow(colspan: number, title: string, description: string): string {
+  return `<tr><td colspan="${colspan}" class="admin-config-empty"><strong>${title}</strong><div>${description}</div></td></tr>`;
+}
+
+function renderAdminConfigPage(params: AdminConfigPageParams): string {
   return pageTemplate(
-    'Admin Language',
-    `<div class="topbar"><h1>Admin Language</h1>${renderTopbarActions('/admin/dashboard', 'Back Dashboard')}</div>
-     ${msgHtml}
-     <div class="card" style="margin-bottom:16px;">
-       <h3>Create Language</h3>
-       <form method="post" action="/admin/language/save">
-         <input name="name" placeholder="Name" required />
-         <input name="image" placeholder="Image filename" />
-         <button type="submit">Create</button>
-       </form>
-     </div>
-     <div class="card">
-       <h3>Language List</h3>
-       <table style="width:100%; border-collapse:collapse;">
-         <thead><tr><th align="left">ID</th><th align="left">Name</th><th align="left">Image</th><th align="left">Status</th><th align="left">Actions</th></tr></thead>
-         <tbody>${rows}</tbody>
-       </table>
+    params.title,
+    `${renderAdminConfigStyles()}
+     <div class="topbar"><h1>${params.title}</h1>${renderTopbarActions('/admin/dashboard', 'Back Dashboard')}</div>
+     ${params.message}
+     <div class="admin-config-grid">${params.introCards.join('')}</div>
+     <div class="admin-config-shell">
+       <div class="admin-config-toolbar">
+         <h3 class="admin-config-title">${params.listTitle}</h3>
+         <div class="admin-config-summary">${params.summary}</div>
+       </div>
+       <div class="admin-config-table-wrap">
+         <table class="admin-config-table">
+           <thead>${params.headerHtml}</thead>
+           <tbody>${params.bodyHtml}</tbody>
+         </table>
+       </div>
      </div>`,
   );
 }
@@ -503,6 +742,132 @@ export function renderAdminContentPlaceholderPage(title: string, message: string
   );
 }
 
+type AdminListPagination = {
+  currentPage: number;
+  totalPages: number;
+  totalRows: number;
+  pageSize: number;
+  startRow: number;
+  endRow: number;
+};
+
+function renderAdminArcoTableStyles(): string {
+  return `<style>
+    .admin-arco-shell { background:#fff; border:1px solid #e5e6eb; border-radius:12px; overflow:visible; }
+    .admin-arco-toolbar {
+      display:flex; justify-content:space-between; align-items:center; gap:12px;
+      padding:14px 18px; border-bottom:1px solid #f2f3f5; background:#fafbfc;
+    }
+    .admin-arco-summary { color:#4e5969; font-size:13px; }
+    .admin-arco-table-wrap {
+      width:100%;
+      overflow-x:auto;
+      overflow-y:visible;
+    }
+    .admin-arco-table {
+      width:100%;
+      min-width:1120px;
+      border-collapse:separate;
+      border-spacing:0;
+      table-layout:fixed;
+    }
+    .admin-arco-table th {
+      background:#fafbfc; color:#1d2129; font-weight:600; font-size:13px;
+      padding:12px 14px; border-bottom:1px solid #e5e6eb; text-align:left;
+    }
+    .admin-arco-table td {
+      padding:14px; border-bottom:1px solid #f2f3f5; color:#1d2129; font-size:14px; vertical-align:top;
+    }
+    .admin-arco-table tr:hover td { background:#f7f8fa; }
+    .admin-arco-name-cell { position:relative; }
+    .admin-arco-name {
+      max-width:340px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-weight:500;
+      cursor:default;
+    }
+    .admin-arco-name[data-tooltip]:hover::after,
+    .admin-arco-name[data-tooltip]:focus-visible::after {
+      content:attr(data-tooltip);
+      position:absolute;
+      left:0;
+      top:calc(100% + 8px);
+      z-index:30;
+      max-width:420px;
+      padding:8px 10px;
+      border-radius:6px;
+      background:#1d2129;
+      color:#fff;
+      font-size:12px;
+      line-height:1.5;
+      white-space:normal;
+      word-break:break-word;
+      box-shadow:0 8px 24px rgba(0,0,0,.2);
+      pointer-events:none;
+    }
+    .admin-arco-tag {
+      display:inline-flex; align-items:center; padding:3px 10px; border-radius:999px;
+      font-size:12px; line-height:1.2; font-weight:600;
+    }
+    .admin-arco-tag-success { background:#e8ffea; color:#00b42a; }
+    .admin-arco-tag-danger { background:#ffece8; color:#f53f3f; }
+    .admin-arco-tag-blue { background:#e8f3ff; color:#165dff; }
+    .admin-arco-tag-gray { background:#f2f3f5; color:#4e5969; }
+    .admin-arco-action button {
+      min-width:120px; height:32px; border-radius:6px; border:1px solid #165dff;
+      background:#165dff; color:#fff; font-weight:500; cursor:pointer;
+    }
+    .admin-arco-action button:hover { background:#0e42d2; border-color:#0e42d2; }
+    .admin-arco-pagination {
+      display:flex; justify-content:space-between; align-items:center; gap:12px;
+      padding:14px 18px; background:#fff;
+    }
+    .admin-arco-pages { display:flex; align-items:center; gap:8px; }
+    .admin-arco-page-btn, .admin-arco-page-num {
+      min-width:32px; height:32px; border-radius:6px; border:1px solid #e5e6eb;
+      background:#fff; color:#4e5969; text-decoration:none; display:inline-flex; align-items:center; justify-content:center;
+      font-size:13px; padding:0 8px;
+    }
+    .admin-arco-page-num.active { border-color:#165dff; color:#165dff; background:#f2f7ff; font-weight:600; }
+    .admin-arco-page-btn.disabled { pointer-events:none; opacity:.45; }
+  </style>`;
+}
+
+function renderAdminArcoPagination(basePath: string, pagination: AdminListPagination): string {
+  const currentPage = Math.max(1, pagination.currentPage);
+  const totalPages = Math.max(1, pagination.totalPages);
+  const totalRows = Math.max(0, pagination.totalRows);
+  const windowSize = 5;
+  let startPage = Math.max(1, currentPage - Math.floor(windowSize / 2));
+  let endPage = Math.min(totalPages, startPage + windowSize - 1);
+  if (endPage - startPage + 1 < windowSize) {
+    startPage = Math.max(1, endPage - windowSize + 1);
+  }
+
+  const numbers: string[] = [];
+  for (let page = startPage; page <= endPage; page += 1) {
+    numbers.push(
+      `<a class="admin-arco-page-num ${page === currentPage ? 'active' : ''}" href="${basePath}?page=${page}">${page}</a>`,
+    );
+  }
+
+  return `<div class="admin-arco-pagination">
+    <div class="admin-arco-summary">Showing <b>${pagination.startRow}</b>-<b>${pagination.endRow}</b> of <b>${totalRows}</b></div>
+    <div class="admin-arco-pages">
+      <a class="admin-arco-page-btn ${currentPage <= 1 ? 'disabled' : ''}" href="${currentPage <= 1 ? '#' : `${basePath}?page=${currentPage - 1}`}">Prev</a>
+      ${numbers.join('')}
+      <a class="admin-arco-page-btn ${currentPage >= totalPages ? 'disabled' : ''}" href="${currentPage >= totalPages ? '#' : `${basePath}?page=${currentPage + 1}`}">Next</a>
+    </div>
+  </div>`;
+}
+
+function escapeHtmlAttr(value: string): string {
+  return value
+    .replaceAll('&', '&amp;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;');
+}
+
 export function renderAdminVideoPage(
   items: Array<{
     id: number;
@@ -518,6 +883,7 @@ export function renderAdminVideoPage(
     status: number;
     created_at: string;
   }>,
+  pagination: AdminListPagination,
   message = '',
 ): string {
   const msgHtml = message ? `<div class="msg">${message}</div>` : '';
@@ -525,35 +891,41 @@ export function renderAdminVideoPage(
     .map(
       (item) => `<tr>
         <td>${item.id}</td>
-        <td>${item.name || '-'}</td>
+        <td class="admin-arco-name-cell"><div class="admin-arco-name" title="${escapeHtmlAttr(item.name || '-')}" data-tooltip="${escapeHtmlAttr(item.name || '-')}" tabindex="0">${item.name || '-'}</div></td>
         <td>${item.type_id}</td>
         <td>${item.video_type}</td>
         <td>${item.producer_id}</td>
-        <td>${item.is_premium === 1 ? 'Premium' : 'Free'}</td>
-        <td>${item.is_rent === 1 ? `Rent (${item.price})` : 'No'}</td>
+        <td>${item.is_premium === 1 ? '<span class="admin-arco-tag admin-arco-tag-blue">Premium</span>' : '<span class="admin-arco-tag admin-arco-tag-gray">Free</span>'}</td>
+        <td>${item.is_rent === 1 ? `<span class="admin-arco-tag admin-arco-tag-blue">Rent ${item.price}</span>` : '<span class="admin-arco-tag admin-arco-tag-gray">No</span>'}</td>
         <td>${item.total_view}</td>
         <td>${formatDateDMY(item.created_at)}</td>
-        <td>${item.status === 1 ? '<span class="badge badge-success">Show</span>' : '<span class="badge badge-danger">Hide</span>'}</td>
-        <td>
-          <form method="post" action="/admin/video/toggle" style="display:inline-block; width:140px;">
+        <td>${item.status === 1 ? '<span class="admin-arco-tag admin-arco-tag-success">Show</span>' : '<span class="admin-arco-tag admin-arco-tag-danger">Hide</span>'}</td>
+        <td class="admin-arco-action">
+          <form method="post" action="/admin/video/toggle">
             <input type="hidden" name="id" value="${item.id}" />
+            <input type="hidden" name="page" value="${pagination.currentPage}" />
             <button type="submit">Toggle Status</button>
           </form>
         </td>
       </tr>`,
     )
     .join('');
-  const rows = rowsHtml || '<tr><td colspan="11" style="text-align:center;color:#6b7280;">No data available in table</td></tr>';
+  const rows = rowsHtml || '<tr><td colspan="11" style="text-align:center;color:#86909c;padding:24px;">No data available in table</td></tr>';
 
   return pageTemplate(
     'Admin Video',
-    `<div class="topbar"><h1>Admin Video</h1>${renderTopbarActions('/admin/dashboard', 'Back Dashboard')}</div>
+    `${renderAdminArcoTableStyles()}
+     <div class="topbar"><h1>Admin Video</h1>${renderTopbarActions('/admin/dashboard', 'Back Dashboard')}</div>
      ${msgHtml}
-     <div class="card">
-       <table style="width:100%; border-collapse:collapse;">
-         <thead><tr><th align="left">#</th><th align="left">Name</th><th align="left">Type ID</th><th align="left">Video Type</th><th align="left">Producer</th><th align="left">Premium</th><th align="left">Rent</th><th align="left">Views</th><th align="left">Created</th><th align="left">Status</th><th align="left">Actions</th></tr></thead>
-         <tbody>${rows}</tbody>
-       </table>
+     <div class="admin-arco-shell">
+       <div class="admin-arco-toolbar"><div class="admin-arco-summary">Arco-style table with pagination</div></div>
+       <div class="admin-arco-table-wrap">
+         <table class="admin-arco-table">
+           <thead><tr><th align="left">#</th><th align="left">Name</th><th align="left">Type ID</th><th align="left">Video Type</th><th align="left">Producer</th><th align="left">Premium</th><th align="left">Rent</th><th align="left">Views</th><th align="left">Created</th><th align="left">Status</th><th align="left">Actions</th></tr></thead>
+           <tbody>${rows}</tbody>
+         </table>
+       </div>
+       ${renderAdminArcoPagination('/admin/video', pagination)}
      </div>`,
   );
 }
@@ -572,6 +944,7 @@ export function renderAdminTvShowPage(
     status: number;
     created_at: string;
   }>,
+  pagination: AdminListPagination,
   message = '',
 ): string {
   const msgHtml = message ? `<div class="msg">${message}</div>` : '';
@@ -579,34 +952,40 @@ export function renderAdminTvShowPage(
     .map(
       (item) => `<tr>
         <td>${item.id}</td>
-        <td>${item.name || '-'}</td>
+        <td class="admin-arco-name-cell"><div class="admin-arco-name" title="${escapeHtmlAttr(item.name || '-')}" data-tooltip="${escapeHtmlAttr(item.name || '-')}" tabindex="0">${item.name || '-'}</div></td>
         <td>${item.type_id}</td>
         <td>${item.video_type}</td>
         <td>${item.producer_id}</td>
-        <td>${item.is_rent === 1 ? `Rent (${item.price})` : 'No'}</td>
+        <td>${item.is_rent === 1 ? `<span class="admin-arco-tag admin-arco-tag-blue">Rent ${item.price}</span>` : '<span class="admin-arco-tag admin-arco-tag-gray">No</span>'}</td>
         <td>${item.total_view}</td>
         <td>${formatDateDMY(item.created_at)}</td>
-        <td>${item.status === 1 ? '<span class="badge badge-success">Show</span>' : '<span class="badge badge-danger">Hide</span>'}</td>
-        <td>
-          <form method="post" action="/admin/tvshow/toggle" style="display:inline-block; width:140px;">
+        <td>${item.status === 1 ? '<span class="admin-arco-tag admin-arco-tag-success">Show</span>' : '<span class="admin-arco-tag admin-arco-tag-danger">Hide</span>'}</td>
+        <td class="admin-arco-action">
+          <form method="post" action="/admin/tvshow/toggle">
             <input type="hidden" name="id" value="${item.id}" />
+            <input type="hidden" name="page" value="${pagination.currentPage}" />
             <button type="submit">Toggle Status</button>
           </form>
         </td>
       </tr>`,
     )
     .join('');
-  const rows = rowsHtml || '<tr><td colspan="10" style="text-align:center;color:#6b7280;">No data available in table</td></tr>';
+  const rows = rowsHtml || '<tr><td colspan="10" style="text-align:center;color:#86909c;padding:24px;">No data available in table</td></tr>';
 
   return pageTemplate(
     'Admin TV Show',
-    `<div class="topbar"><h1>Admin TV Show</h1>${renderTopbarActions('/admin/dashboard', 'Back Dashboard')}</div>
+    `${renderAdminArcoTableStyles()}
+     <div class="topbar"><h1>Admin TV Show</h1>${renderTopbarActions('/admin/dashboard', 'Back Dashboard')}</div>
      ${msgHtml}
-     <div class="card">
-       <table style="width:100%; border-collapse:collapse;">
-         <thead><tr><th align="left">#</th><th align="left">Name</th><th align="left">Type ID</th><th align="left">Video Type</th><th align="left">Producer</th><th align="left">Rent</th><th align="left">Views</th><th align="left">Created</th><th align="left">Status</th><th align="left">Actions</th></tr></thead>
-         <tbody>${rows}</tbody>
-       </table>
+     <div class="admin-arco-shell">
+       <div class="admin-arco-toolbar"><div class="admin-arco-summary">Arco-style table with pagination</div></div>
+       <div class="admin-arco-table-wrap">
+         <table class="admin-arco-table">
+           <thead><tr><th align="left">#</th><th align="left">Name</th><th align="left">Type ID</th><th align="left">Video Type</th><th align="left">Producer</th><th align="left">Rent</th><th align="left">Views</th><th align="left">Created</th><th align="left">Status</th><th align="left">Actions</th></tr></thead>
+           <tbody>${rows}</tbody>
+         </table>
+       </div>
+       ${renderAdminArcoPagination('/admin/tvshow', pagination)}
      </div>`,
   );
 }
@@ -623,6 +1002,7 @@ export function renderAdminShortsPage(
     status: number;
     created_at: string;
   }>,
+  pagination: AdminListPagination,
   message = '',
 ): string {
   const msgHtml = message ? `<div class="msg">${message}</div>` : '';
@@ -630,33 +1010,39 @@ export function renderAdminShortsPage(
     .map(
       (item) => `<tr>
         <td>${item.id}</td>
-        <td>${item.name || '-'}</td>
+        <td class="admin-arco-name-cell"><div class="admin-arco-name" title="${escapeHtmlAttr(item.name || '-')}" data-tooltip="${escapeHtmlAttr(item.name || '-')}" tabindex="0">${item.name || '-'}</div></td>
         <td>${item.type_id}</td>
         <td>${item.video_type}</td>
         <td>${item.producer_id}</td>
         <td>${item.total_view}</td>
         <td>${formatDateDMY(item.created_at)}</td>
-        <td>${item.status === 1 ? '<span class="badge badge-success">Show</span>' : '<span class="badge badge-danger">Hide</span>'}</td>
-        <td>
-          <form method="post" action="/admin/shorts/toggle" style="display:inline-block; width:140px;">
+        <td>${item.status === 1 ? '<span class="admin-arco-tag admin-arco-tag-success">Show</span>' : '<span class="admin-arco-tag admin-arco-tag-danger">Hide</span>'}</td>
+        <td class="admin-arco-action">
+          <form method="post" action="/admin/shorts/toggle">
             <input type="hidden" name="id" value="${item.id}" />
+            <input type="hidden" name="page" value="${pagination.currentPage}" />
             <button type="submit">Toggle Status</button>
           </form>
         </td>
       </tr>`,
     )
     .join('');
-  const rows = rowsHtml || '<tr><td colspan="9" style="text-align:center;color:#6b7280;">No data available in table</td></tr>';
+  const rows = rowsHtml || '<tr><td colspan="9" style="text-align:center;color:#86909c;padding:24px;">No data available in table</td></tr>';
 
   return pageTemplate(
     'Admin Shorts',
-    `<div class="topbar"><h1>Admin Shorts</h1>${renderTopbarActions('/admin/dashboard', 'Back Dashboard')}</div>
+    `${renderAdminArcoTableStyles()}
+     <div class="topbar"><h1>Admin Shorts</h1>${renderTopbarActions('/admin/dashboard', 'Back Dashboard')}</div>
      ${msgHtml}
-     <div class="card">
-       <table style="width:100%; border-collapse:collapse;">
-         <thead><tr><th align="left">#</th><th align="left">Name</th><th align="left">Type ID</th><th align="left">Video Type</th><th align="left">Producer</th><th align="left">Views</th><th align="left">Created</th><th align="left">Status</th><th align="left">Actions</th></tr></thead>
-         <tbody>${rows}</tbody>
-       </table>
+     <div class="admin-arco-shell">
+       <div class="admin-arco-toolbar"><div class="admin-arco-summary">Arco-style table with pagination</div></div>
+       <div class="admin-arco-table-wrap">
+         <table class="admin-arco-table">
+           <thead><tr><th align="left">#</th><th align="left">Name</th><th align="left">Type ID</th><th align="left">Video Type</th><th align="left">Producer</th><th align="left">Views</th><th align="left">Created</th><th align="left">Status</th><th align="left">Actions</th></tr></thead>
+           <tbody>${rows}</tbody>
+         </table>
+       </div>
+       ${renderAdminArcoPagination('/admin/shorts', pagination)}
      </div>`,
   );
 }
@@ -806,10 +1192,12 @@ export function renderProducerVideoPage(
   },
   message = '',
 ): string {
+  const liveProducerVideoTemplate = fs.readFileSync(producerVideoTemplatePath, 'utf8');
+
   return pageTemplate(
     'Video',
     ejs.render(
-      producerVideoTemplate,
+      liveProducerVideoTemplate,
       {
         payload,
         message,
@@ -855,10 +1243,12 @@ export function renderProducerTvShowPage(
   },
   message = '',
 ): string {
+  const liveProducerTvShowTemplate = fs.readFileSync(producerTvShowTemplatePath, 'utf8');
+
   return pageTemplate(
     'TV Show',
     ejs.render(
-      producerTvShowTemplate,
+      liveProducerTvShowTemplate,
       {
         payload,
         message,
@@ -1052,10 +1442,12 @@ export function renderProducerShortsPage(
   },
   message = '',
 ): string {
+  const liveProducerShortsTemplate = fs.readFileSync(producerShortsTemplatePath, 'utf8');
+
   return pageTemplate(
     'Shorts',
     ejs.render(
-      producerShortsTemplate,
+      liveProducerShortsTemplate,
       {
         payload,
         message,

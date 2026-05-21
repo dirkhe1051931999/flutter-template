@@ -20,6 +20,17 @@
 
   <%- include('./components/video-create-form', { payload }) %>
 
+  <%- include('./components/pagination', {
+    payload,
+    paginationBasePath: '/producer/video',
+    paginationQueryState: {
+      input_search: payload.inputSearch,
+      input_rent: payload.inputRent,
+      input_premium: payload.inputPremium,
+      input_status: payload.inputStatus
+    }
+  }) %>
+
   <div class="ios-list">
     <% if (payload.items.length === 0) { %>
       <div class="ios-card ios-empty"><strong>No videos yet</strong><div style="margin-top:6px;">Create your first video or adjust the filters above.</div></div>
@@ -28,6 +39,17 @@
       <%- include('./components/video-card', { payload, item, formatDateDMY }) %>
     <% }) %>
   </div>
+
+  <%- include('./components/pagination', {
+    payload,
+    paginationBasePath: '/producer/video',
+    paginationQueryState: {
+      input_search: payload.inputSearch,
+      input_rent: payload.inputRent,
+      input_premium: payload.inputPremium,
+      input_status: payload.inputStatus
+    }
+  }) %>
 </div>
 
 <%- include('./components/rent-toggle-script') %>

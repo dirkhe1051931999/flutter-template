@@ -19,6 +19,16 @@
   <%- include('./components/shorts-filter-bar', { payload }) %>
   <%- include('./components/shorts-create-form', { payload }) %>
 
+  <%- include('./components/pagination', {
+    payload,
+    paginationBasePath: '/producer/shorts',
+    paginationQueryState: {
+      input_search: payload.inputSearch,
+      input_rent: payload.inputRent,
+      input_status: payload.inputStatus
+    }
+  }) %>
+
   <div class="ios-list">
     <% if (payload.items.length === 0) { %>
       <div class="ios-card ios-empty"><strong>No shorts yet</strong><div style="margin-top:6px;">Create your first shorts content or adjust filters.</div></div>
@@ -27,4 +37,14 @@
       <%- include('./components/shorts-card', { payload, item }) %>
     <% }) %>
   </div>
+
+  <%- include('./components/pagination', {
+    payload,
+    paginationBasePath: '/producer/shorts',
+    paginationQueryState: {
+      input_search: payload.inputSearch,
+      input_rent: payload.inputRent,
+      input_status: payload.inputStatus
+    }
+  }) %>
 </div>

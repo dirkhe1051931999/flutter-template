@@ -1,4 +1,5 @@
 import bcrypt from 'bcryptjs';
+import { env } from '../../config/env';
 import { BackofficeRepository } from './backoffice.repository';
 
 function normalizeBcryptHash(hash: string): string {
@@ -686,6 +687,8 @@ export class BackofficeService {
     const inputRent = String(query.input_rent ?? '0');
     const inputPremium = String(query.input_premium ?? 'all');
     const inputStatus = String(query.input_status ?? 'all');
+    const requestedPage = Number(query.page ?? '1');
+    const pageSize = Math.max(1, env.pageLimit);
 
     const [type, items, channels, releasesTypes] = await Promise.all([
       this.repository.getTypeById(typeId),
@@ -698,15 +701,32 @@ export class BackofficeService {
       throw new Error('type not found');
     }
 
+    const totalRows = items.length;
+    const totalPages = Math.max(1, Math.ceil(totalRows / pageSize));
+    const normalizedPage = Number.isFinite(requestedPage) ? Math.floor(requestedPage) : 1;
+    const currentPage = Math.min(Math.max(1, normalizedPage), totalPages);
+    const startIndex = (currentPage - 1) * pageSize;
+    const pageItems = items.slice(startIndex, startIndex + pageSize);
+    const startRow = totalRows === 0 ? 0 : startIndex + 1;
+    const endRow = Math.min(totalRows, startIndex + pageItems.length);
+
     return {
       typeId,
       inputSearch,
       inputRent,
       inputPremium,
       inputStatus,
-      items,
+      items: pageItems,
       channels,
       releasesTypes,
+      pagination: {
+        currentPage,
+        totalPages,
+        totalRows,
+        pageSize,
+        startRow,
+        endRow,
+      },
     };
   }
 
@@ -884,6 +904,8 @@ export class BackofficeService {
     const inputSearch = String(query.input_search ?? '').trim();
     const inputRent = String(query.input_rent ?? '0');
     const inputStatus = String(query.input_status ?? 'all');
+    const requestedPage = Number(query.page ?? '1');
+    const pageSize = Math.max(1, env.pageLimit);
 
     const [type, items, channels, releasesTypes] = await Promise.all([
       this.repository.getTypeById(typeId),
@@ -896,14 +918,31 @@ export class BackofficeService {
       throw new Error('type not found');
     }
 
+    const totalRows = items.length;
+    const totalPages = Math.max(1, Math.ceil(totalRows / pageSize));
+    const normalizedPage = Number.isFinite(requestedPage) ? Math.floor(requestedPage) : 1;
+    const currentPage = Math.min(Math.max(1, normalizedPage), totalPages);
+    const startIndex = (currentPage - 1) * pageSize;
+    const pageItems = items.slice(startIndex, startIndex + pageSize);
+    const startRow = totalRows === 0 ? 0 : startIndex + 1;
+    const endRow = Math.min(totalRows, startIndex + pageItems.length);
+
     return {
       typeId,
       inputSearch,
       inputRent,
       inputStatus,
-      items,
+      items: pageItems,
       channels,
       releasesTypes,
+      pagination: {
+        currentPage,
+        totalPages,
+        totalRows,
+        pageSize,
+        startRow,
+        endRow,
+      },
     };
   }
 
@@ -1188,6 +1227,8 @@ export class BackofficeService {
     const inputSearch = String(query.input_search ?? '').trim();
     const inputRent = String(query.input_rent ?? '0');
     const inputStatus = String(query.input_status ?? 'all');
+    const requestedPage = Number(query.page ?? '1');
+    const pageSize = Math.max(1, env.pageLimit);
 
     const [type, items, channels, releasesTypes] = await Promise.all([
       this.repository.getTypeById(typeId),
@@ -1200,14 +1241,31 @@ export class BackofficeService {
       throw new Error('type not found');
     }
 
+    const totalRows = items.length;
+    const totalPages = Math.max(1, Math.ceil(totalRows / pageSize));
+    const normalizedPage = Number.isFinite(requestedPage) ? Math.floor(requestedPage) : 1;
+    const currentPage = Math.min(Math.max(1, normalizedPage), totalPages);
+    const startIndex = (currentPage - 1) * pageSize;
+    const pageItems = items.slice(startIndex, startIndex + pageSize);
+    const startRow = totalRows === 0 ? 0 : startIndex + 1;
+    const endRow = Math.min(totalRows, startIndex + pageItems.length);
+
     return {
       typeId,
       inputSearch,
       inputRent,
       inputStatus,
-      items,
+      items: pageItems,
       channels,
       releasesTypes,
+      pagination: {
+        currentPage,
+        totalPages,
+        totalRows,
+        pageSize,
+        startRow,
+        endRow,
+      },
     };
   }
 

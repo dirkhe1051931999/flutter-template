@@ -32,6 +32,7 @@
       <form method="post" action="/producer/video/update/${item.id}" class="ios-stack" data-rent-form>
         <input type="hidden" name="type_id" value="${payload.typeId}" />
         <input type="hidden" name="video_type" value="${item.video_type}" />
+        <input type="hidden" name="subtitle_type" value="${item.subtitle_type || 'external'}" />
         <div class="ios-grid-2">
           <div><label class="ios-label">Name</label><input name="name" value="${item.name}" required /></div>
           <div><label class="ios-label">Release Date</label><input name="release_date" value="${item.release_date || ''}" placeholder="YYYY-MM-DD" /></div>
