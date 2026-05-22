@@ -1,4 +1,4 @@
-import Router from '@koa/router';
+﻿import Router from '@koa/router';
 import type { Context } from 'koa';
 
 const docsRouter = new Router();
@@ -12,313 +12,135 @@ type DocField = {
 
 type ApiDoc = {
   slug: string;
-  method: 'GET' | 'POST';
+  method: 'POST' | 'GET';
   path: string;
   title: string;
   summary: string;
   fields: DocField[];
-  requestExample: string;
   successExample: string;
-  errorCodes: Array<{ code: number; meaning: string }>;
-  authFailureExample: string;
 };
 
-function escapeHtml(value: string): string {
-  return value
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#39;');
-}
+const dtliveApiPaths: string[] = [
+  '/api/add_comment',
+  '/api/add_continue_watching',
+  '/api/add_remove_bookmark',
+  '/api/add_remove_device_watching',
+  '/api/add_remove_kids_mode',
+  '/api/add_remove_like',
+  '/api/add_rent_transaction',
+  '/api/add_review',
+  '/api/add_transaction',
+  '/api/add_video_view',
+  '/api/add_wallet_amount',
+  '/api/apply_coupon',
+  '/api/cast_detail',
+  '/api/check_tv_login',
+  '/api/content_by_cast',
+  '/api/content_by_category',
+  '/api/content_by_channel',
+  '/api/content_by_language',
+  '/api/content_detail',
+  '/api/create_razorpay_order',
+  '/api/delete_comment',
+  '/api/edit_comment',
+  '/api/general_setting',
+  '/api/get_avatar',
+  '/api/get_banner',
+  '/api/get_bookmark_video',
+  '/api/get_category',
+  '/api/get_channel',
+  '/api/get_comment',
+  '/api/get_continue_watching',
+  '/api/get_coupon_list',
+  '/api/get_device_sync_list',
+  '/api/get_language',
+  '/api/get_notification',
+  '/api/get_onboarding_screen',
+  '/api/get_package',
+  '/api/get_pages',
+  '/api/get_payment_option',
+  '/api/get_profile',
+  '/api/get_refer_earn_history',
+  '/api/get_releted_content',
+  '/api/get_replay_comment',
+  '/api/get_reviews',
+  '/api/get_shorts_episode',
+  '/api/get_shorts_list',
+  '/api/get_social_link',
+  '/api/get_transaction_list',
+  '/api/get_tv_login_code',
+  '/api/get_type',
+  '/api/get_vdocipher_otp',
+  '/api/get_video_by_season_id',
+  '/api/get_wallet_transaction',
+  '/api/getReferEarnHistory',
+  '/api/login',
+  '/api/logout_device_sync',
+  '/api/parent_control_check_password',
+  '/api/read_notification',
+  '/api/register',
+  '/api/remove_continue_watching',
+  '/api/rent_content_list',
+  '/api/search_content',
+  '/api/section_detail',
+  '/api/section_list',
+  '/api/tv_login',
+  '/api/update_profile',
+  '/api/update_transaction_status',
+  '/api/user_rent_content_list',
+  '/api/validate_coupon',
+];
 
-function parseExampleObject(input: string): Record<string, unknown> {
-  try {
-    const parsed = JSON.parse(input) as unknown;
-    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
-      return parsed as Record<string, unknown>;
-    }
-  } catch {
-    return {};
-  }
-
-  return {};
-}
-
-const apiDocs: ApiDoc[] = [
-  {
-    slug: 'get_channel',
-    method: 'POST',
-    path: '/api/get_channel',
-    title: '获取频道列表',
-    summary: '返回当前可用频道列表，并补齐频道图片 URL。',
-    fields: [],
-    requestExample: `{}`,
-    successExample: `{
-  "status": 200,
-  "message": "Data retrieved successfully",
-  "result": [
-    {
-      "id": 1,
-      "name": "News Channel",
-      "portrait_img": "https://example.com/uploads/channel/portrait/xxx.png",
-      "landscape_img": "https://example.com/uploads/channel/landscape/xxx.png",
-      "status": 1
-    }
-  ]
-}`,
-    errorCodes: [
-      { code: 200, meaning: '请求成功' },
-      { code: 400, meaning: '数据为空或业务处理失败' },
-      { code: 401, meaning: '缺少或错误的 Api-Token' },
-    ],
-    authFailureExample: `{
-  "status": 401,
-  "errors": "Api token missing"
-}`,
-  },
-  {
-    slug: 'section_list',
-    method: 'POST',
-    path: '/api/section_list',
-    title: '获取首页 section 列表',
-    summary: '按首页场景、内容类型与分页参数返回 section 列表和分页信息。',
+const curatedDocs: Record<string, Partial<ApiDoc>> = {
+  rent_content_list: {
+    title: '租赁内容列表',
+    summary: '获取可租赁内容列表，支持按电影/剧集/全部筛选并分页。',
     fields: [
-      { name: 'is_home_screen', type: 'number', required: true, description: '首页场景标识，只允许 1 或 2。' },
-      { name: 'type_id', type: 'number', required: true, description: '内容类型 ID。' },
-      { name: 'page_no', type: 'number', required: false, description: '页码，默认 1。' },
-      { name: 'user_id', type: 'number', required: false, description: '用户 ID，默认 0。' },
-      { name: 'device_id', type: 'string', required: false, description: '设备 ID，用于配合家长控制状态判断。' },
+      { name: 'type', type: 'number', required: false, description: '1=电影/视频, 2=剧集, 0或不传=全部' },
+      { name: 'user_id', type: 'number', required: false, description: '用户 ID，默认 0' },
+      { name: 'device_id', type: 'string', required: false, description: '设备 ID，用于家长控制判定' },
+      { name: 'page_no', type: 'number', required: false, description: '页码，默认 1' },
     ],
-    requestExample: `{
-  "is_home_screen": 1,
-  "type_id": 1,
-  "page_no": 1,
-  "user_id": 12,
-  "device_id": "device-001"
-}`,
     successExample: `{
   "status": 200,
-  "message": "Data retrieved successfully",
-  "result": [
-    {
-      "id": 3,
-      "title": "Trending",
-      "video_type": 1,
-      "data": []
-    }
-  ],
-  "total_rows": 8,
-  "total_page": 1,
-  "current_page": 1,
-  "more_page": false
-}`,
-    errorCodes: [
-      { code: 200, meaning: '请求成功' },
-      { code: 400, meaning: '参数缺失、参数类型错误或数据为空' },
-      { code: 401, meaning: '缺少或错误的 Api-Token' },
-    ],
-    authFailureExample: `{
-  "status": 401,
-  "errors": "Invalid api token"
-}`,
-  },
-  {
-    slug: 'content_detail',
-    method: 'POST',
-    path: '/api/content_detail',
-    title: '获取内容详情',
-    summary: '根据类型与内容 ID 返回单个内容详情、cast 和 season 等扩展信息。',
-    fields: [
-      { name: 'type_id', type: 'number', required: true, description: '内容类型 ID。' },
-      { name: 'video_type', type: 'number', required: true, description: '内容视频类型。' },
-      { name: 'video_id', type: 'number', required: true, description: '内容主键 ID。' },
-      { name: 'sub_video_type', type: 'number', required: false, description: '子视频类型，默认 0。对于部分类型必须为 1 或 2。' },
-      { name: 'user_id', type: 'number', required: false, description: '用户 ID，默认 0。' },
-      { name: 'is_kids_profile', type: 'number', required: false, description: '是否儿童模式，默认 0。' },
-    ],
-    requestExample: `{
-  "type_id": 1,
-  "video_type": 1,
-  "video_id": 25,
-  "sub_video_type": 0,
-  "user_id": 12,
-  "is_kids_profile": 0
-}`,
-    successExample: `{
-  "status": 200,
-  "message": "Data retrieved successfully",
-  "result": [
-    {
-      "id": 25,
-      "name": "Example Content",
-      "thumbnail": "https://example.com/uploads/content/portrait/xxx.png",
-      "landscape": "https://example.com/uploads/content/landscape/xxx.png",
-      "cast": [],
-      "season": [],
-      "is_bookmark": 0,
-      "is_user_like": 0
-    }
-  ]
-}`,
-    errorCodes: [
-      { code: 200, meaning: '请求成功' },
-      { code: 400, meaning: '参数错误、内容不存在或子类型非法' },
-      { code: 401, meaning: '缺少或错误的 Api-Token' },
-    ],
-    authFailureExample: `{
-  "status": 401,
-  "errors": "Api token missing"
-}`,
-  },
-  {
-    slug: 'content_by_channel',
-    method: 'POST',
-    path: '/api/content_by_channel',
-    title: '按频道获取内容列表',
-    summary: '根据频道 ID 返回内容列表，并附带分页信息。',
-    fields: [
-      { name: 'channel_id', type: 'number', required: true, description: '频道 ID。' },
-      { name: 'user_id', type: 'number', required: false, description: '用户 ID，默认 0。' },
-      { name: 'is_kids_profile', type: 'number', required: false, description: '是否儿童模式，默认 0。' },
-      { name: 'page_no', type: 'number', required: false, description: '页码，默认 1。' },
-    ],
-    requestExample: `{
-  "channel_id": 2,
-  "user_id": 12,
-  "is_kids_profile": 0,
-  "page_no": 1
-}`,
-    successExample: `{
-  "status": 200,
-  "message": "Data retrieved successfully",
+  "message": "Data Retrieved Successfully.",
   "result": [
     {
       "id": 101,
-      "name": "Channel Content",
-      "sub_video_type": 1
+      "name": "Sample Rent Content",
+      "video_type": 1,
+      "sub_video_type": 0
     }
   ],
-  "total_rows": 10,
-  "total_page": 1,
+  "total_rows": 120,
+  "total_page": 12,
   "current_page": 1,
-  "more_page": false
-}`,
-    errorCodes: [
-      { code: 200, meaning: '请求成功' },
-      { code: 400, meaning: '参数错误或无数据' },
-      { code: 401, meaning: '缺少或错误的 Api-Token' },
-    ],
-    authFailureExample: `{
-  "status": 401,
-  "errors": "Invalid api token"
+  "more_page": true
 }`,
   },
-  {
-    slug: 'add_continue_watching',
+};
+
+function toTitle(slug: string): string {
+  return `${slug} 接口`;
+}
+
+const apiDocs: ApiDoc[] = dtliveApiPaths.map((path) => {
+  const slug = path.replace('/api/', '');
+  const curated = curatedDocs[slug] ?? {};
+  return {
+    slug,
     method: 'POST',
-    path: '/api/add_continue_watching',
-    title: '新增或更新继续观看记录',
-    summary: '写入当前用户的继续观看进度。',
-    fields: [
-      { name: 'user_id', type: 'number', required: true, description: '用户 ID。' },
-      { name: 'is_kids_profile', type: 'number', required: true, description: '是否儿童模式。' },
-      { name: 'video_type', type: 'number', required: true, description: '视频类型。' },
-      { name: 'sub_video_type', type: 'number', required: false, description: '子视频类型，默认 0。' },
-      { name: 'video_id', type: 'number', required: true, description: '内容 ID。' },
-      { name: 'episode_id', type: 'number', required: false, description: '分集 ID，默认 0。' },
-      { name: 'stop_time', type: 'number', required: true, description: '停止播放时间，通常为秒或毫秒数值。' },
-    ],
-    requestExample: `{
-  "user_id": 12,
-  "is_kids_profile": 0,
-  "video_type": 2,
-  "sub_video_type": 0,
-  "video_id": 35,
-  "episode_id": 6,
-  "stop_time": 840
-}`,
-    successExample: `{
+    path,
+    title: curated.title ?? toTitle(slug),
+    summary: curated.summary ?? `Flutter 客户端接口：${path}`,
+    fields: curated.fields ?? [],
+    successExample: curated.successExample ?? `{
   "status": 200,
-  "message": "Added continue watching"
+  "message": "success",
+  "result": {}
 }`,
-    errorCodes: [
-      { code: 200, meaning: '写入成功' },
-      { code: 400, meaning: '参数缺失或类型错误' },
-      { code: 401, meaning: '缺少或错误的 Api-Token' },
-    ],
-    authFailureExample: `{
-  "status": 401,
-  "errors": "Api token missing"
-}`,
-  },
-  {
-    slug: 'add_remove_like',
-    method: 'POST',
-    path: '/api/add_remove_like',
-    title: '点赞 / 取消点赞',
-    summary: '同一接口根据当前状态执行点赞或取消点赞。',
-    fields: [
-      { name: 'user_id', type: 'number', required: true, description: '用户 ID。' },
-      { name: 'video_type', type: 'number', required: true, description: '视频类型。' },
-      { name: 'sub_video_type', type: 'number', required: false, description: '子视频类型，默认 0。' },
-      { name: 'video_id', type: 'number', required: true, description: '内容 ID。' },
-    ],
-    requestExample: `{
-  "user_id": 12,
-  "video_type": 1,
-  "sub_video_type": 0,
-  "video_id": 25
-}`,
-    successExample: `{
-  "status": 200,
-  "message": "Content liked"
-}`,
-    errorCodes: [
-      { code: 200, meaning: '点赞或取消点赞成功' },
-      { code: 400, meaning: '参数缺失或类型错误' },
-      { code: 401, meaning: '缺少或错误的 Api-Token' },
-    ],
-    authFailureExample: `{
-  "status": 401,
-  "errors": "Invalid api token"
-}`,
-  },
-  {
-    slug: 'add_remove_bookmark',
-    method: 'POST',
-    path: '/api/add_remove_bookmark',
-    title: '收藏 / 取消收藏',
-    summary: '同一接口根据当前状态执行收藏或取消收藏。',
-    fields: [
-      { name: 'user_id', type: 'number', required: true, description: '用户 ID。' },
-      { name: 'is_kids_profile', type: 'number', required: true, description: '是否儿童模式。' },
-      { name: 'video_type', type: 'number', required: true, description: '视频类型。' },
-      { name: 'sub_video_type', type: 'number', required: false, description: '子视频类型，默认 0。' },
-      { name: 'video_id', type: 'number', required: true, description: '内容 ID。' },
-    ],
-    requestExample: `{
-  "user_id": 12,
-  "is_kids_profile": 0,
-  "video_type": 1,
-  "sub_video_type": 0,
-  "video_id": 25
-}`,
-    successExample: `{
-  "status": 200,
-  "message": "Content bookmarked"
-}`,
-    errorCodes: [
-      { code: 200, meaning: '收藏或取消收藏成功' },
-      { code: 400, meaning: '参数缺失或类型错误' },
-      { code: 401, meaning: '缺少或错误的 Api-Token' },
-    ],
-    authFailureExample: `{
-  "status": 401,
-  "errors": "Api token missing"
-}`,
-  },
-];
+  };
+});
 
 function renderLayout(title: string, body: string): string {
   return `<!doctype html>
@@ -333,35 +155,20 @@ function renderLayout(title: string, body: string): string {
     .hero, .card { background:#fff; border-radius:16px; box-shadow:0 8px 24px rgba(15,23,42,.08); }
     .hero { padding:32px; margin-bottom:24px; }
     .card { padding:24px; margin-bottom:20px; }
-    h1, h2, h3 { margin-top:0; }
-    h1 { font-size:32px; margin-bottom:12px; }
+    h1, h2 { margin-top:0; }
+    h1 { font-size:30px; margin-bottom:12px; }
     h2 { font-size:22px; margin-bottom:14px; }
-    h3 { font-size:18px; margin-bottom:10px; }
-    p { line-height:1.7; }
     .muted { color:#6b7280; }
     .badge { display:inline-block; padding:4px 10px; border-radius:999px; font-size:12px; font-weight:700; }
     .badge-post { background:#dbeafe; color:#1d4ed8; }
-    .badge-get { background:#dcfce7; color:#166534; }
     .grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap:16px; }
     .endpoint { border:1px solid #e5e7eb; border-radius:12px; padding:16px; background:#f8fafc; }
     .path { display:block; font-family: Consolas, monospace; font-size:14px; margin:10px 0 8px; word-break: break-all; }
-    code, pre { font-family: Consolas, monospace; }
-    pre { background:#0f172a; color:#e2e8f0; padding:16px; border-radius:12px; overflow:auto; font-size:13px; line-height:1.6; }
-    ul { padding-left:20px; }
-    table { width:100%; border-collapse: collapse; margin-top:10px; }
+    pre { font-family: Consolas, monospace; background:#0f172a; color:#e2e8f0; padding:16px; border-radius:12px; overflow:auto; font-size:13px; }
+    table { width:100%; border-collapse: collapse; }
     th, td { text-align:left; padding:10px 12px; border-top:1px solid #e5e7eb; vertical-align:top; }
     th { background:#f8fafc; }
-    a { color:#2563eb; text-decoration:none; }
-    .topbar { display:flex; justify-content:space-between; align-items:flex-start; gap:16px; margin-bottom:14px; }
-    .link-group { display:flex; gap:10px; flex-wrap:wrap; }
-    .link-btn { display:inline-flex; align-items:center; justify-content:center; min-width:110px; padding:10px 12px; border-radius:8px; background:#eef2ff; color:#1e3a8a; }
-    .debug-grid { display:grid; gap:14px; }
-    .debug-field { display:grid; gap:8px; }
-    .debug-label { font-weight:700; color:#111827; }
-    .debug-grid input { width:100%; box-sizing:border-box; padding:10px 12px; border:1px solid #d1d5db; border-radius:10px; font:inherit; }
-    .debug-action-row { display:flex; justify-content:flex-start; }
-    .debug-submit { padding:10px 16px; border:none; border-radius:10px; background:#111827; color:#fff; cursor:pointer; font:inherit; }
-    .debug-submit:disabled { opacity:.6; cursor:not-allowed; }
+    .link-btn { display:inline-flex; align-items:center; justify-content:center; min-width:110px; padding:10px 12px; border-radius:8px; background:#eef2ff; color:#1e3a8a; text-decoration:none; }
   </style>
 </head>
 <body>
@@ -370,298 +177,60 @@ function renderLayout(title: string, body: string): string {
 </html>`;
 }
 
-function renderCommonIntro(): string {
-  return `<div class="card">
-    <h2>调用要求</h2>
-    <ul>
-      <li>公开业务接口走 <code>/api/*</code>，当前已开放接口以 <strong>POST</strong> 为主。</li>
-      <li>请求头必须携带 <code>Api-Token</code>。</li>
-      <li>当服务端启用了购买码校验但未验证通过时，会返回 <code>Purchase code is not verified</code>。</li>
-      <li>请求体建议使用 <code>application/json</code>。</li>
-    </ul>
-    <h3>示例请求头</h3>
-    <pre>Api-Token: YOUR_API_TOKEN
-Content-Type: application/json</pre>
-  </div>
-  <div class="card">
-    <h2>通用返回结构</h2>
-    <table>
-      <thead>
-        <tr>
-          <th>字段</th>
-          <th>说明</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td><code>status</code></td>
-          <td>状态码。成功一般为 200，鉴权失败通常为 401，业务失败多为 400。</td>
-        </tr>
-        <tr>
-          <td><code>message</code></td>
-          <td>响应说明。</td>
-        </tr>
-        <tr>
-          <td><code>result</code></td>
-          <td>成功时的主体数据。</td>
-        </tr>
-        <tr>
-          <td><code>total_rows / total_page / current_page / more_page</code></td>
-          <td>列表型接口的分页字段。</td>
-        </tr>
-        <tr>
-          <td><code>errors</code></td>
-          <td>失败时的错误信息。</td>
-        </tr>
-      </tbody>
-    </table>
-  </div>`;
-}
-
-function renderDocsIndexPage(): string {
-  const endpointCards = apiDocs
-    .map(
-      (doc) => `<div class="endpoint">
-        <span class="badge ${doc.method === 'GET' ? 'badge-get' : 'badge-post'}">${doc.method}</span>
-        <span class="path">${doc.path}</span>
-        <div style="font-weight:700; margin-bottom:8px;">${doc.title}</div>
-        <div class="muted">${doc.summary}</div>
-        <div style="margin-top:12px;"><a class="link-btn" href="/docs/api/${doc.slug}">查看详情</a></div>
-      </div>`,
-    )
-    .join('');
-
-  return renderLayout(
-    'DTLive API Docs',
-    `<div class="hero">
-      <div class="badge badge-post" style="margin-bottom:12px;">Public API Docs</div>
-      <h1>DTLive API 文档首页</h1>
-      <p class="muted">这里是面向外部调用方的 API 文档入口。你可以先看总览，再进入每个接口的详情页查看参数表、请求示例、成功响应、错误码和鉴权失败示例。</p>
-      <p class="muted">Base URL：<code>/api</code></p>
-    </div>
-    ${renderCommonIntro()}
-    <div class="card">
-      <h2>接口目录</h2>
-      <div class="grid">${endpointCards}</div>
-    </div>`,
-  );
-}
-
 function renderFieldRows(fields: DocField[]): string {
   if (fields.length === 0) {
-    return `<tr><td colspan="4" class="muted">该接口无需业务参数，请直接提交空 JSON 对象即可。</td></tr>`;
+    return '<tr><td colspan="4" class="muted">该接口当前未定义固定业务参数（按客户端实际请求传参）。</td></tr>';
   }
 
   return fields
-    .map(
-      (field) => `<tr>
-        <td><code>${field.name}</code></td>
-        <td>${field.type}</td>
-        <td>${field.required ? '是' : '否'}</td>
-        <td>${field.description}</td>
-      </tr>`,
-    )
+    .map((field) => `<tr><td><code>${field.name}</code></td><td>${field.type}</td><td>${field.required ? '是' : '否'}</td><td>${field.description}</td></tr>`)
     .join('');
 }
 
-function renderErrorRows(items: Array<{ code: number; meaning: string }>): string {
-  return items
-    .map(
-      (item) => `<tr>
-        <td><code>${item.code}</code></td>
-        <td>${item.meaning}</td>
-      </tr>`,
-    )
+function renderDocsIndexPage(): string {
+  const groupDefs: Array<{ key: string; title: string; match: (slug: string) => boolean }> = [
+    { key: 'auth', title: '账号与登录', match: (slug) => ['register', 'login', 'get_profile', 'update_profile', 'get_tv_login_code', 'tv_login', 'check_tv_login', 'parent_control_check_password', 'get_device_sync_list', 'logout_device_sync', 'add_remove_device_watching'].includes(slug) },
+    { key: 'home', title: '首页与基础配置', match: (slug) => ['general_setting', 'get_payment_option', 'get_social_link', 'get_onboarding_screen', 'get_avatar', 'get_category', 'get_language', 'get_channel', 'get_type', 'get_pages', 'get_banner', 'section_list', 'section_detail'].includes(slug) },
+    { key: 'content', title: '内容浏览与详情', match: (slug) => ['content_detail', 'get_releted_content', 'cast_detail', 'content_by_category', 'content_by_language', 'content_by_cast', 'content_by_channel', 'get_video_by_season_id', 'search_content', 'get_shorts_list', 'get_shorts_episode'].includes(slug) },
+    { key: 'user_action', title: '用户行为', match: (slug) => ['add_continue_watching', 'remove_continue_watching', 'get_continue_watching', 'add_remove_like', 'add_remove_bookmark', 'get_bookmark_video', 'add_video_view', 'add_comment', 'edit_comment', 'delete_comment', 'get_comment', 'get_replay_comment', 'add_remove_kids_mode', 'add_review', 'get_reviews'].includes(slug) },
+    { key: 'payment', title: '交易支付与优惠', match: (slug) => ['add_transaction', 'update_transaction_status', 'get_transaction_list', 'add_rent_transaction', 'rent_content_list', 'user_rent_content_list', 'get_coupon_list', 'apply_coupon', 'validate_coupon', 'create_razorpay_order'].includes(slug) },
+    { key: 'wallet', title: '钱包与推荐', match: (slug) => ['get_refer_earn_history', 'getReferEarnHistory', 'add_wallet_amount', 'get_wallet_transaction'].includes(slug) },
+    { key: 'notification', title: '通知', match: (slug) => ['get_notification', 'read_notification'].includes(slug) },
+    { key: 'media_security', title: '媒体与安全', match: (slug) => ['get_vdocipher_otp'].includes(slug) },
+  ];
+
+  const grouped = groupDefs.map((group) => {
+    const docs = apiDocs.filter((doc) => group.match(doc.slug));
+    return { ...group, docs };
+  });
+  const uncategorized = apiDocs.filter((doc) => !groupDefs.some((group) => group.match(doc.slug)));
+
+  const renderCards = (docs: ApiDoc[]) => docs
+    .map((doc) => `<div class="endpoint"><span class="badge badge-post">POST</span><span class="path">${doc.path}</span><div style="font-weight:700; margin-bottom:8px;">${doc.title}</div><div class="muted">${doc.summary}</div><div style="margin-top:12px;"><a class="link-btn" href="/docs/api/${doc.slug}">查看详情</a></div></div>`)
     .join('');
-}
 
-function renderRequestDebugger(doc: ApiDoc): string {
-  const exampleObject = parseExampleObject(doc.requestExample);
-  const fieldRows = doc.fields.length === 0
-    ? `<div class="muted">该接口无需业务参数，将直接提交空 JSON 对象。</div>`
-    : doc.fields
-        .map((field) => {
-          const exampleValue = exampleObject[field.name];
-          const defaultValue = exampleValue === undefined || exampleValue === null ? '' : String(exampleValue);
+  const groupedHtml = grouped
+    .filter((group) => group.docs.length > 0)
+    .map((group) => `<div class="card"><h2>${group.title}（${group.docs.length}）</h2><div class="grid">${renderCards(group.docs)}</div></div>`)
+    .join('');
 
-          return `<label class="debug-field">
-            <div class="debug-label"><code>${field.name}</code> <span class="muted">${field.type}${field.required ? ' · 必填' : ' · 可选'}</span></div>
-            <input data-param-name="${escapeHtml(field.name)}" data-param-type="${escapeHtml(field.type)}" placeholder="${escapeHtml(field.description)}" value="${escapeHtml(defaultValue)}" />
-          </label>`;
-        })
-        .join('');
+  const uncategorizedHtml = uncategorized.length > 0
+    ? `<div class="card"><h2>未分类（${uncategorized.length}）</h2><div class="grid">${renderCards(uncategorized)}</div></div>`
+    : '';
 
-  return `<div class="card">
-    <h2>请求调试</h2>
-    <div class="muted" style="margin-bottom:14px;">按参数一行一个填写，点击发送后会直接请求当前接口并展示返回结果。</div>
-    <div class="debug-grid" data-doc-debugger data-endpoint="${escapeHtml(doc.path)}" data-method="${doc.method}">
-      <label class="debug-field">
-        <div class="debug-label"><code>Api-Token</code> <span class="muted">请求头</span></div>
-        <input data-api-token placeholder="请输入 Api-Token" />
-      </label>
-      ${fieldRows}
-      <div class="debug-action-row">
-        <button type="button" class="debug-submit">发送请求</button>
-      </div>
-      <div>
-        <div class="debug-label">请求体预览</div>
-        <pre class="debug-request">{}</pre>
-      </div>
-      <div>
-        <div class="debug-label">响应结果</div>
-        <pre class="debug-response">点击“发送请求”后查看结果</pre>
-      </div>
-    </div>
-  </div>`;
+  return renderLayout(
+    'DTLive API Docs',
+    `<div class="hero"><h1>DTLive API 文档</h1><p class="muted">共 ${apiDocs.length} 个接口（Flutter 客户端）。已按业务分类展示。</p></div>${groupedHtml}${uncategorizedHtml}`,
+  );
 }
 
 function renderDocsDetailPage(doc: ApiDoc): string {
   return renderLayout(
     `${doc.title} - DTLive API Docs`,
-    `<div class="hero">
-      <div class="topbar">
-        <div>
-          <div class="badge ${doc.method === 'GET' ? 'badge-get' : 'badge-post'}" style="margin-bottom:12px;">${doc.method}</div>
-          <h1>${doc.title}</h1>
-          <div class="path">${doc.path}</div>
-          <p class="muted">${doc.summary}</p>
-        </div>
-        <div class="link-group">
-          <a class="link-btn" href="/docs">返回文档首页</a>
-        </div>
-      </div>
-    </div>
-    ${renderCommonIntro()}
-    <div class="card">
-      <h2>参数表</h2>
-      <table>
-        <thead>
-          <tr>
-            <th>参数</th>
-            <th>类型</th>
-            <th>必填</th>
-            <th>说明</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${renderFieldRows(doc.fields)}
-        </tbody>
-      </table>
-    </div>
-    <div class="card">
-      <h2>请求 JSON 示例</h2>
-      <pre>${doc.requestExample}</pre>
-    </div>
-    ${renderRequestDebugger(doc)}
-    <div class="card">
-      <h2>成功响应 JSON 示例</h2>
-      <pre>${doc.successExample}</pre>
-    </div>
-    <div class="card">
-      <h2>错误码说明</h2>
-      <table>
-        <thead>
-          <tr>
-            <th>状态码</th>
-            <th>含义</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${renderErrorRows(doc.errorCodes)}
-        </tbody>
-      </table>
-    </div>
-    <div class="card">
-      <h2>鉴权失败示例</h2>
-      <pre>${doc.authFailureExample}</pre>
-    </div>
-    <script>
-      (() => {
-        const debuggers = document.querySelectorAll('[data-doc-debugger]');
-
-        const parseValue = (rawValue, type) => {
-          const value = rawValue.trim();
-          if (value.length === 0) {
-            return undefined;
-          }
-          if (type === 'number') {
-            const parsed = Number(value);
-            return Number.isNaN(parsed) ? value : parsed;
-          }
-          if (type === 'boolean') {
-            return value === 'true' || value === '1';
-          }
-          return value;
-        };
-
-        debuggers.forEach((root) => {
-          const endpoint = root.getAttribute('data-endpoint') || '';
-          const method = root.getAttribute('data-method') || 'POST';
-          const tokenInput = root.querySelector('[data-api-token]');
-          const submitButton = root.querySelector('.debug-submit');
-          const requestPreview = root.querySelector('.debug-request');
-          const responsePreview = root.querySelector('.debug-response');
-          const paramInputs = Array.from(root.querySelectorAll('[data-param-name]'));
-
-          const buildPayload = () => {
-            const payload = {};
-            paramInputs.forEach((input) => {
-              const name = input.getAttribute('data-param-name') || '';
-              const type = input.getAttribute('data-param-type') || 'string';
-              const value = parseValue(input.value || '', type);
-              if (value !== undefined && name) {
-                payload[name] = value;
-              }
-            });
-            return payload;
-          };
-
-          const syncPreview = () => {
-            requestPreview.textContent = JSON.stringify(buildPayload(), null, 2);
-          };
-
-          paramInputs.forEach((input) => input.addEventListener('input', syncPreview));
-          syncPreview();
-
-          submitButton?.addEventListener('click', async () => {
-            const payload = buildPayload();
-            responsePreview.textContent = '请求中...';
-            submitButton.disabled = true;
-
-            try {
-              const response = await fetch(endpoint, {
-                method,
-                headers: {
-                  'Content-Type': 'application/json',
-                  ...(tokenInput?.value ? { 'Api-Token': tokenInput.value } : {}),
-                },
-                body: method === 'GET' ? undefined : JSON.stringify(payload),
-              });
-
-              const text = await response.text();
-              try {
-                const json = JSON.parse(text);
-                responsePreview.textContent = JSON.stringify({
-                  http_status: response.status,
-                  body: json,
-                }, null, 2);
-              } catch {
-                responsePreview.textContent = JSON.stringify({
-                  http_status: response.status,
-                  body: text,
-                }, null, 2);
-              }
-            } catch (error) {
-              responsePreview.textContent = JSON.stringify({
-                error: error instanceof Error ? error.message : String(error),
-              }, null, 2);
-            } finally {
-              submitButton.disabled = false;
-            }
-          });
-        });
-      })();
-    </script>`,
+    `<div class="hero"><h1>${doc.title}</h1><span class="path">${doc.path}</span><p class="muted">${doc.summary}</p><a class="link-btn" href="/docs">返回文档首页</a></div>
+    <div class="card"><h2>请求类型</h2><p><span class="badge badge-post">${doc.method}</span></p></div>
+    <div class="card"><h2>参数</h2><table><thead><tr><th>参数</th><th>类型</th><th>必填</th><th>说明</th></tr></thead><tbody>${renderFieldRows(doc.fields)}</tbody></table></div>
+    <div class="card"><h2>正确返回示例</h2><pre>${doc.successExample}</pre></div>`,
   );
 }
 
@@ -677,14 +246,7 @@ docsRouter.get('/docs/api/:slug', async (ctx: Context) => {
   if (!doc) {
     ctx.status = 404;
     ctx.type = 'html';
-    ctx.body = renderLayout(
-      'Docs 404',
-      `<div class="hero">
-        <h1>文档不存在</h1>
-        <p class="muted">未找到对应接口文档：<code>/docs/api/${slug}</code></p>
-        <div style="margin-top:16px;"><a class="link-btn" href="/docs">返回文档首页</a></div>
-      </div>`,
-    );
+    ctx.body = renderLayout('Docs 404', `<div class="hero"><h1>文档不存在</h1><p class="muted">未找到接口：/docs/api/${slug}</p><a class="link-btn" href="/docs">返回文档首页</a></div>`);
     return;
   }
 

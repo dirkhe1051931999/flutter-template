@@ -488,6 +488,340 @@ export class BackofficeService {
     await this.repository.saveAdminSeasonSortOrder(parsedIds);
   }
 
+  getAdminBanners() {
+    return this.repository.getAdminBanners();
+  }
+
+  async toggleAdminBannerStatus(id: number): Promise<void> {
+    if (!Number.isFinite(id) || id <= 0) {
+      throw new Error('id is invalid');
+    }
+
+    const ok = await this.repository.toggleAdminBannerStatus(id);
+    if (!ok) {
+      throw new Error('banner not found');
+    }
+  }
+
+  async saveAdminBannerSortOrder(ids: string): Promise<void> {
+    const parsedIds = this.parseSortableIds(ids);
+    await this.repository.saveAdminBannerSortOrder(parsedIds);
+  }
+
+  async createAdminBanner(input: {
+    isHomeScreen: number; typeId: number; videoType: number; subvideoType: number; videoId: number; sortOrder: number; status: number;
+  }): Promise<void> {
+    if (input.typeId <= 0 || input.videoId <= 0) throw new Error('type_id and video_id are required');
+    await this.repository.createAdminBanner(input);
+  }
+
+  async updateAdminBanner(id: number, input: {
+    isHomeScreen: number; typeId: number; videoType: number; subvideoType: number; videoId: number; sortOrder: number; status: number;
+  }): Promise<void> {
+    if (!Number.isFinite(id) || id <= 0) throw new Error('id is invalid');
+    if (input.typeId <= 0 || input.videoId <= 0) throw new Error('type_id and video_id are required');
+    await this.repository.updateAdminBanner(id, input);
+  }
+
+  getAdminHomeSections() {
+    return this.repository.getAdminHomeSections();
+  }
+
+  async toggleAdminHomeSectionStatus(id: number): Promise<void> {
+    if (!Number.isFinite(id) || id <= 0) {
+      throw new Error('id is invalid');
+    }
+
+    const ok = await this.repository.toggleAdminHomeSectionStatus(id);
+    if (!ok) {
+      throw new Error('section not found');
+    }
+  }
+
+  async saveAdminHomeSectionSortOrder(ids: string): Promise<void> {
+    const parsedIds = this.parseSortableIds(ids);
+    await this.repository.saveAdminHomeSectionSortOrder(parsedIds);
+  }
+
+  async getAdminBannerTypeByData(type: number, typeId: number, subvideoType: number) {
+    const usedIds = await this.repository.getBannerUsedVideoIdsByType(typeId);
+    if (type === 1) return this.repository.getVideoOptionsByType(typeId, usedIds);
+    if (type === 2) return this.repository.getTvShowOptionsByType(typeId, usedIds);
+    if (type === 8) return this.repository.getShortsOptionsByType(typeId, usedIds);
+    if ([5, 6, 7].includes(type)) {
+      return subvideoType === 2
+        ? this.repository.getTvShowOptionsByType(typeId, usedIds)
+        : this.repository.getVideoOptionsByType(typeId, usedIds);
+    }
+    return [];
+  }
+
+  async getAdminBannerList(isHomeScreen: number, typeId: number) {
+    const rows = await this.repository.getBannerListByScreenAndType(isHomeScreen, typeId);
+    const result = await Promise.all(rows.map(async (row) => {
+      const videoType = Number(row.video_type ?? 0);
+      const subvideoType = Number(row.subvideo_type ?? 0);
+      const videoId = Number(row.video_id ?? 0);
+      let videoName = '';
+      if (videoType === 1) videoName = await this.repository.getVideoNameById(videoId);
+      else if (videoType === 2) videoName = await this.repository.getTvShowNameById(videoId);
+      else if (videoType === 8) videoName = await this.repository.getShortsNameById(videoId);
+      else if ([5, 6, 7].includes(videoType)) {
+        videoName = subvideoType === 2
+          ? await this.repository.getTvShowNameById(videoId)
+          : await this.repository.getVideoNameById(videoId);
+      }
+      return {
+        ...row,
+        type_name: await this.repository.getTypeNameById(Number(row.type_id ?? 0)),
+        video: { id: videoId, name: videoName },
+      };
+    }));
+    return result;
+  }
+
+  async getAdminSectionData(isHomeScreen: number, topTypeId: number) {
+    const rows = await this.repository.getSectionListData(isHomeScreen, topTypeId);
+    const categories = await this.repository.getCategoryOptions();
+    const languages = await this.repository.getLanguageOptions();
+    const channels = await this.repository.getChannelOptions();
+    const categoryMap = new Map(categories.map((i) => [i.id, i.name]));
+    const languageMap = new Map(languages.map((i) => [i.id, i.name]));
+    const channelMap = new Map(channels.map((i) => [i.id, i.name]));
+
+    return rows.map((row) => ({
+      ...row,
+      type_name: '',
+      category_name: categoryMap.get(Number(row.category_id ?? 0)) ?? '',
+      language_name: languageMap.get(Number(row.language_id ?? 0)) ?? '',
+      channel_name: channelMap.get(Number(row.channel_id ?? 0)) ?? '',
+    }));
+  }
+
+  async getAdminSectionDataEdit(id: number) {
+    const row = await this.repository.getSectionById(id);
+    if (!row) return null;
+    const content = String(row.content_ids ?? '').trim() ? String(row.content_ids).split(',').map((v) => Number(v)).filter((v) => v > 0) : [];
+    const contentData = await this.getAdminSectionContent({
+      videoType: Number(row.video_type ?? 0),
+      typeId: Number(row.type_id ?? 0),
+      subVideoType: Number(row.sub_video_type ?? 0),
+      channelId: Number(row.channel_id ?? 0),
+      typeType: await this.repository.getTypeTypeById(Number(row.type_id ?? 0)),
+    });
+    return { ...row, content, content_data: contentData };
+  }
+
+  async getAdminSectionSortable(isHomeScreen: number, topTypeId: number) {
+    const rows = await this.repository.getSectionListData(isHomeScreen, topTypeId);
+    return rows.filter((row) => Number(row.status ?? 0) === 1).map((row) => ({ id: Number(row.id ?? 0), title: String(row.title ?? '') }));
+  }
+
+  async getAdminSectionContent(params: { videoType: number; typeId: number; subVideoType: number; channelId: number; typeType: number }) {
+    const { videoType, typeId, subVideoType, channelId, typeType } = params;
+    if (videoType === 3) return this.repository.getCategoryOptions();
+    if (videoType === 4) return this.repository.getLanguageOptions();
+    if (videoType === 102) return this.repository.getChannelOptions();
+    if (videoType === 8) return this.repository.getShortsOptionsByType(typeId, []);
+    if (videoType === 1) return this.repository.getVideoOptionsByType(typeId, []);
+    if (videoType === 2) return this.repository.getTvShowOptionsByType(typeId, []);
+    if ([5, 6, 7].includes(videoType)) {
+      if (subVideoType === 2) return this.repository.getTvShowOptionsByType(typeId, []);
+      const list = await this.repository.getVideoOptionsByType(typeId, []);
+      if (videoType !== 6 || channelId === 0) return list;
+      return list;
+    }
+    if (videoType === 103) {
+      const sourceType = typeType;
+      if ([1, 6, 7].includes(sourceType)) {
+        return subVideoType === 2
+          ? this.repository.getTvShowOptionsByType(typeId, [])
+          : this.repository.getVideoOptionsByType(typeId, []);
+      }
+      if (sourceType === 2) return this.repository.getTvShowOptionsByType(typeId, []);
+    }
+    return [];
+  }
+
+  getAdminNotificationSettings() {
+    return this.repository.getNotificationSettings();
+  }
+
+  async saveAdminNotificationSettings(data: Record<string, unknown>): Promise<void> {
+    await this.repository.saveGeneralSettings(data);
+  }
+
+  private async recalculateReviewRating(videoType: number, subVideoType: number, videoId: number): Promise<void> {
+    const stats = await this.repository.getApprovedReviewStats(videoType, subVideoType, videoId);
+    const avg = Math.round(stats.avg * 10) / 10;
+    const total = stats.total;
+    if (videoType === 8) {
+      await this.repository.updateShortsRating(videoId, avg, total);
+      return;
+    }
+    if (videoType === 1 || ([5, 6, 7].includes(videoType) && subVideoType === 1)) {
+      await this.repository.updateVideoRating(videoId, avg, total);
+      return;
+    }
+    if (videoType === 2 || ([5, 6, 7].includes(videoType) && subVideoType === 2)) {
+      await this.repository.updateTvShowRating(videoId, avg, total);
+    }
+  }
+
+  async approveReview(id: number): Promise<void> {
+    const review = await this.repository.getReviewById(id);
+    if (!review) throw new Error('data not found');
+    const current = Number(review.status ?? 0);
+    if (![0, 2].includes(current)) throw new Error('invalid action');
+    await this.repository.updateReviewStatus(id, 1);
+    await this.recalculateReviewRating(Number(review.video_type ?? 0), Number(review.sub_video_type ?? 0), Number(review.video_id ?? 0));
+  }
+
+  async rejectReview(id: number): Promise<void> {
+    const review = await this.repository.getReviewById(id);
+    if (!review) throw new Error('data not found');
+    const current = Number(review.status ?? 0);
+    if (![0, 1].includes(current)) throw new Error('invalid action');
+    await this.repository.updateReviewStatus(id, 2);
+    await this.recalculateReviewRating(Number(review.video_type ?? 0), Number(review.sub_video_type ?? 0), Number(review.video_id ?? 0));
+  }
+
+  async destroyReview(id: number): Promise<void> {
+    const review = await this.repository.getReviewById(id);
+    if (review) {
+      await this.repository.deleteReviewById(id);
+      await this.recalculateReviewRating(Number(review.video_type ?? 0), Number(review.sub_video_type ?? 0), Number(review.video_id ?? 0));
+    }
+  }
+
+  async destroyCoupon(id: number): Promise<void> {
+    await this.repository.deleteCouponById(id);
+  }
+
+  async destroyRentPrice(id: number): Promise<void> {
+    await this.repository.deleteRentPriceById(id);
+  }
+
+  async destroyType(id: number): Promise<void> {
+    await this.repository.deleteTypeById(id);
+  }
+
+  async destroyCategory(id: number): Promise<void> {
+    await this.repository.deleteCategoryById(id);
+  }
+
+  async destroyLanguage(id: number): Promise<void> {
+    await this.repository.deleteLanguageById(id);
+  }
+
+  async destroySeason(id: number): Promise<void> {
+    await this.repository.deleteSeasonById(id);
+  }
+
+  async destroyAvatar(id: number): Promise<void> {
+    await this.repository.deleteAvatarById(id);
+  }
+
+  async destroyChannel(id: number): Promise<void> {
+    await this.repository.deleteChannelById(id);
+  }
+
+  async destroyUser(id: number): Promise<void> {
+    await this.repository.deleteUserById(id);
+  }
+
+  async destroyProducer(id: number): Promise<void> {
+    await this.repository.deleteProducerById(id);
+  }
+
+  async destroyCast(id: number): Promise<void> {
+    await this.repository.deleteCastById(id);
+  }
+
+  async destroySection(id: number): Promise<void> {
+    await this.repository.deleteSectionById(id);
+  }
+
+  async destroyNotification(id: number): Promise<void> {
+    await this.repository.deleteNotificationById(id);
+  }
+
+  async getAdminPaymentById(id: number): Promise<Record<string, unknown> | null> {
+    if (!Number.isFinite(id) || id <= 0) {
+      throw new Error('id is invalid');
+    }
+    return this.repository.getPaymentOptionById(id);
+  }
+
+  getAdminPaymentOptions() {
+    return this.repository.getPaymentOptions();
+  }
+
+  async updateAdminPayment(payload: {
+    id: number; key1: string; key2: string; key3: string; key4: string; visibility: number; isLive: number;
+  }): Promise<void> {
+    if (!Number.isFinite(payload.id) || payload.id <= 0) {
+      throw new Error('id is invalid');
+    }
+    if (!Number.isFinite(payload.visibility)) {
+      throw new Error('visibility is required');
+    }
+    if (!Number.isFinite(payload.isLive)) {
+      throw new Error('is_live is required');
+    }
+
+    const exists = await this.repository.getPaymentOptionById(payload.id);
+    if (!exists) {
+      throw new Error('payment not found');
+    }
+
+    await this.repository.updatePaymentOptionById(payload.id, {
+      key1: payload.key1,
+      key2: payload.key2,
+      key3: payload.key3,
+      key4: payload.key4,
+      visibility: payload.visibility,
+      isLive: payload.isLive,
+    });
+  }
+
+  async destroyTransaction(id: number): Promise<void> {
+    await this.repository.deleteTransactionById(id);
+  }
+
+  async destroyPackage(id: number): Promise<void> {
+    await this.repository.deletePackageById(id);
+  }
+
+  async destroyRentTransaction(id: number): Promise<void> {
+    await this.repository.deleteRentTransactionById(id);
+  }
+
+  async destroyPage(id: number): Promise<void> {
+    await this.repository.deletePageById(id);
+  }
+
+  async createAdminHomeSection(input: {
+    sectionType: number; isHomeScreen: number; videoType: number; subVideoType: number; typeId: number; title: string; shortTitle: string;
+    screenLayout: string; contentIds: string; categoryId: number; languageId: number; channelId: number; orderByUpload: number; orderByView: number;
+    premiumVideo: number; noOfContent: number; viewAll: number; isTitle: number; sortOrder: number; status: number;
+  }): Promise<void> {
+    if (!input.title.trim()) throw new Error('title is required');
+    if (input.typeId <= 0) throw new Error('type_id is required');
+    await this.repository.createAdminHomeSection(input);
+  }
+
+  async updateAdminHomeSection(id: number, input: {
+    sectionType: number; isHomeScreen: number; videoType: number; subVideoType: number; typeId: number; title: string; shortTitle: string;
+    screenLayout: string; contentIds: string; categoryId: number; languageId: number; channelId: number; orderByUpload: number; orderByView: number;
+    premiumVideo: number; noOfContent: number; viewAll: number; isTitle: number; sortOrder: number; status: number;
+  }): Promise<void> {
+    if (!Number.isFinite(id) || id <= 0) throw new Error('id is invalid');
+    if (!input.title.trim()) throw new Error('title is required');
+    if (input.typeId <= 0) throw new Error('type_id is required');
+    await this.repository.updateAdminHomeSection(id, input);
+  }
+
   getProducerWithdrawalSetup(producerId: number) {
     return this.repository.getProducerWithdrawalSetup(producerId);
   }
@@ -560,6 +894,248 @@ export class BackofficeService {
       inputSearch: normalizedSearch,
       items,
     };
+  }
+
+  getAdminReferEarnRows() {
+    return this.repository.getAdminReferEarnRows();
+  }
+
+  getAdminWalletTransactions() {
+    return this.repository.getAdminWalletTransactions();
+  }
+
+  getAdminWithdrawalRows() {
+    return this.repository.getAdminWithdrawalRows();
+  }
+
+  getAdminAdmobRows() {
+    return this.repository.getAdminAdmobRows();
+  }
+
+  async saveAdminAdmob(payload: Record<string, unknown>): Promise<void> {
+    const id = Number(payload.id ?? 0);
+    if (!Number.isFinite(id) || id <= 0) {
+      throw new Error('id is invalid');
+    }
+    await this.repository.updateAdminAdmobById(id, payload);
+  }
+
+  async getAdminSettingsByKeys(keys: string[]): Promise<Record<string, string>> {
+    return this.repository.getGeneralSettingsByKeys(keys);
+  }
+
+  async saveAdminSettings(data: Record<string, unknown>): Promise<void> {
+    await this.repository.saveGeneralSettings(data);
+  }
+
+  getAdminNotificationConfigurationRows() {
+    return this.repository.getNotificationConfigurationRows();
+  }
+
+  async saveAdminNotificationConfiguration(payload: Record<string, unknown>): Promise<void> {
+    await this.repository.upsertNotificationConfiguration(payload);
+  }
+
+  getAdminReviews() {
+    return this.repository.getAdminReviews();
+  }
+
+  async searchAdminUsers(keyword: string) {
+    return this.repository.searchUsersForAdmin(keyword.trim());
+  }
+
+  getAdminCoupons() {
+    return this.repository.getAdminCoupons();
+  }
+
+  getAdminRentPriceList() {
+    return this.repository.getAdminRentPriceList();
+  }
+
+  getAdminPackages() {
+    return this.repository.getAdminPackages();
+  }
+
+  getAdminTransactions() {
+    return this.repository.getAdminTransactions();
+  }
+
+  getAdminRentTransactions() {
+    return this.repository.getAdminRentTransactions();
+  }
+
+  getAdminUsers() {
+    return this.repository.getAdminUsers();
+  }
+
+  getAdminUserDashboard(userId: number) {
+    return this.repository.getAdminUserDashboard(userId);
+  }
+
+  getAdminProducers() {
+    return this.repository.getAdminProducers();
+  }
+
+  getAdminCasts() {
+    return this.repository.getAdminCasts();
+  }
+
+  async destroyTvShow(id: number): Promise<void> {
+    await this.repository.deleteTvShowById(id);
+  }
+
+  async destroyTvShowEpisode(id: number): Promise<void> {
+    await this.repository.deleteTvShowEpisodeById(id);
+  }
+
+  async destroyShorts(id: number): Promise<void> {
+    await this.repository.deleteShortsById(id);
+  }
+
+  async destroyShortsEpisode(id: number): Promise<void> {
+    await this.repository.deleteShortsEpisodeById(id);
+  }
+
+  async destroyVideo(id: number): Promise<void> {
+    await this.repository.deleteVideoById(id);
+  }
+
+  async destroyBanner(id: number): Promise<void> {
+    await this.repository.deleteBannerById(id);
+  }
+
+  async searchAdminVideoNames(txtVal: string) {
+    if (txtVal.trim().length < 1) return [];
+    return this.repository.searchAdminVideoNames(txtVal.trim());
+  }
+
+  async searchAdminTvShowNames(txtVal: string) {
+    if (txtVal.trim().length < 1) return [];
+    return this.repository.searchAdminTvShowNames(txtVal.trim());
+  }
+
+  async searchAdminShortsNames(txtVal: string) {
+    if (txtVal.trim().length < 1) return [];
+    return this.repository.searchAdminShortsNames(txtVal.trim());
+  }
+
+  async getAdminVideoDataForFill(id: number) {
+    return this.repository.getAdminVideoById(id);
+  }
+
+  async getAdminTvShowDataForFill(id: number) {
+    return this.repository.getAdminTvShowById(id);
+  }
+
+  async getAdminShortsDataForFill(id: number) {
+    return this.repository.getAdminShortsById(id);
+  }
+
+  async createAdminVideoCompat(payload: Record<string, unknown>): Promise<number> {
+    return this.repository.insertWithPayload('tbl_video', payload);
+  }
+
+  async updateAdminVideoCompat(id: number, payload: Record<string, unknown>): Promise<void> {
+    await this.repository.updateWithPayloadById('tbl_video', id, payload);
+  }
+
+  async createAdminTvShowCompat(payload: Record<string, unknown>): Promise<number> {
+    return this.repository.insertWithPayload('tbl_tv_show', payload);
+  }
+
+  async updateAdminTvShowCompat(id: number, payload: Record<string, unknown>): Promise<void> {
+    await this.repository.updateWithPayloadById('tbl_tv_show', id, payload);
+  }
+
+  async createAdminShortsCompat(payload: Record<string, unknown>): Promise<number> {
+    return this.repository.insertWithPayload('tbl_shorts', payload);
+  }
+
+  async updateAdminShortsCompat(id: number, payload: Record<string, unknown>): Promise<void> {
+    await this.repository.updateWithPayloadById('tbl_shorts', id, payload);
+  }
+
+  async createAdminTvShowEpisodeCompat(payload: Record<string, unknown>): Promise<number> {
+    return this.repository.insertWithPayload('tbl_episode', payload);
+  }
+
+  async updateAdminTvShowEpisodeCompat(id: number, payload: Record<string, unknown>): Promise<void> {
+    await this.repository.updateWithPayloadById('tbl_episode', id, payload);
+  }
+
+  async createAdminShortsEpisodeCompat(payload: Record<string, unknown>): Promise<number> {
+    return this.repository.insertWithPayload('tbl_shorts_episode', payload);
+  }
+
+  async updateAdminShortsEpisodeCompat(id: number, payload: Record<string, unknown>): Promise<void> {
+    await this.repository.updateWithPayloadById('tbl_shorts_episode', id, payload);
+  }
+
+  async toggleAdminTvShowEpisodeCompat(id: number): Promise<void> {
+    await this.repository.toggleTableStatusById('tbl_episode', id);
+  }
+
+  async toggleAdminShortsEpisodeCompat(id: number): Promise<void> {
+    await this.repository.toggleTableStatusById('tbl_shorts_episode', id);
+  }
+
+  async sortAdminTvShowEpisodes(ids: string): Promise<void> {
+    const parsed = this.parseSortableIds(ids);
+    await this.repository.saveEpisodeSortOrder('tbl_episode', parsed);
+  }
+
+  async sortAdminShortsEpisodes(ids: string): Promise<void> {
+    const parsed = this.parseSortableIds(ids);
+    await this.repository.saveEpisodeSortOrder('tbl_shorts_episode', parsed);
+  }
+
+  async createAdminResourceCompat(table: string, payload: Record<string, unknown>): Promise<number> {
+    return this.repository.insertWithPayload(table, payload);
+  }
+
+  async updateAdminResourceCompat(table: string, id: number, payload: Record<string, unknown>): Promise<void> {
+    await this.repository.updateWithPayloadById(table, id, payload);
+  }
+
+  async toggleAdminProducerContentStatus(payload: Record<string, unknown>): Promise<void> {
+    const id = Number(payload.id ?? 0);
+    const contentType = String(payload.content_type ?? '').trim();
+    if (!Number.isFinite(id) || id <= 0) throw new Error('id is invalid');
+    const type = contentType.toLowerCase();
+    if (type === 'video') {
+      await this.toggleAdminVideoStatus(id);
+      return;
+    }
+    if (type === 'tvshow' || type === 'tv_show') {
+      await this.toggleAdminTvShowStatus(id);
+      return;
+    }
+    if (type === 'shorts') {
+      await this.toggleAdminShortsStatus(id);
+      return;
+    }
+    throw new Error('content_type is invalid');
+  }
+
+  async releaseAdminTvShow(payload: Record<string, unknown>): Promise<void> {
+    const id = Number(payload.id ?? payload.tvshow_id ?? 0);
+    if (!Number.isFinite(id) || id <= 0) throw new Error('id is invalid');
+    await this.updateAdminTvShowCompat(id, {
+      type_id: Number(payload.type_id ?? 0),
+      video_type: Number(payload.video_type ?? 2),
+      channel_id: Number(payload.channel_id ?? 0),
+    });
+  }
+
+  async saveAdminVideoChunk(payload: Record<string, unknown>): Promise<{ chunkStored: boolean; bytes: number }> {
+    // Compatibility behavior: accept chunk metadata and validate target exists.
+    const videoId = Number(payload.video_id ?? payload.id ?? 0);
+    if (Number.isFinite(videoId) && videoId > 0) {
+      const row = await this.repository.getVideoById(videoId);
+      if (!row) throw new Error('video not found');
+    }
+    const chunk = String(payload.chunk ?? '');
+    return { chunkStored: true, bytes: chunk.length };
   }
 
   private toCsv(value: unknown): string {

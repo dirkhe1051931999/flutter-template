@@ -459,15 +459,538 @@ export type LanguageItem = {
   status: number;
 };
 
+export type BannerItem = {
+  id: number;
+  is_home_screen: number;
+  type_id: number;
+  video_type: number;
+  subvideo_type: number;
+  video_id: number;
+  sort_order: number;
+  status: number;
+};
+
+export type HomeSectionItem = {
+  id: number;
+  title: string;
+  short_title: string;
+  section_type: number;
+  is_home_screen: number;
+  type_id: number;
+  video_type: number;
+  sub_video_type: number;
+  screen_layout: string;
+  content_ids: string;
+  category_id: number;
+  language_id: number;
+  channel_id: number;
+  order_by_upload: number;
+  order_by_view: number;
+  premium_video: number;
+  no_of_content: number;
+  view_all: number;
+  is_title: number;
+  sort_order: number;
+  status: number;
+};
+
 async function getCount(query: string, params: unknown[] = []): Promise<number> {
   const [rows] = await dbPool.query<Row[]>(query, params);
   return Number(rows[0]?.total ?? 0);
 }
 
 export class BackofficeRepository {
+  async getNotificationSettings(): Promise<Record<string, string>> {
+    const [rows] = await dbPool.query<Row[]>('SELECT `key`, `value` FROM tbl_general_setting');
+    const result: Record<string, string> = {};
+    for (const row of rows) {
+      result[String(row.key ?? '')] = String(row.value ?? '');
+    }
+    return result;
+  }
+
+  async saveGeneralSettings(data: Record<string, unknown>): Promise<void> {
+    const keys = Object.keys(data);
+    for (const key of keys) {
+      const value = String(data[key] ?? '');
+      await dbPool.query('UPDATE tbl_general_setting SET `value` = ?, updated_at = NOW() WHERE `key` = ?', [value, key]);
+    }
+  }
+
+  async getReviewById(id: number): Promise<Row | null> {
+    const [rows] = await dbPool.query<Row[]>('SELECT * FROM tbl_review WHERE id = ? LIMIT 1', [id]);
+    return rows[0] ?? null;
+  }
+
+  async updateReviewStatus(id: number, status: number): Promise<void> {
+    await dbPool.query('UPDATE tbl_review SET status = ?, updated_at = NOW() WHERE id = ?', [status, id]);
+  }
+
+  async deleteReviewById(id: number): Promise<void> {
+    await dbPool.query('DELETE FROM tbl_review WHERE id = ?', [id]);
+  }
+
+  async getApprovedReviewStats(videoType: number, subVideoType: number, videoId: number): Promise<{ avg: number; total: number }> {
+    const [rows] = await dbPool.query<Row[]>(
+      `SELECT COALESCE(AVG(rating), 0) AS avg_rating, COUNT(*) AS total_reviews
+       FROM tbl_review
+       WHERE video_type = ? AND sub_video_type = ? AND video_id = ? AND status = 1`,
+      [videoType, subVideoType, videoId],
+    );
+    return {
+      avg: Number(rows[0]?.avg_rating ?? 0),
+      total: Number(rows[0]?.total_reviews ?? 0),
+    };
+  }
+
+  async updateVideoRating(videoId: number, avg: number, total: number): Promise<void> {
+    await dbPool.query('UPDATE tbl_video SET avg_rating = ?, total_review = ?, updated_at = NOW() WHERE id = ?', [avg, total, videoId]);
+  }
+
+  async updateTvShowRating(videoId: number, avg: number, total: number): Promise<void> {
+    await dbPool.query('UPDATE tbl_tv_show SET avg_rating = ?, total_review = ?, updated_at = NOW() WHERE id = ?', [avg, total, videoId]);
+  }
+
+  async updateShortsRating(videoId: number, avg: number, total: number): Promise<void> {
+    await dbPool.query('UPDATE tbl_shorts SET avg_rating = ?, total_review = ?, updated_at = NOW() WHERE id = ?', [avg, total, videoId]);
+  }
+
+  async deleteCouponById(id: number): Promise<void> {
+    await dbPool.query('DELETE FROM tbl_coupon WHERE id = ?', [id]);
+  }
+
+  async deleteRentPriceById(id: number): Promise<void> {
+    await dbPool.query('DELETE FROM tbl_rent_price_list WHERE id = ?', [id]);
+  }
+
+  async deleteTypeById(id: number): Promise<void> {
+    await dbPool.query('DELETE FROM tbl_type WHERE id = ?', [id]);
+  }
+
+  async deleteCategoryById(id: number): Promise<void> {
+    await dbPool.query('DELETE FROM tbl_category WHERE id = ?', [id]);
+  }
+
+  async deleteLanguageById(id: number): Promise<void> {
+    await dbPool.query('DELETE FROM tbl_language WHERE id = ?', [id]);
+  }
+
+  async deleteSeasonById(id: number): Promise<void> {
+    await dbPool.query('DELETE FROM tbl_season WHERE id = ?', [id]);
+  }
+
+  async deleteAvatarById(id: number): Promise<void> {
+    await dbPool.query('DELETE FROM tbl_avatar WHERE id = ?', [id]);
+  }
+
+  async deleteChannelById(id: number): Promise<void> {
+    await dbPool.query('DELETE FROM tbl_channel WHERE id = ?', [id]);
+  }
+
+  async deleteUserById(id: number): Promise<void> {
+    await dbPool.query('DELETE FROM tbl_user WHERE id = ?', [id]);
+  }
+
+  async deleteProducerById(id: number): Promise<void> {
+    await dbPool.query('DELETE FROM tbl_producer WHERE id = ?', [id]);
+  }
+
+  async deleteCastById(id: number): Promise<void> {
+    await dbPool.query('DELETE FROM tbl_cast WHERE id = ?', [id]);
+  }
+
+  async deleteSectionById(id: number): Promise<void> {
+    await dbPool.query('DELETE FROM tbl_home_section WHERE id = ?', [id]);
+  }
+
+  async deleteNotificationById(id: number): Promise<void> {
+    await dbPool.query('DELETE FROM tbl_notification WHERE id = ?', [id]);
+  }
+
+  async getPaymentOptionById(id: number): Promise<Row | null> {
+    const [rows] = await dbPool.query<Row[]>('SELECT * FROM tbl_payment_option WHERE id = ? LIMIT 1', [id]);
+    return rows[0] ?? null;
+  }
+
+  async getPaymentOptions(): Promise<Row[]> {
+    const [rows] = await dbPool.query<Row[]>('SELECT * FROM tbl_payment_option ORDER BY id DESC');
+    return rows;
+  }
+
+  async updatePaymentOptionById(id: number, payload: {
+    key1: string; key2: string; key3: string; key4: string; visibility: number; isLive: number;
+  }): Promise<void> {
+    await dbPool.query(
+      `UPDATE tbl_payment_option
+       SET key_1 = ?, key_2 = ?, key_3 = ?, key_4 = ?, visibility = ?, is_live = ?, updated_at = NOW()
+       WHERE id = ?`,
+      [payload.key1, payload.key2, payload.key3, payload.key4, payload.visibility, payload.isLive, id],
+    );
+  }
+
+  async deleteTransactionById(id: number): Promise<void> {
+    await dbPool.query('DELETE FROM tbl_transaction WHERE id = ?', [id]);
+  }
+
+  async deletePackageById(id: number): Promise<void> {
+    await dbPool.query('DELETE FROM tbl_package WHERE id = ?', [id]);
+    await dbPool.query('DELETE FROM tbl_package_detail WHERE package_id = ?', [id]);
+  }
+
+  async deleteRentTransactionById(id: number): Promise<void> {
+    await dbPool.query('DELETE FROM tbl_rent_transaction WHERE id = ?', [id]);
+  }
+
+  async deletePageById(id: number): Promise<void> {
+    await dbPool.query('DELETE FROM tbl_page WHERE id = ?', [id]);
+  }
+
+  async getTypeTypeById(typeId: number): Promise<number> {
+    const [rows] = await dbPool.query<Row[]>('SELECT type FROM tbl_type WHERE id = ? LIMIT 1', [typeId]);
+    return Number(rows[0]?.type ?? 0);
+  }
+
+  async getBannerUsedVideoIdsByType(typeId: number): Promise<number[]> {
+    const [rows] = await dbPool.query<Row[]>('SELECT video_id FROM tbl_banner WHERE type_id = ?', [typeId]);
+    return rows.map((row) => Number(row.video_id ?? 0)).filter((value) => value > 0);
+  }
+
+  async getVideoOptionsByType(typeId: number, excludedIds: number[]): Promise<Array<{ id: number; name: string }>> {
+    const params: unknown[] = [typeId];
+    let where = 'WHERE type_id = ? AND status = 1';
+    if (excludedIds.length > 0) {
+      where += ` AND id NOT IN (${excludedIds.map(() => '?').join(',')})`;
+      params.push(...excludedIds);
+    }
+    const [rows] = await dbPool.query<Row[]>(`SELECT id, name FROM tbl_video ${where} ORDER BY id DESC`, params);
+    return rows.map((row) => ({ id: Number(row.id ?? 0), name: String(row.name ?? '') }));
+  }
+
+  async getTvShowOptionsByType(typeId: number, excludedIds: number[]): Promise<Array<{ id: number; name: string }>> {
+    const params: unknown[] = [typeId];
+    let where = 'WHERE type_id = ? AND status = 1';
+    if (excludedIds.length > 0) {
+      where += ` AND id NOT IN (${excludedIds.map(() => '?').join(',')})`;
+      params.push(...excludedIds);
+    }
+    const [rows] = await dbPool.query<Row[]>(`SELECT id, name FROM tbl_tv_show ${where} ORDER BY id DESC`, params);
+    return rows.map((row) => ({ id: Number(row.id ?? 0), name: String(row.name ?? '') }));
+  }
+
+  async getShortsOptionsByType(typeId: number, excludedIds: number[]): Promise<Array<{ id: number; name: string }>> {
+    const params: unknown[] = [typeId];
+    let where = 'WHERE type_id = ? AND status = 1';
+    if (excludedIds.length > 0) {
+      where += ` AND id NOT IN (${excludedIds.map(() => '?').join(',')})`;
+      params.push(...excludedIds);
+    }
+    const [rows] = await dbPool.query<Row[]>(`SELECT id, name FROM tbl_shorts ${where} ORDER BY id DESC`, params);
+    return rows.map((row) => ({ id: Number(row.id ?? 0), name: String(row.name ?? '') }));
+  }
+
+  async getBannerListByScreenAndType(isHomeScreen: number, typeId: number): Promise<Row[]> {
+    if (isHomeScreen === 1) {
+      const [rows] = await dbPool.query<Row[]>('SELECT * FROM tbl_banner WHERE is_home_screen = ? ORDER BY sort_order ASC, id DESC', [isHomeScreen]);
+      return rows;
+    }
+    const [rows] = await dbPool.query<Row[]>(
+      'SELECT * FROM tbl_banner WHERE is_home_screen = ? AND type_id = ? ORDER BY sort_order ASC, id DESC',
+      [isHomeScreen, typeId],
+    );
+    return rows;
+  }
+
+  async getVideoNameById(id: number): Promise<string> {
+    const [rows] = await dbPool.query<Row[]>('SELECT name FROM tbl_video WHERE id = ? LIMIT 1', [id]);
+    return String(rows[0]?.name ?? '');
+  }
+
+  async getTvShowNameById(id: number): Promise<string> {
+    const [rows] = await dbPool.query<Row[]>('SELECT name FROM tbl_tv_show WHERE id = ? LIMIT 1', [id]);
+    return String(rows[0]?.name ?? '');
+  }
+
+  async getShortsNameById(id: number): Promise<string> {
+    const [rows] = await dbPool.query<Row[]>('SELECT name FROM tbl_shorts WHERE id = ? LIMIT 1', [id]);
+    return String(rows[0]?.name ?? '');
+  }
+
+  async getTypeNameById(id: number): Promise<string> {
+    const [rows] = await dbPool.query<Row[]>('SELECT name FROM tbl_type WHERE id = ? LIMIT 1', [id]);
+    return String(rows[0]?.name ?? '');
+  }
+
+  async getSectionListData(isHomeScreen: number, topTypeId: number): Promise<Row[]> {
+    if (isHomeScreen === 1) {
+      const [rows] = await dbPool.query<Row[]>('SELECT * FROM tbl_home_section WHERE is_home_screen = ? ORDER BY status DESC, sort_order ASC, id DESC', [isHomeScreen]);
+      return rows;
+    }
+    const [rows] = await dbPool.query<Row[]>(
+      'SELECT * FROM tbl_home_section WHERE is_home_screen = ? AND type_id = ? ORDER BY status DESC, sort_order ASC, id DESC',
+      [isHomeScreen, topTypeId],
+    );
+    return rows;
+  }
+
+  async getSectionById(id: number): Promise<Row | null> {
+    const [rows] = await dbPool.query<Row[]>('SELECT * FROM tbl_home_section WHERE id = ? LIMIT 1', [id]);
+    return rows[0] ?? null;
+  }
+
+  async getCategoryOptions(): Promise<Array<{ id: number; name: string }>> {
+    const [rows] = await dbPool.query<Row[]>('SELECT id, name FROM tbl_category WHERE status = 1 ORDER BY sort_order ASC, id DESC');
+    return rows.map((row) => ({ id: Number(row.id ?? 0), name: String(row.name ?? '') }));
+  }
+
+  async getLanguageOptions(): Promise<Array<{ id: number; name: string }>> {
+    const [rows] = await dbPool.query<Row[]>('SELECT id, name FROM tbl_language WHERE status = 1 ORDER BY sort_order ASC, id DESC');
+    return rows.map((row) => ({ id: Number(row.id ?? 0), name: String(row.name ?? '') }));
+  }
+
+  async getChannelOptions(): Promise<Array<{ id: number; name: string }>> {
+    const [rows] = await dbPool.query<Row[]>('SELECT id, name FROM tbl_channel WHERE status = 1 ORDER BY id DESC');
+    return rows.map((row) => ({ id: Number(row.id ?? 0), name: String(row.name ?? '') }));
+  }
   async getGeneralSettingValue(key: string): Promise<string> {
     const [rows] = await dbPool.query<Row[]>('SELECT value FROM tbl_general_setting WHERE `key` = ? LIMIT 1', [key]);
     return String(rows[0]?.value ?? '');
+  }
+
+  async getGeneralSettingsByKeys(keys: string[]): Promise<Record<string, string>> {
+    if (keys.length === 0) return {};
+    const placeholders = keys.map(() => '?').join(',');
+    const [rows] = await dbPool.query<Row[]>(`SELECT \`key\`, \`value\` FROM tbl_general_setting WHERE \`key\` IN (${placeholders})`, keys);
+    const result: Record<string, string> = {};
+    for (const row of rows) {
+      result[String(row.key ?? '')] = String(row.value ?? '');
+    }
+    return result;
+  }
+
+  async getAdminReferEarnRows(): Promise<Row[]> {
+    const [rows] = await dbPool.query<Row[]>('SELECT * FROM tbl_refer_earn ORDER BY id DESC');
+    return rows;
+  }
+
+  async getAdminWalletTransactions(): Promise<Row[]> {
+    const [rows] = await dbPool.query<Row[]>('SELECT * FROM tbl_wallet_transaction ORDER BY id DESC');
+    return rows;
+  }
+
+  async getAdminWithdrawalRows(): Promise<Row[]> {
+    const [rows] = await dbPool.query<Row[]>('SELECT * FROM tbl_withdrawal_request ORDER BY id DESC');
+    return rows;
+  }
+
+  async getAdminAdmobRows(): Promise<Row[]> {
+    const [rows] = await dbPool.query<Row[]>('SELECT * FROM tbl_admob ORDER BY id DESC');
+    return rows;
+  }
+
+  async updateAdminAdmobById(id: number, payload: Record<string, unknown>): Promise<void> {
+    const entries = Object.entries(payload).filter(([key]) => key !== 'id');
+    if (entries.length === 0) return;
+    const setClause = entries.map(([key]) => `${key} = ?`).join(', ');
+    const params = entries.map(([, value]) => value);
+    await dbPool.query(`UPDATE tbl_admob SET ${setClause}, updated_at = NOW() WHERE id = ?`, [...params, id]);
+  }
+
+  async getNotificationConfigurationRows(): Promise<Row[]> {
+    const [rows] = await dbPool.query<Row[]>('SELECT * FROM tbl_notification_configuration ORDER BY id DESC');
+    return rows;
+  }
+
+  async upsertNotificationConfiguration(payload: Record<string, unknown>): Promise<void> {
+    const id = Number(payload.id ?? 0);
+    const keys = Object.keys(payload).filter((key) => key !== 'id');
+    if (id > 0) {
+      if (keys.length === 0) return;
+      const setClause = keys.map((key) => `${key} = ?`).join(', ');
+      const params = keys.map((key) => payload[key]);
+      await dbPool.query(`UPDATE tbl_notification_configuration SET ${setClause}, updated_at = NOW() WHERE id = ?`, [...params, id]);
+      return;
+    }
+
+    if (keys.length === 0) return;
+    const fields = keys.join(', ');
+    const placeholders = keys.map(() => '?').join(', ');
+    const params = keys.map((key) => payload[key]);
+    await dbPool.query(`INSERT INTO tbl_notification_configuration (${fields}, created_at, updated_at) VALUES (${placeholders}, NOW(), NOW())`, params);
+  }
+
+  async getAdminReviews(): Promise<Row[]> {
+    const [rows] = await dbPool.query<Row[]>('SELECT * FROM tbl_review ORDER BY id DESC');
+    return rows;
+  }
+
+  async searchUsersForAdmin(keyword: string, limit = 25): Promise<Row[]> {
+    const q = `%${keyword}%`;
+    const [rows] = await dbPool.query<Row[]>(
+      `SELECT id, full_name, mobile_number, email
+       FROM tbl_user
+       WHERE full_name LIKE ? OR mobile_number LIKE ? OR email LIKE ?
+       ORDER BY id DESC
+       LIMIT ?`,
+      [q, q, q, limit],
+    );
+    return rows;
+  }
+
+  async getAdminCoupons(): Promise<Row[]> {
+    const [rows] = await dbPool.query<Row[]>('SELECT * FROM tbl_coupon ORDER BY id DESC');
+    return rows;
+  }
+
+  async getAdminRentPriceList(): Promise<Row[]> {
+    const [rows] = await dbPool.query<Row[]>('SELECT * FROM tbl_rent_price_list ORDER BY id DESC');
+    return rows;
+  }
+
+  async getAdminPackages(): Promise<Row[]> {
+    const [rows] = await dbPool.query<Row[]>('SELECT * FROM tbl_package ORDER BY id DESC');
+    return rows;
+  }
+
+  async getAdminTransactions(): Promise<Row[]> {
+    const [rows] = await dbPool.query<Row[]>('SELECT * FROM tbl_transaction ORDER BY id DESC');
+    return rows;
+  }
+
+  async getAdminRentTransactions(): Promise<Row[]> {
+    const [rows] = await dbPool.query<Row[]>('SELECT * FROM tbl_rent_transaction ORDER BY id DESC');
+    return rows;
+  }
+
+  async getAdminUsers(): Promise<Row[]> {
+    const [rows] = await dbPool.query<Row[]>('SELECT * FROM tbl_user ORDER BY id DESC');
+    return rows;
+  }
+
+  async getAdminUserDashboard(userId: number): Promise<Record<string, number>> {
+    const [txRows] = await dbPool.query<Row[]>('SELECT COUNT(*) AS total, COALESCE(SUM(price),0) AS amount FROM tbl_transaction WHERE user_id = ?', [userId]);
+    const [rentRows] = await dbPool.query<Row[]>('SELECT COUNT(*) AS total, COALESCE(SUM(price),0) AS amount FROM tbl_rent_transaction WHERE user_id = ?', [userId]);
+    return {
+      transaction_count: Number(txRows[0]?.total ?? 0),
+      transaction_amount: Number(txRows[0]?.amount ?? 0),
+      rent_count: Number(rentRows[0]?.total ?? 0),
+      rent_amount: Number(rentRows[0]?.amount ?? 0),
+    };
+  }
+
+  async getAdminProducers(): Promise<Row[]> {
+    const [rows] = await dbPool.query<Row[]>('SELECT * FROM tbl_producer ORDER BY id DESC');
+    return rows;
+  }
+
+  async getAdminCasts(): Promise<Row[]> {
+    const [rows] = await dbPool.query<Row[]>('SELECT * FROM tbl_cast ORDER BY id DESC');
+    return rows;
+  }
+
+  async deleteTvShowById(id: number): Promise<void> {
+    await dbPool.query('DELETE FROM tbl_tv_show WHERE id = ?', [id]);
+  }
+
+  async deleteTvShowEpisodeById(id: number): Promise<void> {
+    await dbPool.query('DELETE FROM tbl_episode WHERE id = ?', [id]);
+  }
+
+  async deleteShortsById(id: number): Promise<void> {
+    await dbPool.query('DELETE FROM tbl_shorts WHERE id = ?', [id]);
+  }
+
+  async deleteShortsEpisodeById(id: number): Promise<void> {
+    await dbPool.query('DELETE FROM tbl_shorts_episode WHERE id = ?', [id]);
+  }
+
+  async deleteVideoById(id: number): Promise<void> {
+    await dbPool.query('DELETE FROM tbl_video WHERE id = ?', [id]);
+  }
+
+  async deleteBannerById(id: number): Promise<void> {
+    await dbPool.query('DELETE FROM tbl_banner WHERE id = ?', [id]);
+  }
+
+  async searchAdminVideoNames(txtVal: string): Promise<Array<{ id: number; name: string }>> {
+    const keyword = `%${txtVal}%`;
+    const [rows] = await dbPool.query<Row[]>(
+      'SELECT id, name FROM tbl_video WHERE name LIKE ? ORDER BY id DESC LIMIT 50',
+      [keyword],
+    );
+    return rows.map((row) => ({ id: Number(row.id ?? 0), name: String(row.name ?? '') }));
+  }
+
+  async searchAdminTvShowNames(txtVal: string): Promise<Array<{ id: number; name: string }>> {
+    const keyword = `%${txtVal}%`;
+    const [rows] = await dbPool.query<Row[]>(
+      'SELECT id, name FROM tbl_tv_show WHERE name LIKE ? ORDER BY id DESC LIMIT 50',
+      [keyword],
+    );
+    return rows.map((row) => ({ id: Number(row.id ?? 0), name: String(row.name ?? '') }));
+  }
+
+  async searchAdminShortsNames(txtVal: string): Promise<Array<{ id: number; name: string }>> {
+    const keyword = `%${txtVal}%`;
+    const [rows] = await dbPool.query<Row[]>(
+      'SELECT id, name FROM tbl_shorts WHERE name LIKE ? ORDER BY id DESC LIMIT 50',
+      [keyword],
+    );
+    return rows.map((row) => ({ id: Number(row.id ?? 0), name: String(row.name ?? '') }));
+  }
+
+  async getAdminVideoById(id: number): Promise<Row | null> {
+    const [rows] = await dbPool.query<Row[]>('SELECT * FROM tbl_video WHERE id = ? LIMIT 1', [id]);
+    return rows[0] ?? null;
+  }
+
+  async getAdminTvShowById(id: number): Promise<Row | null> {
+    const [rows] = await dbPool.query<Row[]>('SELECT * FROM tbl_tv_show WHERE id = ? LIMIT 1', [id]);
+    return rows[0] ?? null;
+  }
+
+  async getAdminShortsById(id: number): Promise<Row | null> {
+    const [rows] = await dbPool.query<Row[]>('SELECT * FROM tbl_shorts WHERE id = ? LIMIT 1', [id]);
+    return rows[0] ?? null;
+  }
+
+  async insertWithPayload(table: string, payload: Record<string, unknown>): Promise<number> {
+    const entries = Object.entries(payload).filter(([, value]) => value !== undefined);
+    if (entries.length === 0) throw new Error('payload is empty');
+    const columns = entries.map(([key]) => key).join(', ');
+    const placeholders = entries.map(() => '?').join(', ');
+    const values = entries.map(([, value]) => value);
+    const [result] = await dbPool.query(
+      `INSERT INTO ${table} (${columns}, created_at, updated_at) VALUES (${placeholders}, NOW(), NOW())`,
+      values,
+    );
+    return Number((result as { insertId?: number }).insertId ?? 0);
+  }
+
+  async updateWithPayloadById(table: string, id: number, payload: Record<string, unknown>): Promise<void> {
+    const entries = Object.entries(payload).filter(([key, value]) => key !== 'id' && value !== undefined);
+    if (entries.length === 0) return;
+    const setClause = entries.map(([key]) => `${key} = ?`).join(', ');
+    const values = entries.map(([, value]) => value);
+    await dbPool.query(`UPDATE ${table} SET ${setClause}, updated_at = NOW() WHERE id = ?`, [...values, id]);
+  }
+
+  async toggleTableStatusById(table: string, id: number): Promise<void> {
+    const [rows] = await dbPool.query<Row[]>(`SELECT status FROM ${table} WHERE id = ? LIMIT 1`, [id]);
+    if (!rows[0]) throw new Error('data not found');
+    const current = Number(rows[0].status ?? 0);
+    const next = current === 1 ? 0 : 1;
+    await dbPool.query(`UPDATE ${table} SET status = ?, updated_at = NOW() WHERE id = ?`, [next, id]);
+  }
+
+  async saveEpisodeSortOrder(table: string, ids: number[]): Promise<void> {
+    for (let index = 0; index < ids.length; index += 1) {
+      await dbPool.query(`UPDATE ${table} SET sort_order = ?, updated_at = NOW() WHERE id = ?`, [index + 1, ids[index]]);
+    }
+  }
+
+  async getVideoById(id: number): Promise<Row | null> {
+    const [rows] = await dbPool.query<Row[]>('SELECT * FROM tbl_video WHERE id = ? LIMIT 1', [id]);
+    return rows[0] ?? null;
   }
 
   async expireRentTransactions(): Promise<void> {
@@ -566,6 +1089,152 @@ export class BackofficeRepository {
       sort_order: Number(row.sort_order ?? 0),
       status: Number(row.status ?? 0),
     }));
+  }
+
+  async getAdminBanners(): Promise<BannerItem[]> {
+    const [rows] = await dbPool.query<Row[]>(
+      `SELECT id, is_home_screen, type_id, video_type, video_id, sort_order, status
+       , subvideo_type
+       FROM tbl_banner
+       ORDER BY status DESC, sort_order ASC, id DESC`,
+    );
+
+    return rows.map((row) => ({
+      id: Number(row.id ?? 0),
+      is_home_screen: Number(row.is_home_screen ?? 0),
+      type_id: Number(row.type_id ?? 0),
+      video_type: Number(row.video_type ?? 0),
+      subvideo_type: Number(row.subvideo_type ?? 0),
+      video_id: Number(row.video_id ?? 0),
+      sort_order: Number(row.sort_order ?? 0),
+      status: Number(row.status ?? 0),
+    }));
+  }
+
+  async createAdminBanner(input: {
+    isHomeScreen: number; typeId: number; videoType: number; subvideoType: number; videoId: number; sortOrder: number; status: number;
+  }): Promise<void> {
+    await dbPool.query(
+      `INSERT INTO tbl_banner (is_home_screen, type_id, video_type, subvideo_type, video_id, sort_order, status, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
+      [input.isHomeScreen, input.typeId, input.videoType, input.subvideoType, input.videoId, input.sortOrder, input.status],
+    );
+  }
+
+  async updateAdminBanner(id: number, input: {
+    isHomeScreen: number; typeId: number; videoType: number; subvideoType: number; videoId: number; sortOrder: number; status: number;
+  }): Promise<void> {
+    await dbPool.query(
+      `UPDATE tbl_banner
+       SET is_home_screen = ?, type_id = ?, video_type = ?, subvideo_type = ?, video_id = ?, sort_order = ?, status = ?, updated_at = NOW()
+       WHERE id = ?`,
+      [input.isHomeScreen, input.typeId, input.videoType, input.subvideoType, input.videoId, input.sortOrder, input.status, id],
+    );
+  }
+
+  async toggleAdminBannerStatus(id: number): Promise<boolean> {
+    const [rows] = await dbPool.query<Row[]>('SELECT status FROM tbl_banner WHERE id = ? LIMIT 1', [id]);
+    if (rows.length === 0) {
+      return false;
+    }
+
+    const current = Number(rows[0].status ?? 0);
+    const next = current === 1 ? 0 : 1;
+    await dbPool.query('UPDATE tbl_banner SET status = ?, updated_at = NOW() WHERE id = ?', [next, id]);
+    return true;
+  }
+
+  async saveAdminBannerSortOrder(ids: number[]): Promise<void> {
+    for (let index = 0; index < ids.length; index += 1) {
+      await dbPool.query('UPDATE tbl_banner SET sort_order = ?, updated_at = NOW() WHERE id = ?', [index + 1, ids[index]]);
+    }
+  }
+
+  async getAdminHomeSections(): Promise<HomeSectionItem[]> {
+    const [rows] = await dbPool.query<Row[]>(
+      `SELECT id, title, short_title, section_type, is_home_screen, type_id, video_type, sub_video_type, screen_layout,
+              content_ids, category_id, language_id, channel_id, order_by_upload, order_by_view, premium_video,
+              no_of_content, view_all, is_title, sort_order, status
+       FROM tbl_home_section
+       ORDER BY status DESC, sort_order ASC, id DESC`,
+    );
+
+    return rows.map((row) => ({
+      id: Number(row.id ?? 0),
+      title: String(row.title ?? ''),
+      short_title: String(row.short_title ?? ''),
+      section_type: Number(row.section_type ?? 0),
+      is_home_screen: Number(row.is_home_screen ?? 0),
+      type_id: Number(row.type_id ?? 0),
+      video_type: Number(row.video_type ?? 0),
+      sub_video_type: Number(row.sub_video_type ?? 0),
+      screen_layout: String(row.screen_layout ?? ''),
+      content_ids: String(row.content_ids ?? ''),
+      category_id: Number(row.category_id ?? 0),
+      language_id: Number(row.language_id ?? 0),
+      channel_id: Number(row.channel_id ?? 0),
+      order_by_upload: Number(row.order_by_upload ?? 0),
+      order_by_view: Number(row.order_by_view ?? 0),
+      premium_video: Number(row.premium_video ?? 0),
+      no_of_content: Number(row.no_of_content ?? 0),
+      view_all: Number(row.view_all ?? 0),
+      is_title: Number(row.is_title ?? 0),
+      sort_order: Number(row.sort_order ?? 0),
+      status: Number(row.status ?? 0),
+    }));
+  }
+
+  async createAdminHomeSection(input: {
+    sectionType: number; isHomeScreen: number; videoType: number; subVideoType: number; typeId: number; title: string; shortTitle: string;
+    screenLayout: string; contentIds: string; categoryId: number; languageId: number; channelId: number; orderByUpload: number; orderByView: number;
+    premiumVideo: number; noOfContent: number; viewAll: number; isTitle: number; sortOrder: number; status: number;
+  }): Promise<void> {
+    await dbPool.query(
+      `INSERT INTO tbl_home_section
+      (section_type, is_home_screen, video_type, sub_video_type, type_id, title, short_title, screen_layout, content_ids, category_id, language_id, channel_id,
+       order_by_upload, order_by_view, premium_video, no_of_content, view_all, is_title, sort_order, status, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
+      [
+        input.sectionType, input.isHomeScreen, input.videoType, input.subVideoType, input.typeId, input.title, input.shortTitle,
+        input.screenLayout, input.contentIds, input.categoryId, input.languageId, input.channelId, input.orderByUpload, input.orderByView,
+        input.premiumVideo, input.noOfContent, input.viewAll, input.isTitle, input.sortOrder, input.status,
+      ],
+    );
+  }
+
+  async updateAdminHomeSection(id: number, input: {
+    sectionType: number; isHomeScreen: number; videoType: number; subVideoType: number; typeId: number; title: string; shortTitle: string;
+    screenLayout: string; contentIds: string; categoryId: number; languageId: number; channelId: number; orderByUpload: number; orderByView: number;
+    premiumVideo: number; noOfContent: number; viewAll: number; isTitle: number; sortOrder: number; status: number;
+  }): Promise<void> {
+    await dbPool.query(
+      `UPDATE tbl_home_section
+       SET section_type = ?, is_home_screen = ?, video_type = ?, sub_video_type = ?, type_id = ?, title = ?, short_title = ?, screen_layout = ?, content_ids = ?,
+           category_id = ?, language_id = ?, channel_id = ?, order_by_upload = ?, order_by_view = ?, premium_video = ?, no_of_content = ?, view_all = ?, is_title = ?, sort_order = ?, status = ?, updated_at = NOW()
+       WHERE id = ?`,
+      [
+        input.sectionType, input.isHomeScreen, input.videoType, input.subVideoType, input.typeId, input.title, input.shortTitle, input.screenLayout, input.contentIds,
+        input.categoryId, input.languageId, input.channelId, input.orderByUpload, input.orderByView, input.premiumVideo, input.noOfContent, input.viewAll, input.isTitle, input.sortOrder, input.status, id,
+      ],
+    );
+  }
+
+  async toggleAdminHomeSectionStatus(id: number): Promise<boolean> {
+    const [rows] = await dbPool.query<Row[]>('SELECT status FROM tbl_home_section WHERE id = ? LIMIT 1', [id]);
+    if (rows.length === 0) {
+      return false;
+    }
+
+    const current = Number(rows[0].status ?? 0);
+    const next = current === 1 ? 0 : 1;
+    await dbPool.query('UPDATE tbl_home_section SET status = ?, updated_at = NOW() WHERE id = ?', [next, id]);
+    return true;
+  }
+
+  async saveAdminHomeSectionSortOrder(ids: number[]): Promise<void> {
+    for (let index = 0; index < ids.length; index += 1) {
+      await dbPool.query('UPDATE tbl_home_section SET sort_order = ?, updated_at = NOW() WHERE id = ?', [index + 1, ids[index]]);
+    }
   }
 
   async createAdminSeason(name: string): Promise<void> {

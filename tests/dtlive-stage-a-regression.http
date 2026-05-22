@@ -1,0 +1,128 @@
+@baseUrl = http://localhost:9002
+@apiToken = dtlive-dev-token
+
+### Stage A - 0) get_tv_login_code
+POST {{baseUrl}}/api/get_tv_login_code
+Api-Token: {{apiToken}}
+Content-Type: application/json
+
+{}
+
+### Stage A - 1) tv_login (validation: missing user_id)
+POST {{baseUrl}}/api/tv_login
+Api-Token: {{apiToken}}
+Content-Type: application/json
+
+{
+  "unique_code": "123456"
+}
+
+### Stage A - 2) tv_login (validation: missing unique_code)
+POST {{baseUrl}}/api/tv_login
+Api-Token: {{apiToken}}
+Content-Type: application/json
+
+{
+  "user_id": 1
+}
+
+### Stage A - 3) check_tv_login (validation: missing unique_code)
+POST {{baseUrl}}/api/check_tv_login
+Api-Token: {{apiToken}}
+Content-Type: application/json
+
+{}
+
+### Stage A - 4) parent_control_check_password (validation: missing password)
+POST {{baseUrl}}/api/parent_control_check_password
+Api-Token: {{apiToken}}
+Content-Type: application/json
+
+{
+  "user_id": 1
+}
+
+### Stage A - 5) get_device_sync_list (validation: missing user_id)
+POST {{baseUrl}}/api/get_device_sync_list
+Api-Token: {{apiToken}}
+Content-Type: application/json
+
+{}
+
+### Stage A - 6) logout_device_sync (validation: missing device_sync_id)
+POST {{baseUrl}}/api/logout_device_sync
+Api-Token: {{apiToken}}
+Content-Type: application/json
+
+{
+  "device_id": "android-test-device"
+}
+
+### Stage A - 7) add_remove_device_watching (validation: missing type)
+POST {{baseUrl}}/api/add_remove_device_watching
+Api-Token: {{apiToken}}
+Content-Type: application/json
+
+{
+  "user_id": 1,
+  "device_id": "android-test-device"
+}
+
+### Stage A - 8) add_remove_device_watching (add)
+POST {{baseUrl}}/api/add_remove_device_watching
+Api-Token: {{apiToken}}
+Content-Type: application/json
+
+{
+  "user_id": 1,
+  "device_id": "android-test-device",
+  "type": 1
+}
+
+### Stage A - 9) add_remove_device_watching (remove)
+POST {{baseUrl}}/api/add_remove_device_watching
+Api-Token: {{apiToken}}
+Content-Type: application/json
+
+{
+  "user_id": 1,
+  "device_id": "android-test-device",
+  "type": 2
+}
+
+### Stage A - 10) validate_coupon for package flow
+POST {{baseUrl}}/api/validate_coupon
+Api-Token: {{apiToken}}
+Content-Type: application/json
+
+{
+  "apply_coupon_type": 1,
+  "user_id": 1,
+  "package_id": 1,
+  "code": "WELCOME10"
+}
+
+### Stage A - 11) validate_coupon for rent flow
+POST {{baseUrl}}/api/validate_coupon
+Api-Token: {{apiToken}}
+Content-Type: application/json
+
+{
+  "apply_coupon_type": 2,
+  "user_id": 1,
+  "video_type": 1,
+  "sub_video_type": 0,
+  "video_id": 1,
+  "code": "WELCOME10"
+}
+
+### Stage A - 12) get_refer_earn_history compatibility alias
+POST {{baseUrl}}/api/get_refer_earn_history
+Api-Token: {{apiToken}}
+Content-Type: application/json
+
+{
+  "user_id": 1,
+  "page_no": 1,
+  "min_content": 10
+}

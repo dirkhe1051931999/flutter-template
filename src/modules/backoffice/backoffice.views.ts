@@ -11,8 +11,203 @@ const producerTvShowTemplate = fs.readFileSync(producerTvShowTemplatePath, 'utf8
 const producerShortsTemplatePath = path.resolve(process.cwd(), 'src/modules/backoffice/templates/producer-shorts.ejs');
 const producerShortsTemplate = fs.readFileSync(producerShortsTemplatePath, 'utf8');
 
+function localizeBackofficeText(input: string): string {
+  const dict: Array<[string, string]> = [
+    ['404 Not Found', '404 页面不存在'],
+    ['Admin 404', '管理后台 404'],
+    ['Producer 404', '制作人后台 404'],
+    ['Admin Login', '管理后台登录'],
+    ['Producer Login', '制作人登录'],
+    ['Email', '邮箱'],
+    ['Password', '密码'],
+    ['Sign In', '登录'],
+    ['Back Dashboard', '返回仪表盘'],
+    ['Back', '返回'],
+    ['Logout', '退出登录'],
+    ['Profile', '个人资料'],
+    ['Channel', '频道'],
+    ['Dashboard', '仪表盘'],
+    ['Create', '新增'],
+    ['Edit', '编辑'],
+    ['Update', '更新'],
+    ['Delete', '删除'],
+    ['Save', '保存'],
+    ['Status', '状态'],
+    ['Toggle Status', '切换状态'],
+    ['Actions', '操作'],
+    ['Search', '搜索'],
+    ['Reset', '重置'],
+    ['Submit', '提交'],
+    ['Cancel', '取消'],
+    ['Name', '名称'],
+    ['Title', '标题'],
+    ['Image', '图片'],
+    ['Image filename', '图片文件名'],
+    ['Portrait image', '竖图'],
+    ['Landscape image', '横图'],
+    ['Is title (0/1)', '是否标题(0/1)'],
+    ['Icon', '图标'],
+    ['Portrait', '竖图'],
+    ['Landscape', '横图'],
+    ['Category', '分类'],
+    ['Language', '语言'],
+    ['Season', '季'],
+    ['Avatar', '头像'],
+    ['Banner', '横幅'],
+    ['Section', '版块'],
+    ['Video', '视频'],
+    ['TV Show', '剧集'],
+    ['Shorts', '短剧'],
+    ['Episode', '剧集分集'],
+    ['User', '用户'],
+    ['Producer', '制作人'],
+    ['Producers', '制作人'],
+    ['Cast', '演员'],
+    ['Casts', '演员'],
+    ['Coupon', '优惠券'],
+    ['Coupons', '优惠券'],
+    ['Package', '套餐'],
+    ['Packages', '套餐'],
+    ['Transaction', '交易'],
+    ['Transactions', '交易'],
+    ['Rent Transaction', '租赁交易'],
+    ['Rent Transactions', '租赁交易'],
+    ['Rent Price', '租赁价格'],
+    ['Rent Price List', '租赁价格'],
+    ['Withdrawal', '提现'],
+    ['Withdrawals', '提现'],
+    ['Wallet Transaction', '钱包流水'],
+    ['Wallet Transactions', '钱包流水'],
+    ['Notification', '通知'],
+    ['Notifications', '通知'],
+    ['Notification Config', '通知配置'],
+    ['Notification Setting', '通知设置'],
+    ['Notification Configuration', '通知配置'],
+    ['App Setting', '应用设置'],
+    ['Panel Setting', '面板设置'],
+    ['System Setting', '系统设置'],
+    ['Payment', '支付'],
+    ['Payment Option', '支付方式'],
+    ['Page', '页面'],
+    ['Reviews', '评论'],
+    ['Review', '评论'],
+    ['Type', '类型'],
+    ['Section List', '版块列表'],
+    ['Dashboard Stats', '仪表盘统计'],
+    ['Admin Dashboard', '管理后台仪表盘'],
+    ['Producer Dashboard', '制作人仪表盘'],
+    ['Producer Profile', '制作人资料'],
+    ['Producer Change Password', '制作人修改密码'],
+    ['Producer Video', '制作人视频'],
+    ['Producer TV Show', '制作人剧集'],
+    ['Producer Shorts', '制作人短剧'],
+    ['Producer Video Detail', '制作人视频详情'],
+    ['Producer Video Edit', '制作人视频编辑'],
+    ['Producer TV Show Edit', '制作人剧集编辑'],
+    ['Producer Shorts Edit', '制作人短剧编辑'],
+    ['Producer TV Show Episode Edit', '制作人剧集分集编辑'],
+    ['Producer Shorts Episode Edit', '制作人短剧分集编辑'],
+    ['Back Video', '返回视频'],
+    ['Back TV Show', '返回剧集'],
+    ['Back Shorts', '返回短剧'],
+    ['Back User', '返回用户'],
+    ['Back Producer', '返回制作人'],
+    ['Back Cast', '返回演员'],
+    ['Create Successfully.', '创建成功。'],
+    ['Updated successfully.', '更新成功。'],
+    ['Sort order saved.', '排序已保存。'],
+    ['No rows found', '暂无数据'],
+    ['No record found', '暂无记录'],
+    ['No data found', '暂无数据'],
+    ['No category data', '暂无分类数据'],
+    ['No channel data', '暂无频道数据'],
+    ['No avatar data', '暂无头像数据'],
+    ['No banner data', '暂无横幅数据'],
+    ['No language data', '暂无语言数据'],
+    ['No season data', '暂无季度数据'],
+    ['No type data', '暂无类型数据'],
+    ['No section data', '暂无版块数据'],
+    ['Create a category first to manage it here.', '请先创建分类后再进行管理。'],
+    ['Create a channel first to manage it here.', '请先创建频道后再进行管理。'],
+    ['Create an avatar first to manage it here.', '请先创建头像后再进行管理。'],
+    ['Create a banner first to manage it here.', '请先创建横幅后再进行管理。'],
+    ['Create a language first to manage it here.', '请先创建语言后再进行管理。'],
+    ['Create a season first to manage it here.', '请先创建季度后再进行管理。'],
+    ['Create a type first to manage it here.', '请先创建类型后再进行管理。'],
+    ['Create a section first to manage it here.', '请先创建版块后再进行管理。'],
+    ['Profile updated successfully.', '资料更新成功。'],
+    ['Banner created successfully.', '横幅创建成功。'],
+    ['Banner updated successfully.', '横幅更新成功。'],
+    ['Section created successfully.', '版块创建成功。'],
+    ['Section updated successfully.', '版块更新成功。'],
+    ['Type created successfully.', '类型创建成功。'],
+    ['Type updated successfully.', '类型更新成功。'],
+    ['Avatar created successfully.', '头像创建成功。'],
+    ['Avatar updated successfully.', '头像更新成功。'],
+    ['Channel created successfully.', '频道创建成功。'],
+    ['Channel updated successfully.', '频道更新成功。'],
+    ['Category created successfully.', '分类创建成功。'],
+    ['Category updated successfully.', '分类更新成功。'],
+    ['Language created successfully.', '语言创建成功。'],
+    ['Language updated successfully.', '语言更新成功。'],
+    ['Season created successfully.', '季度创建成功。'],
+    ['Season updated successfully.', '季度更新成功。'],
+    ['TV Show updated successfully.', '剧集更新成功。'],
+    ['Shorts updated successfully.', '短剧更新成功。'],
+    ['Video updated successfully.', '视频更新成功。'],
+    ['Episode updated successfully.', '分集更新成功。'],
+    ['Withdrawal request created successfully.', '提现申请提交成功。'],
+    ['Operation failed, please try again later.', '操作失败，请稍后重试。'],
+    ['Operation failed, please try again.', '操作失败，请稍后重试。'],
+    ['Operation failed.', '操作失败。'],
+    ['Access denied: can not add/edit/delete in demo mode.', '演示模式下禁止新增、编辑和删除。'],
+    ['Password changed successfully.', '密码修改成功。'],
+    ['Status changed.', '状态已更新。'],
+    ['Content deleted.', '内容已删除。'],
+    ['Created.', '创建成功。'],
+    ['Updated.', '更新成功。'],
+    ['Deleted.', '删除成功。'],
+    ['Access denied', '访问受限'],
+    ['Withdrawal Request', '提现申请'],
+    ['Rent Transaction', '租赁交易'],
+    ['Rent Transactions', '租赁交易'],
+    ['TV Show Episodes', '剧集分集'],
+    ['Shorts Episodes', '短剧分集'],
+    ['Episode actions are grouped to keep the table readable while preserving quick edits.', '分集操作已聚合展示，方便快速编辑。'],
+    ['Episode editing is folded into row actions so the table stays readable.', '分集编辑已折叠到行操作中，列表更清晰。'],
+    ['No data available in table', '表格暂无数据'],
+    ['Sort order saved.', '排序保存成功。'],
+    ['TV show episode created.', '剧集分集创建成功。'],
+    ['TV show episode updated.', '剧集分集更新成功。'],
+    ['TV show episode status changed.', '剧集分集状态已更新。'],
+    ['Shorts episode created.', '短剧分集创建成功。'],
+    ['Shorts episode updated.', '短剧分集更新成功。'],
+    ['Shorts episode status changed.', '短剧分集状态已更新。'],
+    ['Completed', '已完成'],
+    ['Pending', '待处理'],
+    ['Success', '成功'],
+    ['Processing', '处理中'],
+    ['Failed', '失败'],
+    ['Active', '有效'],
+    ['Expiry', '已过期'],
+    ['No data', '暂无数据'],
+    ['No ', '暂无'],
+    [' list', '列表'],
+    [' Detail', '详情'],
+  ];
+
+  let output = input;
+  for (const [from, to] of dict) {
+    output = output.split(from).join(to);
+  }
+  return output;
+}
+
 function pageTemplate(title: string, body: string): string {
-  return ejs.render(layoutTemplate, { title, body });
+  return ejs.render(layoutTemplate, {
+    title: localizeBackofficeText(title),
+    body: localizeBackofficeText(body),
+  });
 }
 
 function renderTopbarActions(primaryHref: string, primaryLabel: string): string {
@@ -429,6 +624,156 @@ export function renderAdminLanguagePage(
   });
 }
 
+export function renderAdminBannerPage(
+  banners: Array<{ id: number; is_home_screen: number; type_id: number; video_type: number; subvideo_type: number; video_id: number; sort_order: number; status: number }>,
+  message = '',
+): string {
+  const msgHtml = message ? `<div class="msg">${message}</div>` : '';
+  const rows = banners
+    .map(
+      (item) => `<tr>
+        <td>${item.id}</td>
+        <td>${item.is_home_screen}</td>
+        <td>${item.type_id}</td>
+        <td>${item.video_type}</td>
+        <td>${item.subvideo_type}</td>
+        <td>${item.video_id}</td>
+        <td>${item.sort_order}</td>
+        <td>${renderAdminConfigStatusTag(item.status, 'Show', 'Hide')}</td>
+        <td class="admin-config-action-cell">
+          <div class="admin-config-action-stack">
+            <form class="admin-config-inline-form" method="post" action="/admin/banner/update">
+              <input type="hidden" name="id" value="${item.id}" />
+              <input name="is_home_screen" value="${item.is_home_screen}" placeholder="home screen" required />
+              <input name="type_id" value="${item.type_id}" placeholder="type id" required />
+              <input name="video_type" value="${item.video_type}" placeholder="video type" required />
+              <input name="subvideo_type" value="${item.subvideo_type}" placeholder="sub type" required />
+              <input name="video_id" value="${item.video_id}" placeholder="video id" required />
+              <input name="sort_order" value="${item.sort_order}" placeholder="sort" required />
+              <input name="status" value="${item.status}" placeholder="status" required />
+              <button class="admin-config-btn admin-config-btn-primary" type="submit">Update</button>
+            </form>
+            <form method="post" action="/admin/banner/toggle">
+              <input type="hidden" name="id" value="${item.id}" />
+              <button class="admin-config-btn admin-config-btn-ghost" type="submit">Toggle Status</button>
+            </form>
+          </div>
+        </td>
+      </tr>`,
+    )
+    .join('');
+
+  return renderAdminConfigPage({
+    title: 'Admin Banner',
+    message: msgHtml,
+    introCards: [
+      renderAdminConfigCreateCard('Create Banner', '/admin/banner', [
+        { name: 'is_home_screen', placeholder: 'home screen (1/2)', required: true },
+        { name: 'type_id', placeholder: 'type id', required: true },
+        { name: 'video_type', placeholder: 'video type', required: true },
+        { name: 'subvideo_type', placeholder: 'sub video type', required: true },
+        { name: 'video_id', placeholder: 'video id', required: true },
+        { name: 'sort_order', placeholder: 'sort order', required: true },
+        { name: 'status', placeholder: 'status (0/1)', required: true },
+      ]),
+      renderAdminConfigSortCard('/admin/banner/sortable/save'),
+    ],
+    listTitle: 'Banner List',
+    summary: `${banners.length} banners`,
+    headerHtml:
+      '<tr><th align="left">ID</th><th align="left">Home Screen</th><th align="left">Type ID</th><th align="left">Video Type</th><th align="left">Sub Type</th><th align="left">Video ID</th><th align="left">Sort</th><th align="left">Status</th><th align="left">Actions</th></tr>',
+    bodyHtml: rows || renderAdminConfigEmptyRow(9, 'No banner data', 'Create banners from this page to manage status and sort here.'),
+  });
+}
+
+export function renderAdminSectionPage(
+  sections: Array<{ id: number; title: string; short_title: string; section_type: number; is_home_screen: number; type_id: number; video_type: number; sub_video_type: number; screen_layout: string; content_ids: string; category_id: number; language_id: number; channel_id: number; order_by_upload: number; order_by_view: number; premium_video: number; no_of_content: number; view_all: number; is_title: number; sort_order: number; status: number }>,
+  message = '',
+): string {
+  const msgHtml = message ? `<div class="msg">${message}</div>` : '';
+  const rows = sections
+    .map(
+      (item) => `<tr>
+        <td>${item.id}</td>
+        <td class="admin-config-name-cell"><div class="admin-config-name" title="${escapeHtmlAttr(item.title || '-')}" data-tooltip="${escapeHtmlAttr(item.title || '-')}">${item.title || '-'}</div></td>
+        <td>${item.is_home_screen}</td>
+        <td>${item.type_id}</td>
+        <td>${item.video_type}</td>
+        <td>${item.sub_video_type}</td>
+        <td>${item.sort_order}</td>
+        <td>${renderAdminConfigStatusTag(item.status, 'Show', 'Hide')}</td>
+        <td class="admin-config-action-cell">
+          <div class="admin-config-action-stack">
+            <form class="admin-config-inline-form" method="post" action="/admin/section/update">
+              <input type="hidden" name="id" value="${item.id}" />
+              <input name="title" value="${escapeHtmlAttr(item.title || '')}" placeholder="title" required />
+              <input name="short_title" value="${escapeHtmlAttr(item.short_title || '')}" placeholder="short title" required />
+              <input name="section_type" value="${item.section_type}" placeholder="section type" required />
+              <input name="is_home_screen" value="${item.is_home_screen}" placeholder="home screen" required />
+              <input name="type_id" value="${item.type_id}" placeholder="type id" required />
+              <input name="video_type" value="${item.video_type}" placeholder="video type" required />
+              <input name="sub_video_type" value="${item.sub_video_type}" placeholder="sub type" required />
+              <input name="screen_layout" value="${escapeHtmlAttr(item.screen_layout || '')}" placeholder="layout" required />
+              <input name="content_ids" value="${escapeHtmlAttr(item.content_ids || '')}" placeholder="content ids" />
+              <input name="category_id" value="${item.category_id}" placeholder="category id" required />
+              <input name="language_id" value="${item.language_id}" placeholder="language id" required />
+              <input name="channel_id" value="${item.channel_id}" placeholder="channel id" required />
+              <input name="order_by_upload" value="${item.order_by_upload}" placeholder="order upload" required />
+              <input name="order_by_view" value="${item.order_by_view}" placeholder="order view" required />
+              <input name="premium_video" value="${item.premium_video}" placeholder="premium" required />
+              <input name="no_of_content" value="${item.no_of_content}" placeholder="count" required />
+              <input name="view_all" value="${item.view_all}" placeholder="view all" required />
+              <input name="is_title" value="${item.is_title}" placeholder="is title" required />
+              <input name="sort_order" value="${item.sort_order}" placeholder="sort" required />
+              <input name="status" value="${item.status}" placeholder="status" required />
+              <button class="admin-config-btn admin-config-btn-primary" type="submit">Update</button>
+            </form>
+            <form method="post" action="/admin/section/toggle">
+              <input type="hidden" name="id" value="${item.id}" />
+              <button class="admin-config-btn admin-config-btn-ghost" type="submit">Toggle Status</button>
+            </form>
+          </div>
+        </td>
+      </tr>`,
+    )
+    .join('');
+
+  return renderAdminConfigPage({
+    title: 'Admin Section',
+    message: msgHtml,
+    introCards: [
+      renderAdminConfigCreateCard('Create Section', '/admin/section', [
+        { name: 'title', placeholder: 'title', required: true },
+        { name: 'short_title', placeholder: 'short title', required: true },
+        { name: 'section_type', placeholder: 'section type', required: true },
+        { name: 'is_home_screen', placeholder: 'home screen', required: true },
+        { name: 'type_id', placeholder: 'type id', required: true },
+        { name: 'video_type', placeholder: 'video type', required: true },
+        { name: 'sub_video_type', placeholder: 'sub type', required: true },
+        { name: 'screen_layout', placeholder: 'screen layout', required: true },
+        { name: 'content_ids', placeholder: 'content ids csv' },
+        { name: 'category_id', placeholder: 'category id', required: true },
+        { name: 'language_id', placeholder: 'language id', required: true },
+        { name: 'channel_id', placeholder: 'channel id', required: true },
+        { name: 'order_by_upload', placeholder: 'order by upload', required: true },
+        { name: 'order_by_view', placeholder: 'order by view', required: true },
+        { name: 'premium_video', placeholder: 'premium video', required: true },
+        { name: 'no_of_content', placeholder: 'content count', required: true },
+        { name: 'view_all', placeholder: 'view all', required: true },
+        { name: 'is_title', placeholder: 'is title', required: true },
+        { name: 'sort_order', placeholder: 'sort order', required: true },
+        { name: 'status', placeholder: 'status', required: true },
+      ]),
+      renderAdminConfigSortCard('/admin/section/sortable/save'),
+    ],
+    listTitle: 'Section List',
+    summary: `${sections.length} sections`,
+    headerHtml:
+      '<tr><th align="left">ID</th><th align="left">Title</th><th align="left">Home Screen</th><th align="left">Type ID</th><th align="left">Video Type</th><th align="left">Sub Type</th><th align="left">Sort</th><th align="left">Status</th><th align="left">Actions</th></tr>',
+    bodyHtml: rows || renderAdminConfigEmptyRow(9, 'No section data', 'Create sections from legacy admin or database first, then manage status and sort here.'),
+  });
+}
+
 type AdminConfigInputField = {
   name: string;
   placeholder: string;
@@ -572,6 +917,18 @@ function renderAdminConfigStyles(): string {
       vertical-align:top;
     }
     .admin-config-table tr:hover td { background:#f7f8fa; }
+    .admin-config-table th:last-child,
+    .admin-config-table td:last-child {
+      position: sticky;
+      right: 0;
+      z-index: 2;
+      background: #fff;
+      box-shadow: -8px 0 10px -10px rgba(0, 0, 0, .35);
+    }
+    .admin-config-table thead th:last-child {
+      z-index: 4;
+      background: #fafbfc;
+    }
     .admin-config-name-cell { position:relative; }
     .admin-config-name {
       max-width:260px;
@@ -709,6 +1066,179 @@ function renderAdminConfigPage(params: AdminConfigPageParams): string {
   );
 }
 
+function escapeHtml(value: string): string {
+  return value
+    .replaceAll('&', '&amp;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;');
+}
+
+type AdminListColumn<T> = {
+  header: string;
+  render: (item: T) => string;
+  align?: 'left' | 'center' | 'right';
+  className?: string;
+};
+
+type AdminListPageParams<T> = {
+  title: string;
+  rows: T[];
+  columns: AdminListColumn<T>[];
+  summary?: string;
+  message?: string;
+  introHtml?: string;
+  backHref?: string;
+  backLabel?: string;
+  emptyTitle?: string;
+  emptyDescription?: string;
+};
+
+export function renderAdminListPage<T extends Record<string, unknown>>(params: AdminListPageParams<T>): string {
+  const messageHtml = params.message ? `<div class="msg">${params.message}</div>` : '';
+  const introHtml = params.introHtml ? `<div style="margin-bottom:16px;">${params.introHtml}</div>` : '';
+  const headerHtml = params.columns
+    .map(
+      (column) =>
+        `<th${column.align ? ` align="${column.align}"` : ''}${column.className ? ` class="${column.className}"` : ''}>${column.header}</th>`,
+    )
+    .join('');
+  const bodyHtml =
+    params.rows.length > 0
+      ? params.rows
+          .map(
+            (row) =>
+              `<tr>${params.columns
+                .map((column) => `<td${column.className ? ` class="${column.className}"` : ''}>${column.render(row)}</td>`)
+                .join('')}</tr>`,
+          )
+          .join('')
+      : renderAdminConfigEmptyRow(
+          params.columns.length,
+          params.emptyTitle ?? 'No data',
+          params.emptyDescription ?? 'There are no records to display yet.',
+        );
+
+  return pageTemplate(
+    params.title,
+    `${renderAdminConfigStyles()}
+     <div class="topbar"><h1>${params.title}</h1>${renderTopbarActions(params.backHref ?? '/admin/dashboard', params.backLabel ?? 'Back Dashboard')}</div>
+     ${messageHtml}
+     ${introHtml}
+     <div class="admin-config-shell">
+       <div class="admin-config-toolbar">
+         <h3 class="admin-config-title">${params.title}</h3>
+         <div class="admin-config-summary">${params.summary ?? `${params.rows.length} records`}</div>
+       </div>
+       <div class="admin-config-table-wrap">
+         <table class="admin-config-table">
+           <thead><tr>${headerHtml}</tr></thead>
+           <tbody>${bodyHtml}</tbody>
+         </table>
+       </div>
+     </div>`,
+  );
+}
+
+type AdminSettingsPageParams = {
+  title: string;
+  action?: string;
+  settings: Record<string, string>;
+  message?: string;
+  backHref?: string;
+  backLabel?: string;
+  summary?: string;
+};
+
+export function renderAdminSettingsPage(params: AdminSettingsPageParams): string {
+  const entries = Object.entries(params.settings).sort(([left], [right]) => left.localeCompare(right));
+  const fieldsHtml = entries
+    .map(
+      ([key, value]) => `<label style="display:grid; gap:6px;">
+        <span style="font-size:13px; color:#4e5969; font-weight:600;">${escapeHtml(key)}</span>
+        <input name="${escapeHtmlAttr(key)}" value="${escapeHtmlAttr(value)}" />
+      </label>`,
+    )
+    .join('');
+  const rowsHtml = entries
+    .map(
+      ([key, value]) => `<tr>
+        <td>${escapeHtml(key)}</td>
+        <td>${escapeHtml(value || '-')}</td>
+      </tr>`,
+    )
+    .join('');
+  const messageHtml = params.message ? `<div class="msg">${params.message}</div>` : '';
+
+  return pageTemplate(
+    params.title,
+    `${renderAdminConfigStyles()}
+     <div class="topbar"><h1>${params.title}</h1>${renderTopbarActions(params.backHref ?? '/admin/dashboard', params.backLabel ?? 'Back Dashboard')}</div>
+     ${messageHtml}
+      <div class="admin-config-grid">
+       <div class="admin-config-card">
+         <h3>Edit Settings</h3>
+         <div class="admin-config-muted">Review the current values and update them where saving is supported.</div>
+         ${params.action ? `<form class="admin-config-form-grid" method="post" action="${params.action}">${fieldsHtml}<button class="admin-config-btn admin-config-btn-primary" type="submit">Save</button></form>` : fieldsHtml}
+       </div>
+     </div>
+     <div class="admin-config-shell">
+       <div class="admin-config-toolbar">
+         <h3 class="admin-config-title">${params.title}</h3>
+         <div class="admin-config-summary">${params.summary ?? `${entries.length} settings`}</div>
+       </div>
+       <div class="admin-config-table-wrap">
+         <table class="admin-config-table">
+           <thead><tr><th align="left">Key</th><th align="left">Value</th></tr></thead>
+           <tbody>${rowsHtml || renderAdminConfigEmptyRow(2, 'No settings', 'No settings were returned from the database.')}</tbody>
+         </table>
+       </div>
+     </div>`,
+  );
+}
+
+export function renderAdminPaymentEditPage(
+  payment: Record<string, unknown>,
+  message = '',
+): string {
+  const title = `Payment #${Number(payment.id ?? 0) || ''}`.trim();
+  const fields: Array<[string, unknown]> = [
+    ['id', payment.id ?? ''],
+    ['key_1', payment.key_1 ?? ''],
+    ['key_2', payment.key_2 ?? ''],
+    ['key_3', payment.key_3 ?? ''],
+    ['key_4', payment.key_4 ?? ''],
+    ['visibility', payment.visibility ?? ''],
+    ['is_live', payment.is_live ?? ''],
+  ];
+  const messageHtml = message ? `<div class="msg">${message}</div>` : '';
+
+  return pageTemplate(
+    title,
+    `${renderAdminConfigStyles()}
+     <div class="topbar"><h1>${title}</h1>${renderTopbarActions('/admin/payment', 'Back Payment')}</div>
+     ${messageHtml}
+     <div class="admin-config-grid">
+       <div class="admin-config-card">
+         <h3>Edit Payment Option</h3>
+         <div class="admin-config-muted">Update the existing payment option record.</div>
+         <form class="admin-config-form-grid" method="post" action="/admin/payment/update">
+           ${fields
+             .map(
+               ([key, value]) => `<label style="display:grid; gap:6px;">
+                 <span style="font-size:13px; color:#4e5969; font-weight:600;">${escapeHtml(String(key))}</span>
+                 <input name="${escapeHtmlAttr(String(key))}" value="${escapeHtmlAttr(String(value ?? ''))}" />
+               </label>`,
+             )
+             .join('')}
+           <button class="admin-config-btn admin-config-btn-primary" type="submit">Save</button>
+         </form>
+       </div>
+     </div>`,
+  );
+}
+
 export function renderAdminDashboard(userName: string, stats: Record<string, number>): string {
   const entries = [
     ['Users', stats.users],
@@ -729,7 +1259,42 @@ export function renderAdminDashboard(userName: string, stats: Record<string, num
   return pageTemplate(
     'Admin Dashboard',
     `<div class="topbar"><h1>Admin Dashboard</h1>${renderTopbarActions('/admin/logout', 'Logout')}</div>
-     <div style="margin-bottom:12px;"><a href="/admin/profile">Profile</a> | <a href="/admin/type">Type</a> | <a href="/admin/category">Category</a> | <a href="/admin/language">Language</a> | <a href="/admin/season">Season</a> | <a href="/admin/avatar">Avatar</a> | <a href="/admin/channel">Channel</a> | <a href="/admin/video">Video</a> | <a href="/admin/tvshow">TV Show</a> | <a href="/admin/shorts">Shorts</a> | <a href="/admin/episode">Episodes</a></div>
+     <div style="margin-bottom:12px; line-height:1.9;">
+       <a href="/admin/profile">Profile</a> |
+       <a href="/admin/type">Type</a> |
+       <a href="/admin/category">Category</a> |
+       <a href="/admin/language">Language</a> |
+       <a href="/admin/season">Season</a> |
+       <a href="/admin/avatar">Avatar</a> |
+       <a href="/admin/channel">Channel</a> |
+       <a href="/admin/banner">Banner</a> |
+       <a href="/admin/section">Section</a> |
+       <a href="/admin/video">Video</a> |
+       <a href="/admin/tvshow">TV Show</a> |
+       <a href="/admin/shorts">Shorts</a> |
+       <a href="/admin/episode">Episodes</a> |
+       <a href="/admin/reviews">Reviews</a> |
+       <a href="/admin/coupon">Coupon</a> |
+       <a href="/admin/rent-price-list">Rent Price</a> |
+       <a href="/admin/rent-transaction">Rent Transaction</a> |
+       <a href="/admin/package">Package</a> |
+       <a href="/admin/transaction">Transaction</a> |
+       <a href="/admin/payment">Payment</a> |
+       <a href="/admin/wallet-transaction">Wallet Transaction</a> |
+       <a href="/admin/withdrawal">Withdrawal</a> |
+       <a href="/admin/refer-earn">Refer Earn</a> |
+       <a href="/admin/notification">Notification</a> |
+       <a href="/admin/notifications/setting">Notification Setting</a> |
+       <a href="/admin/notificationconfiguration">Notification Config</a> |
+       <a href="/admin/admob">Admob</a> |
+       <a href="/admin/app-setting">App Setting</a> |
+       <a href="/admin/panel-setting">Panel Setting</a> |
+       <a href="/admin/system-setting">System Setting</a> |
+       <a href="/admin/page">Page</a> |
+       <a href="/admin/user">User</a> |
+       <a href="/admin/producer">Producer</a> |
+       <a href="/admin/cast">Cast</a>
+     </div>
      <div class="card"><p>Welcome, ${userName}</p><div class="grid">${metrics}</div></div>`,
   );
 }
@@ -738,6 +1303,14 @@ export function renderAdminContentPlaceholderPage(title: string, message: string
   return pageTemplate(
     title,
     `<div class="topbar"><h1>${title}</h1>${renderTopbarActions('/admin/dashboard', 'Back Dashboard')}</div>
+     <div class="card"><p>${message}</p></div>`,
+  );
+}
+
+export function renderProducerContentPlaceholderPage(title: string, message: string): string {
+  return pageTemplate(
+    title,
+    `<div class="topbar"><h1>${title}</h1>${renderTopbarActions('/producer/dashboard', 'Back Dashboard')}</div>
      <div class="card"><p>${message}</p></div>`,
   );
 }
@@ -779,6 +1352,18 @@ function renderAdminArcoTableStyles(): string {
       padding:14px; border-bottom:1px solid #f2f3f5; color:#1d2129; font-size:14px; vertical-align:top;
     }
     .admin-arco-table tr:hover td { background:#f7f8fa; }
+    .admin-arco-table th:last-child,
+    .admin-arco-table td:last-child {
+      position: sticky;
+      right: 0;
+      z-index: 2;
+      background: #fff;
+      box-shadow: -8px 0 10px -10px rgba(0, 0, 0, .35);
+    }
+    .admin-arco-table thead th:last-child {
+      z-index: 4;
+      background: #fafbfc;
+    }
     .admin-arco-name-cell { position:relative; }
     .admin-arco-name {
       max-width:340px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-weight:500;
@@ -1402,10 +1987,12 @@ export function renderProducerTvShowEpisodePage(
      </div>
      <div class="card">
        <h3>Episode List</h3>
-       <table style="width:100%; border-collapse:collapse;">
+       <div class="sticky-action-wrap">
+       <table class="sticky-action-table" style="width:100%; border-collapse:collapse;">
          <thead><tr><th align="left">#</th><th align="left">Name</th><th align="left">Season</th><th align="left">Premium</th><th align="left">Views</th><th align="left">Status</th><th align="left">Sort</th><th align="left">Actions</th></tr></thead>
          <tbody>${rows}</tbody>
        </table>
+       </div>
      </div>`,
   );
 }
@@ -1574,10 +2161,12 @@ export function renderProducerShortsEpisodePage(
      </div>
      <div class="card">
        <h3>Episode List</h3>
-       <table style="width:100%; border-collapse:collapse;">
+       <div class="sticky-action-wrap">
+       <table class="sticky-action-table" style="width:100%; border-collapse:collapse;">
          <thead><tr><th align="left">#</th><th align="left">Name</th><th align="left">Season</th><th align="left">Premium</th><th align="left">Views</th><th align="left">Status</th><th align="left">Sort</th><th align="left">Actions</th></tr></thead>
          <tbody>${rows}</tbody>
        </table>
+       </div>
      </div>`,
   );
 }
