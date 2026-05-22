@@ -133,6 +133,21 @@ export function createApp(): Koa {
 
   app.use(errorHandler);
   app.use(requestLogger);
+  app.use(async (ctx, next) => {
+    const origin = ctx.get('Origin');
+    ctx.set('Access-Control-Allow-Origin', origin || '*');
+    ctx.set('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS');
+    ctx.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, Api-Token, X-Requested-With');
+    ctx.set('Access-Control-Allow-Credentials', 'true');
+    ctx.set('Vary', 'Origin');
+
+    if (ctx.method === 'OPTIONS') {
+      ctx.status = 204;
+      return;
+    }
+
+    await next();
+  });
   app.use(bodyParser());
   applySessionMiddleware(app);
   app.use(async (ctx, next) => {
