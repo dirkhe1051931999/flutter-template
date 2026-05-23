@@ -7,11 +7,11 @@ import 'package:oolaf_flutted/utils/oolaf_media_kit_controller.dart';
 import 'package:oolaf_flutted/utils/oolaf_video_controller.dart';
 
 class VideoManager with WidgetsBindingObserver {
-  VideoManager._() {
+  VideoManager() {
     WidgetsBinding.instance.addObserver(this);
   }
 
-  static final VideoManager instance = VideoManager._();
+  static final VideoManager instance = VideoManager();
 
   final Map<String, OolafVideoController> _controllerCache =
       <String, OolafVideoController>{};
@@ -179,6 +179,14 @@ class VideoManager with WidgetsBindingObserver {
     await _disposeAllSafely();
   }
 
+  Future<void> disposeManager() async {
+    WidgetsBinding.instance.removeObserver(this);
+    _backgroundDisposeTimer?.cancel();
+    _backgroundDisposeTimer = null;
+    _scopeRefCount.clear();
+    await _disposeAllSafely();
+  }
+
   Future<void> disposeWhere(bool Function(String id) test) async {
     await _awaitPendingDispose();
     final toDispose = _controllerCache.keys.where(test).toList(growable: false);
@@ -193,6 +201,18 @@ class VideoManager with WidgetsBindingObserver {
         await c?.dispose();
       } catch (_) {}
     }
+  }
+
+  Future<void> disposeById(String id) async {
+    await _awaitPendingDispose();
+    final c = _controllerCache.remove(id);
+    _accessOrder.remove(id);
+    try {
+      await c?.pause();
+    } catch (_) {}
+    try {
+      await c?.dispose();
+    } catch (_) {}
   }
 
   @override

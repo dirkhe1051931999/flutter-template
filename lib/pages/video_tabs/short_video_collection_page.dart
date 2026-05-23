@@ -1,6 +1,8 @@
 import 'package:flutter/cupertino.dart';
+import 'package:oolaf_flutted/pages/video_tabs/watch_history_page.dart';
 import 'package:oolaf_flutted/pages/video_tabs/watch_history_play_page.dart';
 import 'package:oolaf_flutted/utils/short_video_collection_persistence.dart';
+import 'package:oolaf_flutted/utils/short_video_playback_progress_persistence.dart';
 import 'package:oolaf_flutted/utils/short_video_watch_history_persistence.dart';
 
 class ShortVideoCollectionPage extends StatefulWidget {
@@ -16,7 +18,8 @@ class ShortVideoCollectionPage extends StatefulWidget {
   final ShortVideoCollectionPersistence persistence;
 
   @override
-  State<ShortVideoCollectionPage> createState() => _ShortVideoCollectionPageState();
+  State<ShortVideoCollectionPage> createState() =>
+      _ShortVideoCollectionPageState();
 }
 
 class _ShortVideoCollectionPageState extends State<ShortVideoCollectionPage> {
@@ -24,7 +27,10 @@ class _ShortVideoCollectionPageState extends State<ShortVideoCollectionPage> {
   static const double _gridGap = 4;
 
   bool _isLoading = true;
-  List<ShortVideoCollectionEntry> _entries = const <ShortVideoCollectionEntry>[];
+  List<ShortVideoCollectionEntry> _entries =
+      const <ShortVideoCollectionEntry>[];
+  Map<String, ShortVideoPlaybackProgressEntry> _progressByVideoId =
+      const <String, ShortVideoPlaybackProgressEntry>{};
 
   @override
   void initState() {
@@ -34,12 +40,26 @@ class _ShortVideoCollectionPageState extends State<ShortVideoCollectionPage> {
 
   Future<void> _loadEntries() async {
     final entries = await widget.persistence.loadAll();
+    final progressByVideoId =
+        await ShortVideoPlaybackProgressPersistence.loadAll();
     if (!mounted) {
       return;
     }
     setState(() {
       _entries = entries;
+      _progressByVideoId = progressByVideoId;
       _isLoading = false;
+    });
+  }
+
+  Future<void> _refreshProgress() async {
+    final progressByVideoId =
+        await ShortVideoPlaybackProgressPersistence.loadAll();
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _progressByVideoId = progressByVideoId;
     });
   }
 
@@ -69,7 +89,7 @@ class _ShortVideoCollectionPageState extends State<ShortVideoCollectionPage> {
         .toList(growable: false);
   }
 
-  void _openPlayPage(ShortVideoCollectionEntry entry) {
+  Future<void> _openPlayPage(ShortVideoCollectionEntry entry) async {
     final entries = _toPlayableEntries();
     if (entries.isEmpty) {
       return;
@@ -82,7 +102,7 @@ class _ShortVideoCollectionPageState extends State<ShortVideoCollectionPage> {
       return;
     }
 
-    Navigator.of(context).push(
+    await Navigator.of(context).push(
       CupertinoPageRoute<void>(
         builder: (context) {
           return ShortVideoWatchHistoryPlayPage(
@@ -92,6 +112,7 @@ class _ShortVideoCollectionPageState extends State<ShortVideoCollectionPage> {
         },
       ),
     );
+    await _refreshProgress();
   }
 
   @override
@@ -139,6 +160,7 @@ class _ShortVideoCollectionPageState extends State<ShortVideoCollectionPage> {
                       final entry = _entries[index];
                       return _CollectionGridItem(
                         entry: entry,
+                        progress: _progressByVideoId[entry.videoId],
                         onTap: () {
                           _openPlayPage(entry);
                         },
@@ -151,9 +173,14 @@ class _ShortVideoCollectionPageState extends State<ShortVideoCollectionPage> {
 }
 
 class _CollectionGridItem extends StatelessWidget {
-  const _CollectionGridItem({required this.entry, required this.onTap});
+  const _CollectionGridItem({
+    required this.entry,
+    required this.progress,
+    required this.onTap,
+  });
 
   final ShortVideoCollectionEntry entry;
+  final ShortVideoPlaybackProgressEntry? progress;
   final VoidCallback onTap;
 
   @override
@@ -171,24 +198,33 @@ class _CollectionGridItem extends StatelessWidget {
           children: [
             Expanded(
               child: ClipRRect(
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(6)),
-                child: Image.network(
-                  entry.coverUrl,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) {
-                    return const ColoredBox(
-                      color: Color(0xFFE5E5EA),
-                      child: Center(
-                        child: Icon(
-                          CupertinoIcons.exclamationmark_triangle,
-                          color: Color(0xFF8E8E93),
-                        ),
-                      ),
-                    );
-                  },
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(6),
+                ),
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    Image.network(
+                      entry.coverUrl,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) {
+                        return const ColoredBox(
+                          color: Color(0xFFE5E5EA),
+                          child: Center(
+                            child: Icon(
+                              CupertinoIcons.exclamationmark_triangle,
+                              color: Color(0xFF8E8E93),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                    ShortVideoListProgressBadge(progress: progress),
+                  ],
                 ),
               ),
             ),
+            ShortVideoListProgressStrip(progress: progress),
             Padding(
               padding: const EdgeInsets.fromLTRB(6, 6, 6, 2),
               child: Text(

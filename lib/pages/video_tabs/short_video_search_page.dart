@@ -1,6 +1,8 @@
 import 'dart:math' as math;
 
 import 'package:flutter/cupertino.dart';
+import 'package:oolaf_flutted/pages/video_tabs/short_video_search_result_page.dart';
+import 'package:oolaf_flutted/tools/developer_tools_entry.dart';
 import 'package:oolaf_flutted/utils/short_video_search_history_persistence.dart';
 
 class ShortVideoSearchPage extends StatefulWidget {
@@ -18,12 +20,26 @@ class ShortVideoSearchPage extends StatefulWidget {
 }
 
 class _ShortVideoSearchPageState extends State<ShortVideoSearchPage> {
+  static const int _historyInitialVisibleCount = 5;
+  static const int _historyExpandStep = 5;
+  static const List<String> _baseHotSearches = <String>[
+    '热点新闻',
+    '搞笑短片',
+    '手机摄影',
+    'AI剪辑',
+    '电影解说',
+    '旅行记录',
+    '美食探店',
+    '体育集锦',
+  ];
+
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _focusNode = FocusNode();
 
   List<String> _history = const <String>[];
   List<_GuessCandidate> _guesses = const <_GuessCandidate>[];
   int _guessRefreshTick = 0;
+  int _historyVisibleCount = _historyInitialVisibleCount;
 
   @override
   void initState() {
@@ -51,6 +67,12 @@ class _ShortVideoSearchPageState extends State<ShortVideoSearchPage> {
     }
     setState(() {
       _history = history;
+      _historyVisibleCount = history.isEmpty
+          ? _historyInitialVisibleCount
+          : _historyVisibleCount.clamp(
+              _historyInitialVisibleCount,
+              history.length,
+            );
     });
   }
 
@@ -61,27 +83,22 @@ class _ShortVideoSearchPageState extends State<ShortVideoSearchPage> {
     }
     _searchController.text = text;
     _searchController.selection = TextSelection.collapsed(offset: text.length);
+    final openedDeveloperTools = await DeveloperToolsEntry.maybeOpenFromInput(
+      context,
+      text,
+    );
+    if (openedDeveloperTools) {
+      return;
+    }
     await ShortVideoSearchHistoryPersistence.add(text);
     await _loadHistory();
     if (!mounted) {
       return;
     }
-    showCupertinoDialog<void>(
-      context: context,
-      builder: (context) {
-        return CupertinoAlertDialog(
-          title: const Text('搜索开发中'),
-          content: Text('已记录关键词：$text\n当前暂无搜索接口，后续将接入真实结果。'),
-          actions: [
-            CupertinoDialogAction(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: const Text('知道了'),
-            ),
-          ],
-        );
-      },
+    await Navigator.of(context).push<void>(
+      CupertinoPageRoute<void>(
+        builder: (_) => ShortVideoSearchResultPage(keyword: text),
+      ),
     );
   }
 
@@ -90,14 +107,31 @@ class _ShortVideoSearchPageState extends State<ShortVideoSearchPage> {
     await _loadHistory();
   }
 
+  void _expandHistory() {
+    if (_history.isEmpty) {
+      return;
+    }
+    setState(() {
+      _historyVisibleCount = (_historyVisibleCount + _historyExpandStep).clamp(
+        _historyInitialVisibleCount,
+        _history.length,
+      );
+    });
+  }
+
+  void _collapseHistory() {
+    setState(() {
+      _historyVisibleCount = _historyInitialVisibleCount;
+    });
+  }
+
   void _refreshGuesses() {
     final seed = '${widget.seedTitle}::${widget.seedSource ?? ''}';
     final random = math.Random(seed.hashCode + _guessRefreshTick * 97);
-    final candidates = _buildGuessPool(random);
-
-    candidates.shuffle(random);
+    final candidates = _buildGuessPool(random)..shuffle(random);
     final selected = <_GuessCandidate>[];
     final used = <String>{};
+
     for (final item in candidates) {
       if (used.add(item.text)) {
         selected.add(item);
@@ -111,6 +145,21 @@ class _ShortVideoSearchPageState extends State<ShortVideoSearchPage> {
       _guesses = selected;
       _guessRefreshTick += 1;
     });
+  }
+
+  List<String> _buildHotSearches() {
+    final source = widget.seedSource?.trim();
+    final result = <String>[];
+    if (source != null && source.isNotEmpty) {
+      result.add('$source 热门视频');
+      result.add('$source 最新内容');
+    }
+    for (final item in _baseHotSearches) {
+      if (!result.contains(item)) {
+        result.add(item);
+      }
+    }
+    return result.take(8).toList(growable: false);
   }
 
   List<_GuessCandidate> _buildGuessPool(math.Random random) {
@@ -153,17 +202,26 @@ class _ShortVideoSearchPageState extends State<ShortVideoSearchPage> {
     ];
 
     final pool = <_GuessCandidate>[];
-
     for (final text in titleCandidates) {
       final clamped = text.trim();
       if (clamped.isEmpty) {
         continue;
       }
-      pool.add(_GuessCandidate(text: clamped, relevance: 0.85 + random.nextDouble() * 0.15));
+      pool.add(
+        _GuessCandidate(
+          text: clamped,
+          relevance: 0.85 + random.nextDouble() * 0.15,
+        ),
+      );
     }
 
     for (final text in sourceCandidates) {
-      pool.add(_GuessCandidate(text: text, relevance: 0.72 + random.nextDouble() * 0.2));
+      pool.add(
+        _GuessCandidate(
+          text: text,
+          relevance: 0.72 + random.nextDouble() * 0.2,
+        ),
+      );
     }
 
     for (final topic in baseTopics) {
@@ -197,6 +255,16 @@ class _ShortVideoSearchPageState extends State<ShortVideoSearchPage> {
 
   @override
   Widget build(BuildContext context) {
+    final visibleHistoryCount = _historyVisibleCount.clamp(0, _history.length);
+    final visibleHistory =
+        _history.take(visibleHistoryCount).toList(growable: false);
+    final recentHistory = visibleHistory.take(5).toList(growable: false);
+    final earlierHistory = visibleHistory.skip(5).toList(growable: false);
+    final hasMoreHistory = _history.length > visibleHistoryCount;
+    final canCollapseHistory = _history.length > _historyInitialVisibleCount &&
+        visibleHistoryCount >= _history.length;
+    final hotSearches = _buildHotSearches();
+
     return CupertinoPageScaffold(
       backgroundColor: const Color(0xFFF4F5F7),
       child: SafeArea(
@@ -207,7 +275,8 @@ class _ShortVideoSearchPageState extends State<ShortVideoSearchPage> {
               child: Row(
                 children: [
                   CupertinoButton(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                     minimumSize: Size.zero,
                     onPressed: () {
                       Navigator.of(context).pop();
@@ -250,7 +319,7 @@ class _ShortVideoSearchPageState extends State<ShortVideoSearchPage> {
                 children: [
                   if (_history.isNotEmpty) ...[
                     _SectionHeader(
-                      title: '搜索历史',
+                      title: '最近搜索',
                       trailing: CupertinoButton(
                         padding: EdgeInsets.zero,
                         minimumSize: Size.zero,
@@ -271,7 +340,7 @@ class _ShortVideoSearchPageState extends State<ShortVideoSearchPage> {
                       spacing: 8,
                       runSpacing: 8,
                       children: [
-                        for (final keyword in _history)
+                        for (final keyword in recentHistory)
                           _HistoryChip(
                             text: keyword,
                             onTap: () {
@@ -283,8 +352,68 @@ class _ShortVideoSearchPageState extends State<ShortVideoSearchPage> {
                           ),
                       ],
                     ),
+                    if (earlierHistory.isNotEmpty) ...[
+                      const SizedBox(height: 12),
+                      const _SectionHeader(title: '更早搜索'),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          for (final keyword in earlierHistory)
+                            _HistoryChip(
+                              text: keyword,
+                              onTap: () {
+                                _submitSearch(keyword);
+                              },
+                              onDelete: () {
+                                _removeHistory(keyword);
+                              },
+                            ),
+                        ],
+                      ),
+                    ],
+                    if (hasMoreHistory || canCollapseHistory) ...[
+                      const SizedBox(height: 10),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: CupertinoButton(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 2,
+                            vertical: 0,
+                          ),
+                          minimumSize: Size.zero,
+                          onPressed: hasMoreHistory
+                              ? _expandHistory
+                              : _collapseHistory,
+                          child: Text(
+                            hasMoreHistory ? '展开更多' : '收起',
+                            style: const TextStyle(
+                              fontSize: 13,
+                              color: Color(0xFF8E8E93),
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: 16),
                   ],
+                  const _SectionHeader(title: '热门搜索'),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      for (var i = 0; i < hotSearches.length; i += 1)
+                        _HotSearchChip(
+                          rank: i + 1,
+                          text: hotSearches[i],
+                          onTap: () {
+                            _submitSearch(hotSearches[i]);
+                          },
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
                   _SectionHeader(
                     title: '猜你想搜',
                     trailing: CupertinoButton(
@@ -315,7 +444,8 @@ class _ShortVideoSearchPageState extends State<ShortVideoSearchPage> {
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
                     itemCount: _guesses.length.clamp(0, 8),
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 2,
                       mainAxisSpacing: 8,
                       crossAxisSpacing: 8,
@@ -427,6 +557,52 @@ class _HistoryChip extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _HotSearchChip extends StatelessWidget {
+  const _HotSearchChip({
+    required this.rank,
+    required this.text,
+    required this.onTap,
+  });
+
+  final int rank;
+  final String text;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final hot = rank <= 3;
+    return CupertinoButton(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      minimumSize: Size.zero,
+      borderRadius: BorderRadius.circular(16),
+      color: CupertinoColors.white,
+      onPressed: onTap,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            '$rank',
+            style: TextStyle(
+              color: hot ? CupertinoColors.systemRed : const Color(0xFF8E8E93),
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(width: 6),
+          Text(
+            text,
+            style: const TextStyle(
+              color: Color(0xFF3A3A3C),
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -18,6 +18,7 @@ class ShortVideoDanmakuOverlay extends StatefulWidget {
     this.speed = 1.0,
     this.areaRatio = 0.7,
     this.enabled = true,
+    this.onTapDanmaku,
   });
 
   final String videoId;
@@ -31,6 +32,7 @@ class ShortVideoDanmakuOverlay extends StatefulWidget {
   final double speed;
   final double areaRatio;
   final bool enabled;
+  final ValueChanged<DanmakuItem>? onTapDanmaku;
 
   @override
   State<ShortVideoDanmakuOverlay> createState() =>
@@ -48,6 +50,8 @@ class _ShortVideoDanmakuOverlayState extends State<ShortVideoDanmakuOverlay>
 
   final List<_DanmakuSeed> _timelineSeeds = <_DanmakuSeed>[];
   final List<_DanmakuRenderEntry> _renderEntries = <_DanmakuRenderEntry>[];
+  final Map<String, _DanmakuFreezeState> _freezeStates =
+      <String, _DanmakuFreezeState>{};
 
   late final AnimationController _ticker;
 
@@ -100,6 +104,7 @@ class _ShortVideoDanmakuOverlayState extends State<ShortVideoDanmakuOverlay>
       _lastLayoutHeight = 0;
       _lastTopInset = 0;
       _lastBottomInset = 0;
+      _freezeStates.clear();
     }
 
     if (!identical(widget.controller, oldWidget.controller)) {
@@ -275,6 +280,7 @@ class _ShortVideoDanmakuOverlayState extends State<ShortVideoDanmakuOverlay>
           emphasize: _shouldEmphasize(item),
           color: _resolveDanmakuColor(item.color),
           sourceSpeedBias: _speedBiasFor(item),
+          item: item,
         ),
       );
     }
@@ -370,6 +376,13 @@ class _ShortVideoDanmakuOverlayState extends State<ShortVideoDanmakuOverlay>
           emphasize: emphasize,
           color: null,
           sourceSpeedBias: null,
+          item: DanmakuItem(
+            atMs: cursorMs,
+            text: text,
+            type: emphasize ? 'highlight' : 'normal',
+            color: '#FFFFFF',
+            priority: emphasize ? 3 : 0,
+          ),
         ),
       );
     }
@@ -467,6 +480,7 @@ class _ShortVideoDanmakuOverlayState extends State<ShortVideoDanmakuOverlay>
       lanesAvailableAtMs[targetTrack] = appearsAtMs + (durationMs * 0.35).round();
       entries.add(
         _DanmakuRenderEntry(
+          id: '${seed.item.atMs}_${seed.item.text}_$targetTrack',
           text: seed.text,
           appearsAtMs: appearsAtMs,
           durationMs: durationMs,
@@ -474,6 +488,7 @@ class _ShortVideoDanmakuOverlayState extends State<ShortVideoDanmakuOverlay>
           track: targetTrack,
           emphasize: seed.emphasize,
           textColor: seed.color,
+          item: seed.item,
         ),
       );
     }
@@ -486,6 +501,73 @@ class _ShortVideoDanmakuOverlayState extends State<ShortVideoDanmakuOverlay>
     _lastTopInset = topInset;
     _lastBottomInset = bottomInset;
     _lastTrackCount = trackCount;
+  }
+
+  void _setDanmakuHovering({
+    required _DanmakuRenderEntry entry,
+    required bool hovering,
+    required int currentMs,
+  }) {
+    final state = _freezeStates.putIfAbsent(entry.id, _DanmakuFreezeState.new);
+    var didChange = false;
+
+    if (hovering) {
+      if (!state.isHovering) {
+        state.isHovering = true;
+        didChange = true;
+      }
+      if (state.freezeStartedAtMs == null) {
+        state.freezeStartedAtMs = currentMs;
+        didChange = true;
+      }
+    } else {
+      if (state.isHovering) {
+        state.isHovering = false;
+        didChange = true;
+      }
+      if (!state.isPinned && state.freezeStartedAtMs != null) {
+        state.accumulatedPausedMs += currentMs - state.freezeStartedAtMs!;
+        state.freezeStartedAtMs = null;
+        didChange = true;
+      }
+    }
+
+    if (didChange && mounted) {
+      setState(() {});
+    }
+  }
+
+  void _toggleDanmakuPinned({
+    required _DanmakuRenderEntry entry,
+    required int currentMs,
+  }) {
+    final state = _freezeStates.putIfAbsent(entry.id, _DanmakuFreezeState.new);
+    if (state.isPinned) {
+      state.isPinned = false;
+      if (!state.isHovering && state.freezeStartedAtMs != null) {
+        state.accumulatedPausedMs += currentMs - state.freezeStartedAtMs!;
+        state.freezeStartedAtMs = null;
+      }
+    } else {
+      state.isPinned = true;
+      state.freezeStartedAtMs ??= currentMs;
+    }
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  int _resolveElapsedMs({
+    required _DanmakuRenderEntry entry,
+    required int currentMs,
+  }) {
+    final state = _freezeStates[entry.id];
+    if (state == null) {
+      return currentMs - entry.appearsAtMs;
+    }
+    final freezeStartedAtMs = state.freezeStartedAtMs;
+    final effectiveCurrentMs = freezeStartedAtMs ?? currentMs;
+    return effectiveCurrentMs - entry.appearsAtMs - state.accumulatedPausedMs;
   }
 
   double _measureTextWidth({
@@ -513,59 +595,78 @@ class _ShortVideoDanmakuOverlayState extends State<ShortVideoDanmakuOverlay>
     final bottomInset = media.padding.bottom;
     final currentMs = _effectivePositionMs();
 
-    return IgnorePointer(
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final width = constraints.maxWidth;
-          final height = constraints.maxHeight;
-          if (width <= 0 || height <= 0) {
-            return const SizedBox.shrink();
-          }
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = constraints.maxWidth;
+        final height = constraints.maxHeight;
+        if (width <= 0 || height <= 0) {
+          return const SizedBox.shrink();
+        }
 
-          _ensureRenderEntries(
-            context: context,
-            width: width,
-            height: height,
-            topInset: topInset,
-            bottomInset: bottomInset,
+        _ensureRenderEntries(
+          context: context,
+          width: width,
+          height: height,
+          topInset: topInset,
+          bottomInset: bottomInset,
+        );
+
+        final trackTop = topInset + _topOffset;
+        final visibleChildren = <Widget>[];
+
+        for (final entry in _renderEntries) {
+          if (currentMs < entry.appearsAtMs) {
+            continue;
+          }
+          final elapsedMs = _resolveElapsedMs(
+            entry: entry,
+            currentMs: currentMs,
           );
-
-          final trackTop = topInset + _topOffset;
-          final visibleChildren = <Widget>[];
-
-          for (final entry in _renderEntries) {
-            if (currentMs < entry.appearsAtMs) {
-              continue;
-            }
-            final elapsedMs = currentMs - entry.appearsAtMs;
-            if (elapsedMs >= entry.durationMs) {
-              continue;
-            }
-
-            final progress = elapsedMs / entry.durationMs;
-            final distance = width + entry.textWidth;
-            final x = width - (distance * progress);
-            final y = trackTop + (entry.track * _trackHeight);
-
-            visibleChildren.add(
-              Positioned(
-                left: x,
-                top: y,
-                child: _DanmakuBubble(
-                  text: entry.text,
-                  emphasize: entry.emphasize,
-                  textColor: entry.textColor,
-                  opacity: widget.opacity,
-                  fontScale: widget.fontScale,
-                  fontWeightValue: widget.fontWeight,
-                ),
-              ),
-            );
+          if (elapsedMs >= entry.durationMs) {
+            continue;
+          }
+          if (elapsedMs < 0) {
+            continue;
           }
 
-          return Stack(children: visibleChildren);
-        },
-      ),
+          final progress = elapsedMs / entry.durationMs;
+          final distance = width + entry.textWidth;
+          final x = width - (distance * progress);
+          final y = trackTop + (entry.track * _trackHeight);
+
+          visibleChildren.add(
+            Positioned(
+              left: x,
+              top: y,
+              child: _DanmakuBubble(
+                text: entry.text,
+                emphasize: entry.emphasize,
+                textColor: entry.textColor,
+                opacity: widget.opacity,
+                fontScale: widget.fontScale,
+                fontWeightValue: widget.fontWeight,
+                isFrozen: (_freezeStates[entry.id]?.isActive ?? false),
+                onHoverChanged: (hovering) {
+                  _setDanmakuHovering(
+                    entry: entry,
+                    hovering: hovering,
+                    currentMs: currentMs,
+                  );
+                },
+                onTap: () {
+                  _toggleDanmakuPinned(
+                    entry: entry,
+                    currentMs: currentMs,
+                  );
+                  widget.onTapDanmaku?.call(entry.item);
+                },
+              ),
+            ),
+          );
+        }
+
+        return Stack(children: visibleChildren);
+      },
     );
   }
 }
@@ -578,6 +679,9 @@ class _DanmakuBubble extends StatelessWidget {
     required this.opacity,
     required this.fontScale,
     required this.fontWeightValue,
+    required this.isFrozen,
+    this.onHoverChanged,
+    this.onTap,
   });
 
   final String text;
@@ -586,6 +690,9 @@ class _DanmakuBubble extends StatelessWidget {
   final double opacity;
   final double fontScale;
   final int fontWeightValue;
+  final bool isFrozen;
+  final ValueChanged<bool>? onHoverChanged;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -596,32 +703,51 @@ class _DanmakuBubble extends StatelessWidget {
         ? const Color(0xB3FF6A85)
         : const Color(0x5CFFFFFF);
 
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: backgroundColor,
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: borderColor, width: 1),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x33000000),
-            blurRadius: 8,
-            offset: Offset(0, 2),
+    return MouseRegion(
+      onEnter: (_) {
+        onHoverChanged?.call(true);
+      },
+      onExit: (_) {
+        onHoverChanged?.call(false);
+      },
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: isFrozen
+                ? backgroundColor.withValues(
+                    alpha: (opacity.clamp(0.2, 1.0) + 0.1).clamp(0.0, 1.0),
+                  )
+                : backgroundColor,
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(
+              color: isFrozen ? const Color(0xFFFFFFFF) : borderColor,
+              width: isFrozen ? 1.2 : 1,
+            ),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x33000000),
+                blurRadius: 8,
+                offset: Offset(0, 2),
+              ),
+            ],
           ),
-        ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-        child: Text(
-          text,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: TextStyle(
-            color: textColor ?? CupertinoColors.white,
-            fontSize: 14 * fontScale.clamp(0.85, 1.4),
-            fontWeight: emphasize || fontWeightValue >= 700
-                ? FontWeight.w700
-                : FontWeight.w600,
-            letterSpacing: 0.1,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            child: Text(
+              text,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: textColor ?? CupertinoColors.white,
+                fontSize: 14 * fontScale.clamp(0.85, 1.4),
+                fontWeight: emphasize || fontWeightValue >= 700
+                    ? FontWeight.w700
+                    : FontWeight.w600,
+                letterSpacing: 0.1,
+              ),
+            ),
           ),
         ),
       ),
@@ -636,6 +762,7 @@ class _DanmakuSeed {
     required this.emphasize,
     this.color,
     this.sourceSpeedBias,
+    required this.item,
   }) : speedBias = sourceSpeedBias ?? ((atMs % 1000) / 1000);
 
   final int atMs;
@@ -643,11 +770,13 @@ class _DanmakuSeed {
   final bool emphasize;
   final Color? color;
   final double? sourceSpeedBias;
+  final DanmakuItem item;
   final double speedBias;
 }
 
 class _DanmakuRenderEntry {
   const _DanmakuRenderEntry({
+    required this.id,
     required this.text,
     required this.appearsAtMs,
     required this.durationMs,
@@ -655,8 +784,10 @@ class _DanmakuRenderEntry {
     required this.track,
     required this.emphasize,
     this.textColor,
+    required this.item,
   });
 
+  final String id;
   final String text;
   final int appearsAtMs;
   final int durationMs;
@@ -664,6 +795,18 @@ class _DanmakuRenderEntry {
   final int track;
   final bool emphasize;
   final Color? textColor;
+  final DanmakuItem item;
+}
+
+class _DanmakuFreezeState {
+  bool isPinned = false;
+  bool isHovering = false;
+  int accumulatedPausedMs = 0;
+  int? freezeStartedAtMs;
+
+  bool get isActive {
+    return isPinned || isHovering;
+  }
 }
 
 bool _isSameDanmakuItems(List<DanmakuItem>? a, List<DanmakuItem>? b) {

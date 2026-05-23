@@ -30,14 +30,17 @@ class OolafMediaKitController implements OolafVideoController {
 
   static const Duration _blackScreenDetectDelay = Duration(seconds: 3);
   static const Duration _blackScreenMinProgress = Duration(milliseconds: 900);
+  static const Duration _bufferingTimeout = Duration(seconds: 15);
 
   StreamSubscription<bool>? _playingSub;
   StreamSubscription<bool>? _bufferingSub;
   StreamSubscription<Duration>? _positionSub;
   StreamSubscription<Duration>? _durationSub;
   StreamSubscription<VideoParams>? _videoParamsSub;
+  StreamSubscription<String>? _errorSub;
 
   Timer? _blackScreenTimer;
+  Timer? _bufferingTimeoutTimer;
   Duration _blackScreenStartPosition = Duration.zero;
   bool _firstFrameRendered = false;
   int _firstFrameMonitorToken = 0;
@@ -165,6 +168,28 @@ class OolafMediaKitController implements OolafVideoController {
     _blackScreenTimer = null;
   }
 
+  void _cancelBufferingTimeoutTimer() {
+    _bufferingTimeoutTimer?.cancel();
+    _bufferingTimeoutTimer = null;
+  }
+
+  void _startBufferingTimeoutIfNeeded() {
+    if (!_isAlive || !_isBuffering.value) {
+      return;
+    }
+    if (_bufferingTimeoutTimer != null) {
+      return;
+    }
+    _bufferingTimeoutTimer = Timer(_bufferingTimeout, () async {
+      if (!_isAlive || !_isBuffering.value) {
+        return;
+      }
+      _bufferingTimeoutTimer = null;
+      _videoOutputStatus.value = OolafVideoOutputStatus.loadTimeout;
+      await _player.pause();
+    });
+  }
+
   void _startBlackScreenDetectionIfNeeded() {
     if (!_isAlive) {
       return;
@@ -187,8 +212,8 @@ class OolafMediaKitController implements OolafVideoController {
       }
       _blackScreenTimer = null;
 
-      final progressed =
-          (_position.value - _blackScreenStartPosition) >= _blackScreenMinProgress;
+      final progressed = (_position.value - _blackScreenStartPosition) >=
+          _blackScreenMinProgress;
       if (!_isPlaying.value || _hasVideoOutput || !progressed) {
         return;
       }
@@ -221,6 +246,11 @@ class OolafMediaKitController implements OolafVideoController {
         return;
       }
       _isBuffering.value = value;
+      if (value) {
+        _startBufferingTimeoutIfNeeded();
+      } else {
+        _cancelBufferingTimeoutTimer();
+      }
     });
     _positionSub = _player.stream.position.listen((value) {
       if (!_isAlive) {
@@ -250,6 +280,13 @@ class OolafMediaKitController implements OolafVideoController {
       _videoOutputStatus.value = OolafVideoOutputStatus.normal;
       _cancelBlackScreenTimer();
     });
+    _errorSub = _player.stream.error.listen((_) {
+      if (!_isAlive) {
+        return;
+      }
+      _cancelBufferingTimeoutTimer();
+      _videoOutputStatus.value = OolafVideoOutputStatus.loadFailed;
+    });
 
     _isInitialized.value = true;
   }
@@ -259,6 +296,7 @@ class OolafMediaKitController implements OolafVideoController {
     if (!_isAlive) {
       return;
     }
+    _cancelBufferingTimeoutTimer();
     _videoOutputStatus.value = OolafVideoOutputStatus.normal;
     _startFirstFrameMonitor();
     await _player.play();
@@ -271,6 +309,7 @@ class OolafMediaKitController implements OolafVideoController {
       return;
     }
     _cancelBlackScreenTimer();
+    _cancelBufferingTimeoutTimer();
     await _player.pause();
   }
 
@@ -322,18 +361,21 @@ class OolafMediaKitController implements OolafVideoController {
     _disposed = true;
     _firstFrameMonitorToken++;
     _cancelBlackScreenTimer();
+    _cancelBufferingTimeoutTimer();
 
     await _playingSub?.cancel();
     await _bufferingSub?.cancel();
     await _positionSub?.cancel();
     await _durationSub?.cancel();
     await _videoParamsSub?.cancel();
+    await _errorSub?.cancel();
 
     _playingSub = null;
     _bufferingSub = null;
     _positionSub = null;
     _durationSub = null;
     _videoParamsSub = null;
+    _errorSub = null;
 
     final dynamic dynamicVideoController = _videoController;
     try {

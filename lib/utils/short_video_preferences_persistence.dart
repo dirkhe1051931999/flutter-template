@@ -5,6 +5,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 class ShortVideoPreferencesSnapshot {
   const ShortVideoPreferencesSnapshot({
     required this.recordWatchHistory,
+    required this.autoPlayOnEnter,
+    required this.rememberPlaybackProgress,
     required this.autoPlayNextVideo,
     required this.playbackRate,
     required this.preloadPagesCount,
@@ -19,6 +21,8 @@ class ShortVideoPreferencesSnapshot {
   });
 
   final bool recordWatchHistory;
+  final bool autoPlayOnEnter;
+  final bool rememberPlaybackProgress;
   final bool autoPlayNextVideo;
   final double playbackRate;
   final int preloadPagesCount;
@@ -39,6 +43,8 @@ class ShortVideoPreferencesPersistence {
 
   static Future<void> save({
     required bool recordWatchHistory,
+    required bool autoPlayOnEnter,
+    required bool rememberPlaybackProgress,
     required bool autoPlayNextVideo,
     required double playbackRate,
     required int preloadPagesCount,
@@ -54,6 +60,8 @@ class ShortVideoPreferencesPersistence {
     final prefs = await SharedPreferences.getInstance();
     final data = <String, dynamic>{
       'recordWatchHistory': recordWatchHistory,
+      'autoPlayOnEnter': autoPlayOnEnter,
+      'rememberPlaybackProgress': rememberPlaybackProgress,
       'autoPlayNextVideo': autoPlayNextVideo,
       'playbackRate': playbackRate,
       'preloadPagesCount': preloadPagesCount,
@@ -82,6 +90,8 @@ class ShortVideoPreferencesPersistence {
         return null;
       }
       final recordRaw = decoded['recordWatchHistory'];
+      final autoPlayOnEnterRaw = decoded['autoPlayOnEnter'];
+      final rememberProgressRaw = decoded['rememberPlaybackProgress'];
       final autoPlayRaw = decoded['autoPlayNextVideo'];
       final playbackRateRaw = decoded['playbackRate'];
       final preloadPagesCountRaw = decoded['preloadPagesCount'];
@@ -95,9 +105,14 @@ class ShortVideoPreferencesPersistence {
       final danmakuAreaRaw = decoded['danmakuArea'];
       return ShortVideoPreferencesSnapshot(
         recordWatchHistory: recordRaw is bool ? recordRaw : true,
+        autoPlayOnEnter:
+            autoPlayOnEnterRaw is bool ? autoPlayOnEnterRaw : true,
+        rememberPlaybackProgress:
+            rememberProgressRaw is bool ? rememberProgressRaw : true,
         autoPlayNextVideo: autoPlayRaw is bool ? autoPlayRaw : true,
         playbackRate: playbackRateRaw is num ? playbackRateRaw.toDouble() : 1.0,
-        preloadPagesCount: preloadPagesCountRaw is int ? preloadPagesCountRaw : 2,
+        preloadPagesCount:
+            preloadPagesCountRaw is int ? preloadPagesCountRaw : 2,
         keepWindow: keepWindowRaw is int ? keepWindowRaw : 1,
         videoFitMode: videoFitModeRaw is String ? videoFitModeRaw : 'cover',
         danmakuEnabled: danmakuEnabledRaw is bool ? danmakuEnabledRaw : true,
@@ -105,7 +120,8 @@ class ShortVideoPreferencesPersistence {
             danmakuOpacityRaw is num ? danmakuOpacityRaw.toDouble() : 0.82,
         danmakuFontScale:
             danmakuFontScaleRaw is num ? danmakuFontScaleRaw.toDouble() : 1.0,
-        danmakuFontWeight: danmakuFontWeightRaw is int ? danmakuFontWeightRaw : 600,
+        danmakuFontWeight:
+            danmakuFontWeightRaw is int ? danmakuFontWeightRaw : 600,
         danmakuSpeed: danmakuSpeedRaw is num ? danmakuSpeedRaw.toDouble() : 1.0,
         danmakuArea: danmakuAreaRaw is num ? danmakuAreaRaw.toDouble() : 0.7,
       );

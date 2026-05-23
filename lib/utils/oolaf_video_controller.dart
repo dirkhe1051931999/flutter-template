@@ -4,6 +4,8 @@ import 'package:flutter/widgets.dart';
 enum OolafVideoOutputStatus {
   normal,
   codecUnsupported,
+  loadFailed,
+  loadTimeout,
 }
 
 abstract class OolafVideoController {

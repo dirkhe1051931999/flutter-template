@@ -2,11 +2,13 @@ import 'package:flutter/widgets.dart';
 import 'package:oolaf_flutted/api/short_video/index.dart';
 import 'package:oolaf_flutted/components/video_top_tabs/index.dart';
 import 'package:oolaf_flutted/pages/video_tabs/recomend_page.dart';
+import 'package:oolaf_flutted/pages/video_tabs/short_video_headline_page.dart';
 
 class VideoTabsRegistry {
   const VideoTabsRegistry._();
 
   static const String recommendTabId = 'recomend';
+  static const String headlineTabId = 'headline_mixed';
 
   static const List<VideoTabChannelMeta> channelMetas = <VideoTabChannelMeta>[
     VideoTabChannelMeta(
@@ -31,7 +33,7 @@ class VideoTabsRegistry {
     ),
     VideoTabChannelMeta(
       id: 'vch_jqgcs',
-      label: '军事观察室',
+      label: '军情观察室',
       request: PhoenixTvChannelRequest(
         channel: 'vch_jqgcs',
         listId: 'VIDEOJQGCS',
@@ -81,7 +83,7 @@ class VideoTabsRegistry {
     ),
     VideoTabChannelMeta(
       id: 'vch_sslld',
-      label: '实事亮亮点',
+      label: '事实亮亮点',
       request: PhoenixTvChannelRequest(
         channel: 'vch_sslld',
         listId: 'VIDEOSSLLD',
@@ -91,13 +93,15 @@ class VideoTabsRegistry {
     ),
   ];
 
+  // 推荐 + 8个频道
   static const int feedTabCount = 9;
 
   static List<String> get defaultChannelOrderIds {
     return channelMetas.map((meta) => meta.id).toList(growable: false);
   }
 
-  static List<VideoTabChannelMeta> resolveChannelOrder(List<String> orderedIds) {
+  static List<VideoTabChannelMeta> resolveChannelOrder(
+      List<String> orderedIds) {
     final byId = <String, VideoTabChannelMeta>{
       for (final meta in channelMetas) meta.id: meta,
     };
@@ -138,6 +142,11 @@ class VideoTabsRegistry {
           initialFeedVisible: true,
         ),
       ),
+      const VideoTopTabItem(
+        id: headlineTabId,
+        label: '头条',
+        page: ShortVideoHeadlinePage(),
+      ),
     ];
 
     for (var i = 0; i < orderedChannels.length; i += 1) {
@@ -156,6 +165,19 @@ class VideoTabsRegistry {
     }
 
     return items;
+  }
+
+  static int? feedKeyIndexOfTabId(String id, List<String> orderedChannelIds) {
+    if (id == recommendTabId) {
+      return 0;
+    }
+    final ordered = resolveChannelOrder(orderedChannelIds);
+    for (var i = 0; i < ordered.length; i += 1) {
+      if (ordered[i].id == id) {
+        return i + 1;
+      }
+    }
+    return null;
   }
 }
 

@@ -4,7 +4,9 @@ import 'package:flutter_redux/flutter_redux.dart';
 import 'package:oolaf_flutted/components/short_video/short_video_bottom_tab_bar.dart';
 import 'package:oolaf_flutted/components/video_top_tabs/index.dart';
 import 'package:oolaf_flutted/pages/video_tabs/index.dart';
+import 'package:oolaf_flutted/pages/video_tabs/short_video_article_history_page.dart';
 import 'package:oolaf_flutted/pages/video_tabs/recomend_page.dart';
+import 'package:oolaf_flutted/pages/video_tabs/short_video_blocked_manage_page.dart';
 import 'package:oolaf_flutted/pages/video_tabs/short_video_channel_manage_page.dart';
 import 'package:oolaf_flutted/pages/video_tabs/short_video_collection_page.dart';
 import 'package:oolaf_flutted/pages/video_tabs/short_video_search_page.dart';
@@ -16,6 +18,7 @@ import 'package:oolaf_flutted/store/short_video/action.dart';
 import 'package:oolaf_flutted/store/short_video/state.dart';
 import 'package:oolaf_flutted/utils/oolaf_audio_player.dart';
 import 'package:oolaf_flutted/utils/short_video_blocked_persistence.dart';
+import 'package:oolaf_flutted/utils/short_video_article_history_persistence.dart';
 import 'package:oolaf_flutted/utils/short_video_collection_persistence.dart';
 import 'package:oolaf_flutted/utils/short_video_playback_progress_persistence.dart';
 import 'package:oolaf_flutted/utils/short_video_watch_history_persistence.dart';
@@ -34,7 +37,8 @@ class ShortVideoPage extends StatefulWidget {
 class _ShortVideoPageState extends State<ShortVideoPage> {
   static const Duration _homeTabDoubleTapGap = Duration(milliseconds: 320);
   static const Duration _topTabLoadDebounceForTap = Duration(milliseconds: 140);
-  static const Duration _topTabLoadDebounceForSwipe = Duration(milliseconds: 260);
+  static const Duration _topTabLoadDebounceForSwipe =
+      Duration(milliseconds: 260);
   static const List<ShortVideoTabItem> _tabItems = <ShortVideoTabItem>[
     ShortVideoTabItem(label: '首页'),
     ShortVideoTabItem(label: '我'),
@@ -48,9 +52,9 @@ class _ShortVideoPageState extends State<ShortVideoPage> {
   List<String> _channelOrderIds = VideoTabsRegistry.defaultChannelOrderIds;
   final List<GlobalKey<VideoTabRecomendPageState>> _feedPageKeys =
       List<GlobalKey<VideoTabRecomendPageState>>.generate(
-        VideoTabsRegistry.feedTabCount,
-        (_) => GlobalKey<VideoTabRecomendPageState>(),
-      );
+    VideoTabsRegistry.feedTabCount,
+    (_) => GlobalKey<VideoTabRecomendPageState>(),
+  );
 
   List<VideoTopTabItem> get _homeTabs {
     return VideoTabsRegistry.buildTabs(
@@ -60,16 +64,29 @@ class _ShortVideoPageState extends State<ShortVideoPage> {
   }
 
   GlobalKey<VideoTabRecomendPageState>? _keyOfTopTab(int index) {
-    if (index < 0 || index >= _feedPageKeys.length) {
+    final tabs = _homeTabs;
+    if (index < 0 || index >= tabs.length) {
       return null;
     }
-    return _feedPageKeys[index];
+    final keyIndex = VideoTabsRegistry.feedKeyIndexOfTabId(
+      tabs[index].id,
+      _channelOrderIds,
+    );
+    if (keyIndex == null || keyIndex < 0 || keyIndex >= _feedPageKeys.length) {
+      return null;
+    }
+    return _feedPageKeys[keyIndex];
   }
 
   void _syncTopTabVisibility({required int activeIndex}) {
-    for (var i = 0; i < _feedPageKeys.length; i += 1) {
+    final tabs = _homeTabs;
+    for (var i = 0; i < tabs.length; i += 1) {
+      final key = _keyOfTopTab(i);
+      if (key == null) {
+        continue;
+      }
       final visible = _activeTabIndex == 0 && i == activeIndex;
-      _feedPageKeys[i].currentState?.onFeedVisibilityChanged(visible);
+      key.currentState?.onFeedVisibilityChanged(visible);
     }
   }
 
@@ -124,7 +141,8 @@ class _ShortVideoPageState extends State<ShortVideoPage> {
     setState(() {
       _channelOrderIds = resolvedIds;
       final newTabs = _homeTabs;
-      final nextIndex = newTabs.indexWhere((item) => item.id == currentActiveId);
+      final nextIndex =
+          newTabs.indexWhere((item) => item.id == currentActiveId);
       _activeHomeTopTabIndex = nextIndex < 0 ? 0 : nextIndex;
     });
 
@@ -211,13 +229,15 @@ class _ShortVideoPageState extends State<ShortVideoPage> {
 
     final store = StoreProvider.of<AppState>(context, listen: false);
     store.dispatch(const OolafSetPlayingAction(false));
-    store.dispatch(const OolafSetPlaybackStateAction(OolafPlaybackState.paused));
+    store
+        .dispatch(const OolafSetPlaybackStateAction(OolafPlaybackState.paused));
   }
 
   Future<void> _exitToHomeHack() async {
     final popped = await Navigator.of(context).maybePop();
     if (!popped && mounted) {
-      Navigator.of(context, rootNavigator: true).popUntil((route) => route.isFirst);
+      Navigator.of(context, rootNavigator: true)
+          .popUntil((route) => route.isFirst);
     }
   }
 
@@ -225,8 +245,7 @@ class _ShortVideoPageState extends State<ShortVideoPage> {
     if (_activeTabIndex == index) {
       if (index == 0) {
         final now = DateTime.now();
-        final isDoubleTap =
-            _lastHomeTabTapAt != null &&
+        final isDoubleTap = _lastHomeTabTapAt != null &&
             now.difference(_lastHomeTabTapAt!) <= _homeTabDoubleTapGap;
         _lastHomeTabTapAt = now;
         if (isDoubleTap) {
@@ -260,6 +279,8 @@ class _ShortVideoPageState extends State<ShortVideoPage> {
     store.dispatch(
       ShortVideoRestorePreferencesAction(
         recordWatchHistory: snapshot.recordWatchHistory,
+        autoPlayOnEnter: snapshot.autoPlayOnEnter,
+        rememberPlaybackProgress: snapshot.rememberPlaybackProgress,
         autoPlayNextVideo: snapshot.autoPlayNextVideo,
         playbackRate: snapshot.playbackRate,
         preloadPagesCount: snapshot.preloadPagesCount,
@@ -352,6 +373,7 @@ class _ShortVideoProfilePageState extends State<_ShortVideoProfilePage> {
 
   Future<void> _clearShortVideoCache() async {
     await ShortVideoWatchHistoryPersistence.clearAll();
+    await ShortVideoArticleHistoryPersistence.clearAll();
     await ShortVideoCollectionPersistence.favorites.clearAll();
     await ShortVideoCollectionPersistence.watchLater.clearAll();
     await ShortVideoBlockedPersistence.clearAll();
@@ -368,7 +390,7 @@ class _ShortVideoProfilePageState extends State<_ShortVideoProfilePage> {
       builder: (context) {
         return CupertinoAlertDialog(
           title: const Text('清理完成'),
-          content: const Text('本地缓存、收藏、稍后再看、历史记录与搜索历史已清空。'),
+          content: const Text('本地缓存、收藏、稍后再看、视频/文章历史记录与搜索历史已清空。'),
           actions: [
             CupertinoDialogAction(
               onPressed: () {
@@ -504,6 +526,18 @@ class _ShortVideoProfilePageState extends State<_ShortVideoProfilePage> {
                       },
                     ),
                     CupertinoListTile(
+                      title: const Text('文章查看历史'),
+                      leading: const Icon(CupertinoIcons.doc_text),
+                      trailing: const CupertinoListTileChevron(),
+                      onTap: () {
+                        Navigator.of(context).push(
+                          CupertinoPageRoute<void>(
+                            builder: (_) => const ShortVideoArticleHistoryPage(),
+                          ),
+                        );
+                      },
+                    ),
+                    CupertinoListTile(
                       title: const Text('我的喜欢'),
                       leading: const Icon(CupertinoIcons.heart_fill),
                       trailing: const CupertinoListTileChevron(),
@@ -513,7 +547,8 @@ class _ShortVideoProfilePageState extends State<_ShortVideoProfilePage> {
                             builder: (_) => const ShortVideoCollectionPage(
                               title: '我的喜欢',
                               emptyText: '暂无喜欢的视频',
-                              persistence: ShortVideoCollectionPersistence.favorites,
+                              persistence:
+                                  ShortVideoCollectionPersistence.favorites,
                             ),
                           ),
                         );
@@ -521,7 +556,8 @@ class _ShortVideoProfilePageState extends State<_ShortVideoProfilePage> {
                     ),
                     CupertinoListTile(
                       title: const Text('离线缓存'),
-                      leading: const Icon(CupertinoIcons.arrow_down_circle_fill),
+                      leading:
+                          const Icon(CupertinoIcons.arrow_down_circle_fill),
                       trailing: const CupertinoListTileChevron(),
                       onTap: () {
                         Navigator.of(context).push(
@@ -541,8 +577,21 @@ class _ShortVideoProfilePageState extends State<_ShortVideoProfilePage> {
                             builder: (_) => const ShortVideoCollectionPage(
                               title: '稍后再看',
                               emptyText: '暂无稍后观看的视频',
-                              persistence: ShortVideoCollectionPersistence.watchLater,
+                              persistence:
+                                  ShortVideoCollectionPersistence.watchLater,
                             ),
+                          ),
+                        );
+                      },
+                    ),
+                    CupertinoListTile(
+                      title: const Text('屏蔽管理'),
+                      leading: const Icon(CupertinoIcons.eye_slash_fill),
+                      trailing: const CupertinoListTileChevron(),
+                      onTap: () {
+                        Navigator.of(context).push(
+                          CupertinoPageRoute<void>(
+                            builder: (_) => const ShortVideoBlockedManagePage(),
                           ),
                         );
                       },
@@ -573,7 +622,8 @@ class _ShortVideoSettingsPage extends StatefulWidget {
   const _ShortVideoSettingsPage();
 
   @override
-  State<_ShortVideoSettingsPage> createState() => _ShortVideoSettingsPageState();
+  State<_ShortVideoSettingsPage> createState() =>
+      _ShortVideoSettingsPageState();
 }
 
 class _ShortVideoSettingsPageState extends State<_ShortVideoSettingsPage> {
@@ -584,6 +634,8 @@ class _ShortVideoSettingsPageState extends State<_ShortVideoSettingsPage> {
     final latest = store.state.shortVideo;
     await ShortVideoPreferencesPersistence.save(
       recordWatchHistory: latest.recordWatchHistory,
+      autoPlayOnEnter: latest.autoPlayOnEnter,
+      rememberPlaybackProgress: latest.rememberPlaybackProgress,
       autoPlayNextVideo: latest.autoPlayNextVideo,
       playbackRate: latest.playbackRate,
       preloadPagesCount: latest.preloadPagesCount,
@@ -604,6 +656,18 @@ class _ShortVideoSettingsPageState extends State<_ShortVideoSettingsPage> {
     await _saveLatestPreferences();
   }
 
+  Future<void> _setAutoPlayOnEnter(bool value) async {
+    final store = StoreProvider.of<AppState>(context, listen: false);
+    store.dispatch(ShortVideoSetAutoPlayOnEnterAction(value));
+    await _saveLatestPreferences();
+  }
+
+  Future<void> _setRememberPlaybackProgress(bool value) async {
+    final store = StoreProvider.of<AppState>(context, listen: false);
+    store.dispatch(ShortVideoSetRememberPlaybackProgressAction(value));
+    await _saveLatestPreferences();
+  }
+
   Future<void> _setAutoPlayNextVideo(bool value) async {
     final store = StoreProvider.of<AppState>(context, listen: false);
     store.dispatch(ShortVideoSetAutoPlayNextVideoAction(value));
@@ -616,7 +680,8 @@ class _ShortVideoSettingsPageState extends State<_ShortVideoSettingsPage> {
     await _saveLatestPreferences();
   }
 
-  Future<void> _setPreloadStrategy(int preloadPagesCount, int keepWindow) async {
+  Future<void> _setPreloadStrategy(
+      int preloadPagesCount, int keepWindow) async {
     final store = StoreProvider.of<AppState>(context, listen: false);
     store.dispatch(
       ShortVideoSetPreloadStrategyAction(
@@ -777,6 +842,20 @@ class _ShortVideoSettingsPageState extends State<_ShortVideoSettingsPage> {
                       ),
                     ),
                     CupertinoListTile(
+                      title: const Text('进入首页自动播放'),
+                      trailing: CupertinoSwitch(
+                        value: shortVideoState.autoPlayOnEnter,
+                        onChanged: _setAutoPlayOnEnter,
+                      ),
+                    ),
+                    CupertinoListTile(
+                      title: const Text('记住播放进度'),
+                      trailing: CupertinoSwitch(
+                        value: shortVideoState.rememberPlaybackProgress,
+                        onChanged: _setRememberPlaybackProgress,
+                      ),
+                    ),
+                    CupertinoListTile(
                       title: const Text('播完自动播放下一个视频'),
                       trailing: CupertinoSwitch(
                         value: shortVideoState.autoPlayNextVideo,
@@ -785,8 +864,8 @@ class _ShortVideoSettingsPageState extends State<_ShortVideoSettingsPage> {
                     ),
                     CupertinoListTile(
                       title: const Text('默认播放速度'),
-                      additionalInfo:
-                          Text('${shortVideoState.playbackRate.toStringAsFixed(2)}x'),
+                      additionalInfo: Text(
+                          '${shortVideoState.playbackRate.toStringAsFixed(2)}x'),
                       trailing: SizedBox(
                         width: 130,
                         child: CupertinoSlidingSegmentedControl<double>(
@@ -794,8 +873,8 @@ class _ShortVideoSettingsPageState extends State<_ShortVideoSettingsPage> {
                           children: {
                             for (final speed in _speedOptions)
                               speed: Padding(
-                                padding:
-                                    const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 6, vertical: 4),
                                 child: Text('${speed.toStringAsFixed(2)}x'),
                               ),
                           },
@@ -825,15 +904,18 @@ class _ShortVideoSettingsPageState extends State<_ShortVideoSettingsPage> {
                           },
                           children: const {
                             0: Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 4),
                               child: Text('省流'),
                             ),
                             1: Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 4),
                               child: Text('平衡'),
                             ),
                             2: Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 4),
                               child: Text('流畅'),
                             ),
                           },
@@ -863,11 +945,13 @@ class _ShortVideoSettingsPageState extends State<_ShortVideoSettingsPage> {
                           groupValue: shortVideoState.videoFitMode,
                           children: const {
                             'cover': Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 4),
                               child: Text('填充'),
                             ),
                             'contain': Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 4),
                               child: Text('完整'),
                             ),
                           },
@@ -880,7 +964,7 @@ class _ShortVideoSettingsPageState extends State<_ShortVideoSettingsPage> {
                         ),
                       ),
                     ),
-                    ],
+                  ],
                 ),
                 CupertinoListSection(
                   margin: const EdgeInsets.only(top: 12),
@@ -910,20 +994,25 @@ class _ShortVideoSettingsPageState extends State<_ShortVideoSettingsPage> {
                       CupertinoListTile(
                         title: const Text('弹幕粗细'),
                         additionalInfo: Text(
-                          shortVideoState.danmakuFontWeight >= 700 ? '加粗' : '常规',
+                          shortVideoState.danmakuFontWeight >= 700
+                              ? '加粗'
+                              : '常规',
                         ),
                         trailing: SizedBox(
                           width: 156,
                           child: CupertinoSlidingSegmentedControl<int>(
-                            groupValue:
-                                shortVideoState.danmakuFontWeight >= 700 ? 700 : 600,
+                            groupValue: shortVideoState.danmakuFontWeight >= 700
+                                ? 700
+                                : 600,
                             children: const {
                               600: Padding(
-                                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                padding: EdgeInsets.symmetric(
+                                    horizontal: 8, vertical: 4),
                                 child: Text('常规'),
                               ),
                               700: Padding(
-                                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                padding: EdgeInsets.symmetric(
+                                    horizontal: 8, vertical: 4),
                                 child: Text('加粗'),
                               ),
                             },
@@ -938,7 +1027,8 @@ class _ShortVideoSettingsPageState extends State<_ShortVideoSettingsPage> {
                       ),
                       _buildDanmakuSliderCard(
                         title: '弹幕透明度',
-                        valueText: '${(shortVideoState.danmakuOpacity * 100).round()}%',
+                        valueText:
+                            '${(shortVideoState.danmakuOpacity * 100).round()}%',
                         value: shortVideoState.danmakuOpacity,
                         min: 0.2,
                         max: 1.0,
@@ -947,7 +1037,8 @@ class _ShortVideoSettingsPageState extends State<_ShortVideoSettingsPage> {
                       ),
                       _buildDanmakuSliderCard(
                         title: '弹幕字号',
-                        valueText: '${shortVideoState.danmakuFontScale.toStringAsFixed(2)}x',
+                        valueText:
+                            '${shortVideoState.danmakuFontScale.toStringAsFixed(2)}x',
                         value: shortVideoState.danmakuFontScale,
                         min: 0.85,
                         max: 1.4,
@@ -964,7 +1055,8 @@ class _ShortVideoSettingsPageState extends State<_ShortVideoSettingsPage> {
                     children: [
                       _buildDanmakuSliderCard(
                         title: '弹幕速度',
-                        valueText: '${shortVideoState.danmakuSpeed.toStringAsFixed(2)}x',
+                        valueText:
+                            '${shortVideoState.danmakuSpeed.toStringAsFixed(2)}x',
                         value: shortVideoState.danmakuSpeed,
                         min: 0.75,
                         max: 1.5,
@@ -973,7 +1065,8 @@ class _ShortVideoSettingsPageState extends State<_ShortVideoSettingsPage> {
                       ),
                       _buildDanmakuSliderCard(
                         title: '弹幕显示区域',
-                        valueText: '${(shortVideoState.danmakuArea * 100).round()}%',
+                        valueText:
+                            '${(shortVideoState.danmakuArea * 100).round()}%',
                         value: shortVideoState.danmakuArea,
                         min: 0.35,
                         max: 1.0,

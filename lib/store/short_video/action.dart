@@ -25,6 +25,20 @@ class ShortVideoSetRecordWatchHistoryAction extends AppAction {
   final bool recordWatchHistory;
 }
 
+class ShortVideoSetAutoPlayOnEnterAction extends AppAction {
+  const ShortVideoSetAutoPlayOnEnterAction(this.autoPlayOnEnter);
+
+  final bool autoPlayOnEnter;
+}
+
+class ShortVideoSetRememberPlaybackProgressAction extends AppAction {
+  const ShortVideoSetRememberPlaybackProgressAction(
+    this.rememberPlaybackProgress,
+  );
+
+  final bool rememberPlaybackProgress;
+}
+
 class ShortVideoSetAutoPlayNextVideoAction extends AppAction {
   const ShortVideoSetAutoPlayNextVideoAction(this.autoPlayNextVideo);
 
@@ -85,6 +99,8 @@ class ShortVideoSetDanmakuAreaAction extends AppAction {
 class ShortVideoRestorePreferencesAction extends AppAction {
   const ShortVideoRestorePreferencesAction({
     required this.recordWatchHistory,
+    required this.autoPlayOnEnter,
+    required this.rememberPlaybackProgress,
     required this.autoPlayNextVideo,
     required this.playbackRate,
     required this.preloadPagesCount,
@@ -99,6 +115,8 @@ class ShortVideoRestorePreferencesAction extends AppAction {
   });
 
   final bool recordWatchHistory;
+  final bool autoPlayOnEnter;
+  final bool rememberPlaybackProgress;
   final bool autoPlayNextVideo;
   final double playbackRate;
   final int preloadPagesCount;

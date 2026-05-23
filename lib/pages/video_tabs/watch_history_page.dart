@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:oolaf_flutted/pages/video_tabs/watch_history_play_page.dart';
+import 'package:oolaf_flutted/utils/short_video_playback_progress_persistence.dart';
 import 'package:oolaf_flutted/utils/short_video_watch_history_persistence.dart';
 
 class ShortVideoWatchHistoryPage extends StatefulWidget {
@@ -10,7 +11,8 @@ class ShortVideoWatchHistoryPage extends StatefulWidget {
       _ShortVideoWatchHistoryPageState();
 }
 
-class _ShortVideoWatchHistoryPageState extends State<ShortVideoWatchHistoryPage> {
+class _ShortVideoWatchHistoryPageState
+    extends State<ShortVideoWatchHistoryPage> {
   static const int _gridCrossAxisCount = 3;
   static const double _gridGap = 4;
 
@@ -18,6 +20,8 @@ class _ShortVideoWatchHistoryPageState extends State<ShortVideoWatchHistoryPage>
   String _searchKeyword = '';
   List<ShortVideoWatchHistorySection> _sections =
       const <ShortVideoWatchHistorySection>[];
+  Map<String, ShortVideoPlaybackProgressEntry> _progressByVideoId =
+      const <String, ShortVideoPlaybackProgressEntry>{};
 
   @override
   void initState() {
@@ -27,13 +31,27 @@ class _ShortVideoWatchHistoryPageState extends State<ShortVideoWatchHistoryPage>
 
   Future<void> _loadHistory() async {
     final entries = await ShortVideoWatchHistoryPersistence.loadAll();
+    final progressByVideoId =
+        await ShortVideoPlaybackProgressPersistence.loadAll();
     final sections = _buildSections(entries);
     if (!mounted) {
       return;
     }
     setState(() {
       _sections = sections;
+      _progressByVideoId = progressByVideoId;
       _isLoading = false;
+    });
+  }
+
+  Future<void> _refreshProgress() async {
+    final progressByVideoId =
+        await ShortVideoPlaybackProgressPersistence.loadAll();
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _progressByVideoId = progressByVideoId;
     });
   }
 
@@ -43,7 +61,7 @@ class _ShortVideoWatchHistoryPageState extends State<ShortVideoWatchHistoryPage>
         .toList(growable: false);
   }
 
-  void _openHistoryPlayPage(ShortVideoWatchHistoryEntry entry) {
+  Future<void> _openHistoryPlayPage(ShortVideoWatchHistoryEntry entry) async {
     final entries = _flattenEntries();
     if (entries.isEmpty) {
       return;
@@ -56,7 +74,7 @@ class _ShortVideoWatchHistoryPageState extends State<ShortVideoWatchHistoryPage>
       return;
     }
 
-    Navigator.of(context).push(
+    await Navigator.of(context).push(
       CupertinoPageRoute<void>(
         builder: (context) {
           return ShortVideoWatchHistoryPlayPage(
@@ -66,6 +84,7 @@ class _ShortVideoWatchHistoryPageState extends State<ShortVideoWatchHistoryPage>
         },
       ),
     );
+    await _refreshProgress();
   }
 
   List<ShortVideoWatchHistorySection> _buildSections(
@@ -75,15 +94,18 @@ class _ShortVideoWatchHistoryPageState extends State<ShortVideoWatchHistoryPage>
 
     for (final entry in entries) {
       final dateKey = _formatDate(entry.watchedAt);
-      final list = map.putIfAbsent(dateKey, () => <ShortVideoWatchHistoryEntry>[]);
+      final list =
+          map.putIfAbsent(dateKey, () => <ShortVideoWatchHistoryEntry>[]);
       list.add(entry);
     }
 
     return map.entries
         .map(
-          (e) => ShortVideoWatchHistorySection(
-            dateLabel: e.key,
-            entries: List<ShortVideoWatchHistoryEntry>.unmodifiable(e.value),
+          (entry) => ShortVideoWatchHistorySection(
+            dateLabel: entry.key,
+            entries: List<ShortVideoWatchHistoryEntry>.unmodifiable(
+              entry.value,
+            ),
           ),
         )
         .toList(growable: false);
@@ -122,12 +144,10 @@ class _ShortVideoWatchHistoryPageState extends State<ShortVideoWatchHistoryPage>
 
     return _sections
         .map((section) {
-          final entries = section.entries
-              .where((entry) {
-                return entry.title.contains(keyword) ||
-                    (entry.source?.contains(keyword) ?? false);
-              })
-              .toList(growable: false);
+          final entries = section.entries.where((entry) {
+            return entry.title.contains(keyword) ||
+                (entry.source?.contains(keyword) ?? false);
+          }).toList(growable: false);
           return ShortVideoWatchHistorySection(
             dateLabel: section.dateLabel,
             entries: entries,
@@ -180,8 +200,12 @@ class _ShortVideoWatchHistoryPageState extends State<ShortVideoWatchHistoryPage>
                     child: visibleSections.isEmpty
                         ? Center(
                             child: Text(
-                              _searchKeyword.trim().isEmpty ? '暂无观看历史' : '没有匹配结果',
-                              style: const TextStyle(color: Color(0xFF8E8E93)),
+                              _searchKeyword.trim().isEmpty
+                                  ? '暂无观看历史'
+                                  : '没有匹配结果',
+                              style: const TextStyle(
+                                color: Color(0xFF8E8E93),
+                              ),
                             ),
                           )
                         : CustomScrollView(
@@ -191,19 +215,28 @@ class _ShortVideoWatchHistoryPageState extends State<ShortVideoWatchHistoryPage>
                                   slivers: [
                                     SliverPersistentHeader(
                                       pinned: true,
-                                      delegate: _ShortVideoHistoryHeaderDelegate(
+                                      delegate:
+                                          _ShortVideoHistoryHeaderDelegate(
                                         height: 30,
                                         label: section.dateLabel,
                                       ),
                                     ),
                                     SliverPadding(
-                                      padding: const EdgeInsets.fromLTRB(4, 0, 4, 10),
+                                      padding: const EdgeInsets.fromLTRB(
+                                        4,
+                                        0,
+                                        4,
+                                        10,
+                                      ),
                                       sliver: SliverGrid(
                                         delegate: SliverChildBuilderDelegate(
                                           (context, index) {
-                                            final entry = section.entries[index];
+                                            final entry =
+                                                section.entries[index];
                                             return _HistoryGridItem(
                                               entry: entry,
+                                              progress: _progressByVideoId[
+                                                  entry.videoId],
                                               onTap: () {
                                                 _openHistoryPlayPage(entry);
                                               },
@@ -238,11 +271,13 @@ class _ShortVideoWatchHistoryPageState extends State<ShortVideoWatchHistoryPage>
 class _HistoryGridItem extends StatelessWidget {
   const _HistoryGridItem({
     required this.entry,
+    required this.progress,
     required this.onTap,
     required this.onLongPress,
   });
 
   final ShortVideoWatchHistoryEntry entry;
+  final ShortVideoPlaybackProgressEntry? progress;
   final VoidCallback onTap;
   final VoidCallback onLongPress;
 
@@ -263,24 +298,33 @@ class _HistoryGridItem extends StatelessWidget {
           children: [
             Expanded(
               child: ClipRRect(
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(6)),
-                child: Image.network(
-                  entry.coverUrl,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) {
-                    return const ColoredBox(
-                      color: Color(0xFFE5E5EA),
-                      child: Center(
-                        child: Icon(
-                          CupertinoIcons.exclamationmark_triangle,
-                          color: Color(0xFF8E8E93),
-                        ),
-                      ),
-                    );
-                  },
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(6),
+                ),
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    Image.network(
+                      entry.coverUrl,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) {
+                        return const ColoredBox(
+                          color: Color(0xFFE5E5EA),
+                          child: Center(
+                            child: Icon(
+                              CupertinoIcons.exclamationmark_triangle,
+                              color: Color(0xFF8E8E93),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                    ShortVideoListProgressBadge(progress: progress),
+                  ],
                 ),
               ),
             ),
+            ShortVideoListProgressStrip(progress: progress),
             Padding(
               padding: const EdgeInsets.fromLTRB(6, 6, 6, 2),
               child: Text(
@@ -313,6 +357,80 @@ class _HistoryGridItem extends StatelessWidget {
   }
 }
 
+double shortVideoListProgressRatio(
+  ShortVideoPlaybackProgressEntry? progress,
+) {
+  if (progress == null || progress.durationMillis <= 0) {
+    return 0;
+  }
+  return (progress.positionMillis / progress.durationMillis).clamp(0.0, 1.0);
+}
+
+class ShortVideoListProgressBadge extends StatelessWidget {
+  const ShortVideoListProgressBadge({super.key, required this.progress});
+
+  final ShortVideoPlaybackProgressEntry? progress;
+
+  @override
+  Widget build(BuildContext context) {
+    final ratio = shortVideoListProgressRatio(progress);
+    if (ratio <= 0) {
+      return const SizedBox.shrink();
+    }
+
+    return Positioned(
+      left: 6,
+      bottom: 6,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: const Color(0xB3000000),
+          borderRadius: BorderRadius.circular(4),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+          child: Text(
+            '已看 ${(ratio * 100).round()}%',
+            style: const TextStyle(
+              color: CupertinoColors.white,
+              fontSize: 10,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class ShortVideoListProgressStrip extends StatelessWidget {
+  const ShortVideoListProgressStrip({super.key, required this.progress});
+
+  final ShortVideoPlaybackProgressEntry? progress;
+
+  @override
+  Widget build(BuildContext context) {
+    final ratio = shortVideoListProgressRatio(progress);
+    if (ratio <= 0) {
+      return const SizedBox(height: 3);
+    }
+
+    return SizedBox(
+      height: 3,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          const ColoredBox(color: Color(0xFFE5E5EA)),
+          FractionallySizedBox(
+            widthFactor: ratio,
+            alignment: Alignment.centerLeft,
+            child: const ColoredBox(color: CupertinoColors.activeBlue),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _ShortVideoHistoryHeaderDelegate extends SliverPersistentHeaderDelegate {
   const _ShortVideoHistoryHeaderDelegate({
     required this.height,
@@ -337,7 +455,8 @@ class _ShortVideoHistoryHeaderDelegate extends SliverPersistentHeaderDelegate {
     return Container(
       alignment: Alignment.centerLeft,
       padding: const EdgeInsets.symmetric(horizontal: 8),
-      color: overlapsContent ? const Color(0xFFF0F1F3) : const Color(0xFFF4F5F7),
+      color:
+          overlapsContent ? const Color(0xFFF0F1F3) : const Color(0xFFF4F5F7),
       child: Text(
         label,
         style: const TextStyle(

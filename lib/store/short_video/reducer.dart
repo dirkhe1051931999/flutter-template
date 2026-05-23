@@ -31,6 +31,22 @@ AppState shortVideoReducer(AppState state, AppAction action) {
     );
   }
 
+  if (action is ShortVideoSetAutoPlayOnEnterAction) {
+    return state.copyWith(
+      shortVideo: current.copyWith(
+        autoPlayOnEnter: action.autoPlayOnEnter,
+      ),
+    );
+  }
+
+  if (action is ShortVideoSetRememberPlaybackProgressAction) {
+    return state.copyWith(
+      shortVideo: current.copyWith(
+        rememberPlaybackProgress: action.rememberPlaybackProgress,
+      ),
+    );
+  }
+
   if (action is ShortVideoSetAutoPlayNextVideoAction) {
     return state.copyWith(
       shortVideo: current.copyWith(
@@ -116,6 +132,8 @@ AppState shortVideoReducer(AppState state, AppAction action) {
     return state.copyWith(
       shortVideo: current.copyWith(
         recordWatchHistory: action.recordWatchHistory,
+        autoPlayOnEnter: action.autoPlayOnEnter,
+        rememberPlaybackProgress: action.rememberPlaybackProgress,
         autoPlayNextVideo: action.autoPlayNextVideo,
         playbackRate: action.playbackRate,
         preloadPagesCount: action.preloadPagesCount,

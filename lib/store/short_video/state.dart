@@ -2,6 +2,7 @@ class ShortVideoItem {
   const ShortVideoItem({
     required this.id,
     this.source,
+    this.avatarUrl,
     required this.title,
     this.updateTime,
     required this.videoUrl,
@@ -10,6 +11,7 @@ class ShortVideoItem {
 
   final String id;
   final String? source;
+  final String? avatarUrl;
   final String title;
   final String? updateTime;
   final String videoUrl;
@@ -22,6 +24,8 @@ class ShortVideoState {
     required this.items,
     required this.activeIndex,
     required this.recordWatchHistory,
+    required this.autoPlayOnEnter,
+    required this.rememberPlaybackProgress,
     required this.autoPlayNextVideo,
     required this.playbackRate,
     required this.preloadPagesCount,
@@ -39,6 +43,8 @@ class ShortVideoState {
   final List<ShortVideoItem> items;
   final int activeIndex;
   final bool recordWatchHistory;
+  final bool autoPlayOnEnter;
+  final bool rememberPlaybackProgress;
   final bool autoPlayNextVideo;
   final double playbackRate;
   final int preloadPagesCount;
@@ -57,6 +63,8 @@ class ShortVideoState {
       items: <ShortVideoItem>[],
       activeIndex: 0,
       recordWatchHistory: true,
+      autoPlayOnEnter: true,
+      rememberPlaybackProgress: true,
       autoPlayNextVideo: true,
       playbackRate: 1.0,
       preloadPagesCount: 2,
@@ -76,6 +84,8 @@ class ShortVideoState {
     List<ShortVideoItem>? items,
     int? activeIndex,
     bool? recordWatchHistory,
+    bool? autoPlayOnEnter,
+    bool? rememberPlaybackProgress,
     bool? autoPlayNextVideo,
     double? playbackRate,
     int? preloadPagesCount,
@@ -93,6 +103,9 @@ class ShortVideoState {
       items: items ?? this.items,
       activeIndex: activeIndex ?? this.activeIndex,
       recordWatchHistory: recordWatchHistory ?? this.recordWatchHistory,
+      autoPlayOnEnter: autoPlayOnEnter ?? this.autoPlayOnEnter,
+      rememberPlaybackProgress:
+          rememberPlaybackProgress ?? this.rememberPlaybackProgress,
       autoPlayNextVideo: autoPlayNextVideo ?? this.autoPlayNextVideo,
       playbackRate: playbackRate ?? this.playbackRate,
       preloadPagesCount: preloadPagesCount ?? this.preloadPagesCount,

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_redux/flutter_redux.dart';
@@ -7,9 +9,11 @@ import 'package:oolaf_flutted/components/short_video/short_video_player_wrapper.
 import 'package:oolaf_flutted/router/route_observer.dart';
 import 'package:oolaf_flutted/store/index.dart';
 import 'package:oolaf_flutted/store/short_video/state.dart';
+import 'package:oolaf_flutted/utils/short_video_blocked_persistence.dart';
 import 'package:oolaf_flutted/utils/short_video_watch_history_persistence.dart';
 import 'package:oolaf_flutted/utils/short_video_collection_persistence.dart';
-import 'package:oolaf_flutted/utils/short_video_playback_progress_persistence.dart';
+import 'package:oolaf_flutted/utils/short_video_playback_coordinator.dart';
+import 'package:oolaf_flutted/utils/short_video_progress_tracker.dart';
 import 'package:oolaf_flutted/utils/short_video_offline_cache_persistence.dart';
 import 'package:oolaf_flutted/utils/oolaf_video_controller.dart';
 import 'package:oolaf_flutted/utils/video_manager.dart';
@@ -37,7 +41,9 @@ class _ShortVideoWatchHistoryPlayPageState
   static const String _controllerIdPrefix = 'short_video_watch_history:';
 
   final PreloadPageController _pageController = PreloadPageController();
-  final VideoManager _videoManager = VideoManager.instance;
+  final VideoManager _videoManager = VideoManager();
+  final ShortVideoPlaybackCoordinator _playbackCoordinator =
+      ShortVideoPlaybackCoordinator.instance;
 
   late final List<ShortVideoWatchHistoryEntry> _entries;
   late int _activeIndex;
@@ -45,17 +51,22 @@ class _ShortVideoWatchHistoryPlayPageState
   bool _isAppActive = true;
   bool _resumeAfterInterruption = false;
   Set<String> _favoriteVideoIds = const <String>{};
-  int _lastProgressPersistAtMillis = 0;
+  final ShortVideoProgressTracker _progressTracker =
+      ShortVideoProgressTracker();
+  double _currentPlaybackRate = 1.0;
+  double? _avatarLongPressRestoreRate;
+  bool _isProgressInteracting = false;
 
   OolafVideoController? _activeStatusObservedController;
   VoidCallback? _activeStatusListener;
-  bool _isAutoSkippingUnsupported = false;
-
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _videoManager.acquire(_videoManagerScope);
+    _playbackCoordinator.register(
+      scope: _videoManagerScope,
+      manager: _videoManager,
+    );
     _loadFavoriteState();
 
     _entries = List<ShortVideoWatchHistoryEntry>.unmodifiable(widget.entries);
@@ -81,6 +92,10 @@ class _ShortVideoWatchHistoryPlayPageState
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    _currentPlaybackRate = StoreProvider.of<AppState>(context, listen: false)
+        .state
+        .shortVideo
+        .playbackRate;
     final route = ModalRoute.of(context);
     if (route is PageRoute) {
       appRouteObserver.subscribe(this, route);
@@ -93,8 +108,9 @@ class _ShortVideoWatchHistoryPlayPageState
     appRouteObserver.unsubscribe(this);
     WidgetsBinding.instance.removeObserver(this);
     _pageController.dispose();
-    _stopHistoryPlayback();
-    _videoManager.release(_videoManagerScope);
+    unawaited(_stopHistoryPlayback());
+    _playbackCoordinator.unregister(_videoManagerScope);
+    unawaited(_videoManager.disposeManager());
     super.dispose();
   }
 
@@ -114,14 +130,42 @@ class _ShortVideoWatchHistoryPlayPageState
       return;
     }
     await controller.setPlaybackRate(rate);
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _currentPlaybackRate = rate;
+    });
+  }
+
+  Future<void> _handleAvatarLongPressStart() async {
+    _avatarLongPressRestoreRate = _currentPlaybackRate;
+    if (_currentPlaybackRate >= 1.99) {
+      return;
+    }
+    await _setPlaybackRate(2.0);
+  }
+
+  Future<void> _handleAvatarLongPressEnd() async {
+    final restoreRate = _avatarLongPressRestoreRate;
+    _avatarLongPressRestoreRate = null;
+    if (restoreRate == null) {
+      return;
+    }
+    if ((restoreRate - _currentPlaybackRate).abs() < 0.001) {
+      return;
+    }
+    await _setPlaybackRate(restoreRate);
   }
 
   Future<void> _stopHistoryPlayback() async {
     _resumeAfterInterruption = false;
+    await _playbackCoordinator.pause(_videoManagerScope);
     await _disposeHistoryControllers();
   }
 
-  ShortVideoCollectionEntry _collectionEntryOf(ShortVideoWatchHistoryEntry entry) {
+  ShortVideoCollectionEntry _collectionEntryOf(
+      ShortVideoWatchHistoryEntry entry) {
     return ShortVideoCollectionEntry(
       videoId: entry.videoId,
       title: entry.title,
@@ -154,13 +198,22 @@ class _ShortVideoWatchHistoryPlayPageState
   }
 
   Future<void> _saveWatchLater(ShortVideoWatchHistoryEntry entry) async {
-    await ShortVideoCollectionPersistence.watchLater.save(_collectionEntryOf(entry));
+    await ShortVideoCollectionPersistence.watchLater
+        .save(_collectionEntryOf(entry));
   }
 
   Future<void> _copyShareText(ShortVideoWatchHistoryEntry entry) async {
     await Clipboard.setData(
       ClipboardData(text: '${entry.title}\n${entry.videoUrl}'),
     );
+  }
+
+  Future<void> _markNotInterested(
+    ShortVideoWatchHistoryEntry entry, {
+    required Future<void> Function() persist,
+  }) async {
+    await persist();
+    await _showNextVideo();
   }
 
   Future<void> _saveOfflineCache(ShortVideoWatchHistoryEntry entry) async {
@@ -200,22 +253,18 @@ class _ShortVideoWatchHistoryPlayPageState
     required ShortVideoWatchHistoryEntry entry,
     required OolafVideoController controller,
   }) async {
-    final saved = await ShortVideoPlaybackProgressPersistence.load(entry.videoId);
-    if (saved == null) {
-      return;
-    }
-    if (saved.positionMillis < 3000 || saved.durationMillis <= 0) {
-      return;
-    }
-    final remain = saved.durationMillis - saved.positionMillis;
-    if (remain <= 3000) {
-      return;
-    }
-    await controller.seekTo(Duration(milliseconds: saved.positionMillis));
+    final store = StoreProvider.of<AppState>(context, listen: false);
+    await _progressTracker.restore(
+      enabled: store.state.shortVideo.rememberPlaybackProgress,
+      videoId: entry.videoId,
+      controller: controller,
+    );
   }
 
   Future<void> _persistActivePlaybackProgress() async {
-    if (_entries.isEmpty || _activeIndex < 0 || _activeIndex >= _entries.length) {
+    if (_entries.isEmpty ||
+        _activeIndex < 0 ||
+        _activeIndex >= _entries.length) {
       return;
     }
     final controller = _getActiveController();
@@ -223,25 +272,12 @@ class _ShortVideoWatchHistoryPlayPageState
       return;
     }
 
-    final now = DateTime.now().millisecondsSinceEpoch;
-    if (now - _lastProgressPersistAtMillis < 2000) {
-      return;
-    }
-
-    final duration = controller.duration.value;
-    final position = controller.position.value;
-    if (duration <= Duration.zero || position <= Duration.zero) {
-      return;
-    }
-
-    _lastProgressPersistAtMillis = now;
-    await ShortVideoPlaybackProgressPersistence.save(
-      ShortVideoPlaybackProgressEntry(
-        videoId: _entries[_activeIndex].videoId,
-        positionMillis: position.inMilliseconds,
-        durationMillis: duration.inMilliseconds,
-        updatedAtMillis: now,
-      ),
+    final store = StoreProvider.of<AppState>(context, listen: false);
+    await _progressTracker.save(
+      enabled: store.state.shortVideo.rememberPlaybackProgress,
+      videoId: _entries[_activeIndex].videoId,
+      controller: controller,
+      force: true,
     );
   }
 
@@ -333,7 +369,8 @@ class _ShortVideoWatchHistoryPlayPageState
                 spacing: crossSpacing,
                 runSpacing: runSpacing,
                 children: [
-                  for (final tile in tiles) SizedBox(width: itemWidth, child: tile),
+                  for (final tile in tiles)
+                    SizedBox(width: itemWidth, child: tile),
                 ],
               );
             },
@@ -353,17 +390,15 @@ class _ShortVideoWatchHistoryPlayPageState
               duration: const Duration(milliseconds: 160),
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: selected
-                    ? CupertinoColors.white
-                    : const Color(0x29000000),
+                color:
+                    selected ? CupertinoColors.white : const Color(0x29000000),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Text(
                 label,
                 style: TextStyle(
-                  color: selected
-                      ? CupertinoColors.black
-                      : CupertinoColors.white,
+                  color:
+                      selected ? CupertinoColors.black : CupertinoColors.white,
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
                 ),
@@ -445,7 +480,34 @@ class _ShortVideoWatchHistoryPlayPageState
                   icon: CupertinoIcons.hand_thumbsdown_fill,
                   label: '不感兴趣',
                   isDanger: true,
-                  onPressed: () => _showNextVideo(),
+                  onPressed: () => _markNotInterested(
+                    entry,
+                    persist: () => ShortVideoBlockedPersistence.addVideo(
+                      entry.videoId,
+                    ),
+                  ),
+                ),
+                actionTile(
+                  icon: CupertinoIcons.person_crop_circle_badge_xmark,
+                  label: '不看该来源',
+                  isDanger: true,
+                  onPressed: () => _markNotInterested(
+                    entry,
+                    persist: () => ShortVideoBlockedPersistence.addSource(
+                      entry.source,
+                    ),
+                  ),
+                ),
+                actionTile(
+                  icon: CupertinoIcons.text_badge_xmark,
+                  label: '屏蔽标题词',
+                  isDanger: true,
+                  onPressed: () => _markNotInterested(
+                    entry,
+                    persist: () => ShortVideoBlockedPersistence.addTitleKeyword(
+                      entry.title,
+                    ),
+                  ),
                 ),
               ]),
             ],
@@ -456,7 +518,9 @@ class _ShortVideoWatchHistoryPlayPageState
   }
 
   OolafVideoController? _getActiveController() {
-    if (_entries.isEmpty || _activeIndex < 0 || _activeIndex >= _entries.length) {
+    if (_entries.isEmpty ||
+        _activeIndex < 0 ||
+        _activeIndex >= _entries.length) {
       return null;
     }
     return _videoManager.getById(_controllerIdOf(_entries[_activeIndex]));
@@ -468,7 +532,7 @@ class _ShortVideoWatchHistoryPlayPageState
       _resumeAfterInterruption = true;
     }
     await _persistActivePlaybackProgress();
-    await _videoManager.pauseAll();
+    await _playbackCoordinator.pause(_videoManagerScope);
   }
 
   Future<void> _resumeIfNeeded() async {
@@ -476,7 +540,7 @@ class _ShortVideoWatchHistoryPlayPageState
       return;
     }
     _resumeAfterInterruption = false;
-    await _videoManager.playActive();
+    await _syncAndPlayActive();
   }
 
   void _unbindActiveVideoStatusListener() {
@@ -519,29 +583,38 @@ class _ShortVideoWatchHistoryPlayPageState
   Future<void> _onActiveVideoOutputStatusChanged(
     OolafVideoOutputStatus status,
   ) async {
-    if (!mounted || status != OolafVideoOutputStatus.codecUnsupported) {
-      return;
-    }
-    if (_isAutoSkippingUnsupported) {
-      return;
-    }
-
-    _isAutoSkippingUnsupported = true;
-    try {
-      if (_activeIndex < _entries.length - 1) {
-        await _showNextVideo();
-        return;
-      }
-      if (_activeIndex > 0) {
-        await _showPreviousVideo();
-      }
-    } finally {
-      _isAutoSkippingUnsupported = false;
+    if (mounted) {
+      setState(() {});
     }
   }
 
+  Future<void> _retryActiveVideo() async {
+    if (_entries.isEmpty ||
+        _activeIndex < 0 ||
+        _activeIndex >= _entries.length) {
+      return;
+    }
+    await _videoManager.disposeById(_controllerIdOf(_entries[_activeIndex]));
+    await _syncAndPlayActive();
+  }
+
+  Future<void> _markActiveVideoUnavailable() async {
+    if (_entries.isEmpty ||
+        _activeIndex < 0 ||
+        _activeIndex >= _entries.length) {
+      return;
+    }
+    final entry = _entries[_activeIndex];
+    await _markNotInterested(
+      entry,
+      persist: () => ShortVideoBlockedPersistence.addVideo(entry.videoId),
+    );
+  }
+
   Future<void> _syncAndPlayActive() async {
-    if (_entries.isEmpty || _activeIndex < 0 || _activeIndex >= _entries.length) {
+    if (_entries.isEmpty ||
+        _activeIndex < 0 ||
+        _activeIndex >= _entries.length) {
       return;
     }
 
@@ -557,6 +630,7 @@ class _ShortVideoWatchHistoryPlayPageState
       setState(() {});
     }
     _bindActiveVideoStatusListenerFor(_activeIndex);
+    await _playbackCoordinator.activate(_videoManagerScope);
     await _videoManager.playActive();
   }
 
@@ -662,11 +736,26 @@ class _ShortVideoWatchHistoryPlayPageState
                     RepaintBoundary(
                       child: ShortVideoPlayerWrapper(
                         controller: controller,
-                        fit: shortVideoState.videoFitMode == 'cover' 
-                            ? BoxFit.cover 
+                        onProgressInteractionChanged: (visible) {
+                          if (_isProgressInteracting == visible || !mounted) {
+                            return;
+                          }
+                          setState(() {
+                            _isProgressInteracting = visible;
+                          });
+                        },
+                        onRetry: _retryActiveVideo,
+                        onSkip: _showNextVideo,
+                        onCopyLink: () async {
+                          await _copyShareText(entry);
+                        },
+                        onMarkUnavailable: _markActiveVideoUnavailable,
+                        fit: shortVideoState.videoFitMode == 'cover'
+                            ? BoxFit.cover
                             : BoxFit.contain,
                         onSingleTap: () async {
-                          final c = _videoManager.getById(_controllerIdOf(entry));
+                          final c =
+                              _videoManager.getById(_controllerIdOf(entry));
                           if (c == null) {
                             return;
                           }
@@ -676,6 +765,9 @@ class _ShortVideoWatchHistoryPlayPageState
                             await c.pause();
                           } else {
                             await _videoManager.pauseAll();
+                            await _playbackCoordinator.activate(
+                              _videoManagerScope,
+                            );
                             await c.play();
                           }
                         },
@@ -685,7 +777,7 @@ class _ShortVideoWatchHistoryPlayPageState
                         onLongPress: () {
                           _showVideoActionSheet(
                             entry,
-                            currentPlaybackRate: shortVideoState.playbackRate,
+                            currentPlaybackRate: _currentPlaybackRate,
                           );
                         },
                         onSwipeUp: () async {
@@ -701,6 +793,7 @@ class _ShortVideoWatchHistoryPlayPageState
                         source: entry.source ?? '观看历史',
                         title: entry.title,
                         updateTime: entry.updateTime,
+                        hideMetaText: _isProgressInteracting,
                         isFavorite: _favoriteVideoIds.contains(entry.videoId),
                         onTapFavorite: () {
                           _toggleFavorite(entry);
@@ -709,6 +802,13 @@ class _ShortVideoWatchHistoryPlayPageState
                         onTapShare: () {
                           _copyShareText(entry);
                         },
+                        onLongPressAvatarStart: () {
+                          _handleAvatarLongPressStart();
+                        },
+                        onLongPressAvatarEnd: () {
+                          _handleAvatarLongPressEnd();
+                        },
+                        isAvatarSpeedActive: _currentPlaybackRate >= 1.99,
                       ),
                     ),
                   ],

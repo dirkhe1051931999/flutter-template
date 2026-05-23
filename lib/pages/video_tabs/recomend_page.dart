@@ -15,7 +15,8 @@ import 'package:oolaf_flutted/store/short_video/state.dart';
 import 'package:oolaf_flutted/utils/short_video_blocked_persistence.dart';
 import 'package:oolaf_flutted/utils/short_video_watch_history_persistence.dart';
 import 'package:oolaf_flutted/utils/short_video_collection_persistence.dart';
-import 'package:oolaf_flutted/utils/short_video_playback_progress_persistence.dart';
+import 'package:oolaf_flutted/utils/short_video_playback_coordinator.dart';
+import 'package:oolaf_flutted/utils/short_video_progress_tracker.dart';
 import 'package:oolaf_flutted/utils/short_video_preferences_persistence.dart';
 import 'package:oolaf_flutted/utils/short_video_offline_cache_persistence.dart';
 import 'package:oolaf_flutted/utils/oolaf_video_controller.dart';
@@ -42,11 +43,14 @@ class VideoTabRecomendPageState extends State<VideoTabRecomendPage>
   static const int _loadMoreThreshold = 5;
   static const double _pullRefreshTriggerOffset = 88;
   static const double _pullRefreshIndicatorMaxOffset = 86;
+  static const double _homeBottomTabBarHeight = 52;
+  static const double _progressBarBottomGap = 12;
   static final Map<String, _VideoTabCacheState> _tabStateCache =
       <String, _VideoTabCacheState>{};
 
   final _pageController = PreloadPageController();
   final _videoManager = VideoManager.instance;
+  final _playbackCoordinator = ShortVideoPlaybackCoordinator.instance;
 
   bool _isAppActive = true;
   late bool _isFeedVisibleInTab;
@@ -65,17 +69,21 @@ class VideoTabRecomendPageState extends State<VideoTabRecomendPage>
   List<ShortVideoItem> _items = const <ShortVideoItem>[];
   int _activeIndex = 0;
   Set<String> _favoriteVideoIds = const <String>{};
-  Set<String> _blockedVideoIds = const <String>{};
-  int _lastProgressPersistAtMillis = 0;
+  ShortVideoBlockedSnapshot _blockedSnapshot = const ShortVideoBlockedSnapshot(
+    videoIds: <String>{},
+    sources: <String>{},
+    titleKeywords: <String>{},
+  );
+  final ShortVideoProgressTracker _progressTracker =
+      ShortVideoProgressTracker();
   double _pullRefreshIndicatorOffset = 0;
   final Map<String, List<DanmakuItem>> _danmakuCache =
       <String, List<DanmakuItem>>{};
   final Set<String> _danmakuLoadingVideoIds = <String>{};
+  bool _isProgressInteracting = false;
 
   OolafVideoController? _activeStatusObservedController;
   VoidCallback? _activeStatusListener;
-  bool _isAutoSkippingUnsupported = false;
-
   OolafVideoController? _activeProgressObservedController;
   VoidCallback? _activeProgressListener;
   String? _lastAutoNextTriggeredVideoId;
@@ -90,8 +98,12 @@ class VideoTabRecomendPageState extends State<VideoTabRecomendPage>
   }
 
   Future<void> pauseForSearchEntry() async {
+    final activeController = _getActiveController();
+    if (activeController?.isPlaying.value == true) {
+      _resumeAfterInterruption = true;
+    }
     await _persistActivePlaybackProgress();
-    await _videoManager.pauseAll();
+    await _playbackCoordinator.pause(_videoManagerOwnerKey);
   }
 
   String get _videoManagerOwnerKey {
@@ -106,7 +118,8 @@ class VideoTabRecomendPageState extends State<VideoTabRecomendPage>
     return '$_videoManagerOwnerKey:${item.id}';
   }
 
-  List<({String id, String url})> _buildVideoSources(List<ShortVideoItem> items) {
+  List<({String id, String url})> _buildVideoSources(
+      List<ShortVideoItem> items) {
     return items
         .map((e) => (id: _controllerIdOf(e), url: e.videoUrl))
         .toList(growable: false);
@@ -154,6 +167,8 @@ class VideoTabRecomendPageState extends State<VideoTabRecomendPage>
     final latest = store.state.shortVideo;
     await ShortVideoPreferencesPersistence.save(
       recordWatchHistory: latest.recordWatchHistory,
+      autoPlayOnEnter: latest.autoPlayOnEnter,
+      rememberPlaybackProgress: latest.rememberPlaybackProgress,
       autoPlayNextVideo: latest.autoPlayNextVideo,
       playbackRate: latest.playbackRate,
       preloadPagesCount: latest.preloadPagesCount,
@@ -165,6 +180,53 @@ class VideoTabRecomendPageState extends State<VideoTabRecomendPage>
       danmakuFontWeight: latest.danmakuFontWeight,
       danmakuSpeed: latest.danmakuSpeed,
       danmakuArea: latest.danmakuArea,
+    );
+  }
+
+  double? _avatarLongPressRestoreRate;
+
+  Future<void> _handleAvatarLongPressStart() async {
+    final currentRate = _store?.state.shortVideo.playbackRate ?? 1.0;
+    _avatarLongPressRestoreRate = currentRate;
+    if (currentRate >= 1.99) {
+      return;
+    }
+    await _setPlaybackRate(2.0);
+  }
+
+  Future<void> _handleAvatarLongPressEnd() async {
+    final restoreRate = _avatarLongPressRestoreRate;
+    _avatarLongPressRestoreRate = null;
+    if (restoreRate == null) {
+      return;
+    }
+    if ((restoreRate - (_store?.state.shortVideo.playbackRate ?? 1.0)).abs() <
+        0.001) {
+      return;
+    }
+    await _setPlaybackRate(restoreRate);
+  }
+
+  void _handleDanmakuTap(DanmakuItem item) {
+    if (!mounted) {
+      return;
+    }
+    showCupertinoDialog<void>(
+      context: context,
+      builder: (dialogContext) {
+        return CupertinoAlertDialog(
+          title: const Text('弹幕'),
+          content: Text(item.text),
+          actions: [
+            CupertinoDialogAction(
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+              },
+              child: const Text('关闭'),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -212,6 +274,7 @@ class VideoTabRecomendPageState extends State<VideoTabRecomendPage>
     await _persistPlaybackProgress(
       videoId: _items[_activeIndex].id,
       controller: controller,
+      force: true,
     );
   }
 
@@ -277,7 +340,8 @@ class VideoTabRecomendPageState extends State<VideoTabRecomendPage>
   }
 
   Future<void> _saveWatchLater(ShortVideoItem item) async {
-    await ShortVideoCollectionPersistence.watchLater.save(_collectionEntryOf(item));
+    await ShortVideoCollectionPersistence.watchLater
+        .save(_collectionEntryOf(item));
   }
 
   Future<void> _copyShareText(ShortVideoItem item) async {
@@ -325,48 +389,63 @@ class VideoTabRecomendPageState extends State<VideoTabRecomendPage>
   }
 
   Future<void> _loadBlockedState() async {
-    final blockedIds = await ShortVideoBlockedPersistence.loadAll();
+    final blockedSnapshot = await ShortVideoBlockedPersistence.loadSnapshot();
     if (!mounted) {
       return;
     }
     setState(() {
-      _blockedVideoIds = blockedIds;
+      _blockedSnapshot = blockedSnapshot;
     });
   }
 
   List<ShortVideoItem> _filterBlockedVideos(List<ShortVideoItem> items) {
-    if (_blockedVideoIds.isEmpty) {
+    if (_blockedSnapshot.isEmpty) {
       return items;
     }
     return items
-        .where((item) => !_blockedVideoIds.contains(item.id))
+        .where(
+          (item) => !_blockedSnapshot.isBlocked(
+            videoId: item.id,
+            title: item.title,
+            source: item.source,
+          ),
+        )
         .toList(growable: false);
   }
 
-  Future<void> _markNotInterested(ShortVideoItem item) async {
-    await ShortVideoBlockedPersistence.add(item.id);
+  Future<void> _markNotInterested(
+    ShortVideoItem item, {
+    required Future<void> Function() persist,
+  }) async {
+    await persist();
     if (!mounted) {
       return;
     }
+    final nextBlocked = await ShortVideoBlockedPersistence.loadSnapshot();
 
     final nextItems = _items
-        .where((element) => element.id != item.id)
+        .where(
+          (element) => !nextBlocked.isBlocked(
+            videoId: element.id,
+            title: element.title,
+            source: element.source,
+          ),
+        )
         .toList(growable: false);
-    final nextBlocked = <String>{..._blockedVideoIds, item.id};
 
     if (nextItems.isEmpty) {
       setState(() {
-        _blockedVideoIds = nextBlocked;
+        _blockedSnapshot = nextBlocked;
         _items = const <ShortVideoItem>[];
         _activeIndex = 0;
       });
-      await _videoManager.pauseAll();
+      await _playbackCoordinator.pause(_videoManagerOwnerKey);
       return;
     }
 
     final nextIndex = _activeIndex.clamp(0, nextItems.length - 1);
     setState(() {
-      _blockedVideoIds = nextBlocked;
+      _blockedSnapshot = nextBlocked;
       _items = nextItems;
       _activeIndex = nextIndex;
     });
@@ -381,43 +460,23 @@ class VideoTabRecomendPageState extends State<VideoTabRecomendPage>
     required ShortVideoItem item,
     required OolafVideoController controller,
   }) async {
-    final saved = await ShortVideoPlaybackProgressPersistence.load(item.id);
-    if (saved == null) {
-      return;
-    }
-    if (saved.positionMillis < 3000 || saved.durationMillis <= 0) {
-      return;
-    }
-    final remain = saved.durationMillis - saved.positionMillis;
-    if (remain <= 3000) {
-      return;
-    }
-    await controller.seekTo(Duration(milliseconds: saved.positionMillis));
+    await _progressTracker.restore(
+      enabled: _store?.state.shortVideo.rememberPlaybackProgress ?? true,
+      videoId: item.id,
+      controller: controller,
+    );
   }
 
   Future<void> _persistPlaybackProgress({
     required String videoId,
     required OolafVideoController controller,
+    bool force = false,
   }) async {
-    final now = DateTime.now().millisecondsSinceEpoch;
-    if (now - _lastProgressPersistAtMillis < 2000) {
-      return;
-    }
-
-    final duration = controller.duration.value;
-    final position = controller.position.value;
-    if (duration <= Duration.zero || position <= Duration.zero) {
-      return;
-    }
-
-    _lastProgressPersistAtMillis = now;
-    await ShortVideoPlaybackProgressPersistence.save(
-      ShortVideoPlaybackProgressEntry(
-        videoId: videoId,
-        positionMillis: position.inMilliseconds,
-        durationMillis: duration.inMilliseconds,
-        updatedAtMillis: now,
-      ),
+    await _progressTracker.save(
+      enabled: _store?.state.shortVideo.rememberPlaybackProgress ?? true,
+      videoId: videoId,
+      controller: controller,
+      force: force,
     );
   }
 
@@ -431,7 +490,8 @@ class VideoTabRecomendPageState extends State<VideoTabRecomendPage>
       edgeToEdge: true,
       builder: (sheetContext) {
         final isFavorite = _favoriteVideoIds.contains(item.id);
-        final currentPlaybackRate = _store?.state.shortVideo.playbackRate ?? 1.0;
+        final currentPlaybackRate =
+            _store?.state.shortVideo.playbackRate ?? 1.0;
         const speedOptions = <double>[0.75, 1.0, 1.25, 1.5, 2.0];
 
         Widget sectionTitle(String label) {
@@ -507,7 +567,8 @@ class VideoTabRecomendPageState extends State<VideoTabRecomendPage>
                 spacing: crossSpacing,
                 runSpacing: runSpacing,
                 children: [
-                  for (final tile in tiles) SizedBox(width: itemWidth, child: tile),
+                  for (final tile in tiles)
+                    SizedBox(width: itemWidth, child: tile),
                 ],
               );
             },
@@ -527,17 +588,15 @@ class VideoTabRecomendPageState extends State<VideoTabRecomendPage>
               duration: const Duration(milliseconds: 160),
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: selected
-                    ? CupertinoColors.white
-                    : const Color(0x29000000),
+                color:
+                    selected ? CupertinoColors.white : const Color(0x29000000),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Text(
                 label,
                 style: TextStyle(
-                  color: selected
-                      ? CupertinoColors.black
-                      : CupertinoColors.white,
+                  color:
+                      selected ? CupertinoColors.black : CupertinoColors.white,
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
                 ),
@@ -619,7 +678,34 @@ class VideoTabRecomendPageState extends State<VideoTabRecomendPage>
                   icon: CupertinoIcons.hand_thumbsdown_fill,
                   label: '不感兴趣',
                   isDanger: true,
-                  onPressed: () => _markNotInterested(item),
+                  onPressed: () => _markNotInterested(
+                    item,
+                    persist: () => ShortVideoBlockedPersistence.addVideo(
+                      item.id,
+                    ),
+                  ),
+                ),
+                actionTile(
+                  icon: CupertinoIcons.person_crop_circle_badge_xmark,
+                  label: '不看该来源',
+                  isDanger: true,
+                  onPressed: () => _markNotInterested(
+                    item,
+                    persist: () => ShortVideoBlockedPersistence.addSource(
+                      item.source,
+                    ),
+                  ),
+                ),
+                actionTile(
+                  icon: CupertinoIcons.text_badge_xmark,
+                  label: '屏蔽标题词',
+                  isDanger: true,
+                  onPressed: () => _markNotInterested(
+                    item,
+                    persist: () => ShortVideoBlockedPersistence.addTitleKeyword(
+                      item.title,
+                    ),
+                  ),
                 ),
               ]),
             ],
@@ -635,7 +721,7 @@ class VideoTabRecomendPageState extends State<VideoTabRecomendPage>
       _resumeAfterInterruption = true;
     }
     await _persistActivePlaybackProgress();
-    await _videoManager.pauseAll();
+    await _playbackCoordinator.pause(_videoManagerOwnerKey);
   }
 
   Future<void> _resumeIfNeeded() async {
@@ -857,28 +943,29 @@ class VideoTabRecomendPageState extends State<VideoTabRecomendPage>
   Future<void> _onActiveVideoOutputStatusChanged(
     OolafVideoOutputStatus status,
   ) async {
-    if (!mounted) {
-      return;
+    if (mounted) {
+      setState(() {});
     }
-    if (status != OolafVideoOutputStatus.codecUnsupported) {
-      return;
-    }
-    if (_isAutoSkippingUnsupported) {
-      return;
-    }
+  }
 
-    _isAutoSkippingUnsupported = true;
-    try {
-      if (_activeIndex < _items.length - 1) {
-        await _showNextVideo();
-        return;
-      }
-      if (_activeIndex > 0) {
-        await _showPreviousVideo();
-      }
-    } finally {
-      _isAutoSkippingUnsupported = false;
+  Future<void> _retryActiveVideo() async {
+    final item = currentActiveItem;
+    if (item == null) {
+      return;
     }
+    await _videoManager.disposeById(_controllerIdOf(item));
+    await _syncAndPlayActive();
+  }
+
+  Future<void> _markActiveVideoUnavailable() async {
+    final item = currentActiveItem;
+    if (item == null) {
+      return;
+    }
+    await _markNotInterested(
+      item,
+      persist: () => ShortVideoBlockedPersistence.addVideo(item.id),
+    );
   }
 
   void _onTopPullOffsetChanged(double offset) {
@@ -997,6 +1084,7 @@ class VideoTabRecomendPageState extends State<VideoTabRecomendPage>
       setState(() {});
     }
     _bindActiveVideoStatusListenerFor(index);
+    await _playbackCoordinator.activate(_videoManagerOwnerKey);
     await _videoManager.playActive();
   }
 
@@ -1121,8 +1209,10 @@ class VideoTabRecomendPageState extends State<VideoTabRecomendPage>
 
       final latestItems = _isFeedVisibleInTab
           ? _items
-          : (_tabStateCache[_videoManagerOwnerKey]?.items ?? const <ShortVideoItem>[]);
-      final merged = _appendUniqueVideos(latestItems, _filterBlockedVideos(incoming));
+          : (_tabStateCache[_videoManagerOwnerKey]?.items ??
+              const <ShortVideoItem>[]);
+      final merged =
+          _appendUniqueVideos(latestItems, _filterBlockedVideos(incoming));
 
       if (!_isFeedVisibleInTab) {
         _nextPullNum = pullNum + 1;
@@ -1171,6 +1261,10 @@ class VideoTabRecomendPageState extends State<VideoTabRecomendPage>
     _isFeedVisibleInTab = widget.initialFeedVisible;
     WidgetsBinding.instance.addObserver(this);
     _videoManager.acquire(_videoManagerOwnerKey);
+    _playbackCoordinator.register(
+      scope: _videoManagerOwnerKey,
+      manager: _videoManager,
+    );
     if (!_isChannelFeed) {
       _dailyOpenNum = nextShortVideoDailyOpenNum();
     }
@@ -1202,6 +1296,7 @@ class VideoTabRecomendPageState extends State<VideoTabRecomendPage>
     appRouteObserver.unsubscribe(this);
     WidgetsBinding.instance.removeObserver(this);
     _pageController.dispose();
+    _playbackCoordinator.unregister(_videoManagerOwnerKey);
     _videoManager.release(_videoManagerOwnerKey);
     super.dispose();
   }
@@ -1229,6 +1324,7 @@ class VideoTabRecomendPageState extends State<VideoTabRecomendPage>
       setState(() {});
     }
     _bindActiveVideoStatusListenerFor(_activeIndex);
+    await _playbackCoordinator.activate(_videoManagerOwnerKey);
     await _videoManager.playActive();
   }
 
@@ -1253,8 +1349,7 @@ class VideoTabRecomendPageState extends State<VideoTabRecomendPage>
     final preloadPagesCount = shortVideoState?.preloadPagesCount ?? 2;
     final keepWindow = shortVideoState?.keepWindow ?? 1;
     final canRefreshByPull = !_isLoading && _activeIndex == 0;
-    final shouldRefreshByRelease =
-        canRefreshByPull &&
+    final shouldRefreshByRelease = canRefreshByPull &&
         _pullRefreshIndicatorOffset >= _pullRefreshTriggerOffset;
     final indicatorOpacity = _isLoading
         ? 1.0
@@ -1262,8 +1357,14 @@ class VideoTabRecomendPageState extends State<VideoTabRecomendPage>
             .clamp(0.0, 1.0)
             .toDouble();
     VideoManager.instance.keepWindow = keepWindow;
+    final shouldAutoPlayOnEnter = _isChannelFeed
+        ? true
+        : (shortVideoState?.autoPlayOnEnter ?? true);
 
-    if (_isFeedVisibleInTab && !_didAutoPlayFirst && items.isNotEmpty) {
+    if (_isFeedVisibleInTab &&
+        shouldAutoPlayOnEnter &&
+        !_didAutoPlayFirst &&
+        items.isNotEmpty) {
       _didAutoPlayFirst = true;
       WidgetsBinding.instance.addPostFrameCallback((_) async {
         _videoManager.setSources(
@@ -1277,6 +1378,7 @@ class VideoTabRecomendPageState extends State<VideoTabRecomendPage>
           setState(() {});
         }
         _bindActiveVideoStatusListenerFor(_activeIndex);
+        await _playbackCoordinator.activate(_videoManagerOwnerKey);
         await _videoManager.playActive();
       });
     }
@@ -1305,6 +1407,9 @@ class VideoTabRecomendPageState extends State<VideoTabRecomendPage>
               itemBuilder: (context, index) {
                 final item = items[index];
                 final controller = _videoManager.getById(_controllerIdOf(item));
+                final progressBarBottomOffset = _homeBottomTabBarHeight +
+                    _progressBarBottomGap +
+                    MediaQuery.of(context).viewPadding.bottom;
 
                 return RepaintBoundary(
                   child: Stack(
@@ -1313,13 +1418,27 @@ class VideoTabRecomendPageState extends State<VideoTabRecomendPage>
                       RepaintBoundary(
                         child: ShortVideoPlayerWrapper(
                           controller: controller,
-                          progressBarBottomOffset:
-                              52 + MediaQuery.of(context).viewPadding.bottom,
-                          fit: shortVideoState?.videoFitMode == 'cover' 
-                              ? BoxFit.cover 
+                          progressBarBottomOffset: progressBarBottomOffset,
+                          onProgressInteractionChanged: (visible) {
+                            if (_isProgressInteracting == visible || !mounted) {
+                              return;
+                            }
+                            setState(() {
+                              _isProgressInteracting = visible;
+                            });
+                          },
+                          onRetry: _retryActiveVideo,
+                          onSkip: _showNextVideo,
+                          onCopyLink: () async {
+                            await _copyShareText(item);
+                          },
+                          onMarkUnavailable: _markActiveVideoUnavailable,
+                          fit: shortVideoState?.videoFitMode == 'cover'
+                              ? BoxFit.cover
                               : BoxFit.contain,
                           onSingleTap: () async {
-                            final c = _videoManager.getById(_controllerIdOf(item));
+                            final c =
+                                _videoManager.getById(_controllerIdOf(item));
                             if (c == null) return;
 
                             final isPlaying = c.isPlaying.value;
@@ -1327,6 +1446,9 @@ class VideoTabRecomendPageState extends State<VideoTabRecomendPage>
                               await c.pause();
                             } else {
                               await _videoManager.pauseAll();
+                              await _playbackCoordinator.activate(
+                                _videoManagerOwnerKey,
+                              );
                               await c.play();
                             }
                           },
@@ -1351,9 +1473,8 @@ class VideoTabRecomendPageState extends State<VideoTabRecomendPage>
                             }
                             await _showPreviousVideo();
                           },
-                          onVerticalDragOffsetChanged: index == 0
-                              ? _onTopPullOffsetChanged
-                              : null,
+                          onVerticalDragOffsetChanged:
+                              index == 0 ? _onTopPullOffsetChanged : null,
                         ),
                       ),
                       RepaintBoundary(
@@ -1363,20 +1484,23 @@ class VideoTabRecomendPageState extends State<VideoTabRecomendPage>
                           source: item.source ?? '',
                           controller: controller,
                           items: _danmakuCache[item.id],
-                          enabled:
-                              index == _activeIndex && (shortVideoState?.danmakuEnabled ?? true),
+                          enabled: index == _activeIndex &&
+                              (shortVideoState?.danmakuEnabled ?? true),
                           opacity: shortVideoState?.danmakuOpacity ?? 0.82,
                           fontScale: shortVideoState?.danmakuFontScale ?? 1.0,
                           fontWeight: shortVideoState?.danmakuFontWeight ?? 600,
                           speed: shortVideoState?.danmakuSpeed ?? 1.0,
                           areaRatio: shortVideoState?.danmakuArea ?? 0.7,
+                          onTapDanmaku: _handleDanmakuTap,
                         ),
                       ),
                       RepaintBoundary(
                         child: ShortVideoInteractionOverlay(
+                          avatarUrl: item.avatarUrl,
                           source: item.source ?? '凤凰网视频',
                           title: item.title,
                           updateTime: item.updateTime ?? '',
+                          hideMetaText: _isProgressInteracting,
                           isFavorite: _favoriteVideoIds.contains(item.id),
                           onTapFavorite: () {
                             _toggleFavorite(item);
@@ -1387,6 +1511,14 @@ class VideoTabRecomendPageState extends State<VideoTabRecomendPage>
                           onTapShare: () {
                             _copyShareText(item);
                           },
+                          onLongPressAvatarStart: () {
+                            _handleAvatarLongPressStart();
+                          },
+                          onLongPressAvatarEnd: () {
+                            _handleAvatarLongPressEnd();
+                          },
+                          isAvatarSpeedActive:
+                              (shortVideoState?.playbackRate ?? 1.0) >= 1.99,
                         ),
                       ),
                       if (index == 0)
@@ -1456,8 +1588,8 @@ class VideoTabRecomendPageState extends State<VideoTabRecomendPage>
                                           _isLoading
                                               ? '刷新中...'
                                               : (shouldRefreshByRelease
-                                                    ? '松手刷新'
-                                                    : '下拉刷新'),
+                                                  ? '松手刷新'
+                                                  : '下拉刷新'),
                                           style: const TextStyle(
                                             color: CupertinoColors.white,
                                             fontSize: 12,
@@ -1497,3 +1629,5 @@ class _VideoTabCacheState {
   final int nextPullNum;
   final bool hasMore;
 }
+
+

@@ -61,6 +61,10 @@ class ShortVideoPlaybackProgressPersistence {
     return map[videoId];
   }
 
+  static Future<Map<String, ShortVideoPlaybackProgressEntry>> loadAll() {
+    return _loadMap();
+  }
+
   static Future<void> save(ShortVideoPlaybackProgressEntry entry) async {
     final map = await _loadMap();
     map[entry.videoId] = entry;

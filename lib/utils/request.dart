@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 import 'package:dio_cookie_manager/dio_cookie_manager.dart';
 import 'package:flutter/foundation.dart';
 import 'package:oolaf_flutted/app.config.dart';
+import 'package:oolaf_flutted/tools/developer_tools_center.dart';
 import 'package:oolaf_flutted/utils/helper.dart';
 import 'package:logger/logger.dart';
 
@@ -52,6 +53,41 @@ class DioClient {
     _cookieReady = _setupCookieManager();
   }
 
+  void _recordRequestLog({
+    required RequestOptions requestOptions,
+    Response<dynamic>? response,
+    String errorMessage = '',
+  }) {
+    final startedAt = requestOptions.extra['devtools_request_started_at'];
+    final started = startedAt is DateTime ? startedAt : null;
+    final now = DateTime.now();
+    final durationMs = started == null ? null : now.difference(started).inMilliseconds;
+
+    DeveloperToolsCenter.instance.recordRequest(
+      DeveloperRequestLog(
+        time: now,
+        method: requestOptions.method,
+        url: requestOptions.uri.toString(),
+        statusCode: response?.statusCode,
+        durationMs: durationMs,
+        requestSummary: _summarizePayload(requestOptions.data ?? requestOptions.queryParameters),
+        responseSummary: _summarizePayload(response?.data),
+        errorMessage: errorMessage,
+      ),
+    );
+  }
+
+  String _summarizePayload(dynamic payload) {
+    if (payload == null) {
+      return '';
+    }
+    final text = payload.toString();
+    if (text.length <= 180) {
+      return text;
+    }
+    return '${text.substring(0, 180)}...';
+  }
+
   final String baseUrl;
   final Dio _dio;
   final TokenGetter? _getAccessToken;
@@ -87,6 +123,8 @@ class DioClient {
       options.headers['Authorization'] = 'Bearer $token';
     }
 
+    options.extra['devtools_request_started_at'] = DateTime.now();
+
     handler.next(options);
   }
 
@@ -94,6 +132,11 @@ class DioClient {
     DioException error,
     ErrorInterceptorHandler handler,
   ) async {
+    _recordRequestLog(
+      requestOptions: error.requestOptions,
+      response: error.response,
+      errorMessage: error.message ?? error.error?.toString() ?? 'unknown error',
+    );
     _logDioError(error);
 
     final requestOptions = error.requestOptions;
@@ -223,12 +266,14 @@ class DioClient {
     CancelToken? cancelToken,
   }) async {
     await ready;
-    return _dio.get(
+    final response = await _dio.get(
       path,
       queryParameters: queryParameters,
       cancelToken: cancelToken,
       options: options,
     );
+    _recordRequestLog(requestOptions: response.requestOptions, response: response);
+    return response;
   }
 
   Future<Response> post(
@@ -238,12 +283,14 @@ class DioClient {
     CancelToken? cancelToken,
   }) async {
     await ready;
-    return _dio.post(
+    final response = await _dio.post(
       path,
       data: data,
       cancelToken: cancelToken,
       options: options,
     );
+    _recordRequestLog(requestOptions: response.requestOptions, response: response);
+    return response;
   }
 
   Future<Response> postFormData(
@@ -253,12 +300,14 @@ class DioClient {
     CancelToken? cancelToken,
   }) async {
     await ready;
-    return _dio.post(
+    final response = await _dio.post(
       path,
       data: FormData.fromMap(data ?? {}),
       cancelToken: cancelToken,
       options: options,
     );
+    _recordRequestLog(requestOptions: response.requestOptions, response: response);
+    return response;
   }
 
   Future<Response> uploadFiles(
@@ -284,12 +333,14 @@ class DioClient {
       }
     }
 
-    return _dio.post(
+    final response = await _dio.post(
       path,
       data: formData,
       cancelToken: cancelToken,
       options: options,
     );
+    _recordRequestLog(requestOptions: response.requestOptions, response: response);
+    return response;
   }
 
   Future<Response> downloadFile(
@@ -301,7 +352,7 @@ class DioClient {
     CancelToken? cancelToken,
   }) async {
     await ready;
-    return _dio.download(
+    final response = await _dio.download(
       path,
       savePath,
       queryParameters: queryParameters,
@@ -309,6 +360,8 @@ class DioClient {
       onReceiveProgress: onProgress,
       options: options,
     );
+    _recordRequestLog(requestOptions: response.requestOptions, response: response);
+    return response;
   }
 
   Future<Response> put(
@@ -318,12 +371,14 @@ class DioClient {
     CancelToken? cancelToken,
   }) async {
     await ready;
-    return _dio.put(
+    final response = await _dio.put(
       path,
       data: data,
       cancelToken: cancelToken,
       options: options,
     );
+    _recordRequestLog(requestOptions: response.requestOptions, response: response);
+    return response;
   }
 
   Future<Response> delete(
@@ -333,11 +388,13 @@ class DioClient {
     CancelToken? cancelToken,
   }) async {
     await ready;
-    return _dio.delete(
+    final response = await _dio.delete(
       path,
       data: data,
       cancelToken: cancelToken,
       options: options,
     );
+    _recordRequestLog(requestOptions: response.requestOptions, response: response);
+    return response;
   }
 }
