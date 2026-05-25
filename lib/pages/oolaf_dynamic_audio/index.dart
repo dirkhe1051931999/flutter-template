@@ -17,6 +17,7 @@ import 'package:oolaf_flutted/utils/oolaf_music_favorites.dart';
 import 'package:oolaf_flutted/utils/oolaf_audio_player.dart';
 import 'package:oolaf_flutted/utils/oolaf_playback_persistence.dart';
 import 'package:flutter_redux/flutter_redux.dart';
+import 'package:oolaf_flutted/components/network_img/index.dart';
 
 class OolafDynamicAudioPage extends StatefulWidget {
   const OolafDynamicAudioPage({super.key});
@@ -639,7 +640,7 @@ class _OolafDynamicAudioPageState extends State<OolafDynamicAudioPage> {
                               const SizedBox(width: 10),
                               ClipRRect(
                                 borderRadius: BorderRadius.circular(16),
-                                child: Image.network(
+                                child: CustomNetworkImage(
                                   headerImageUrl,
                                   width: 64,
                                   height: 64,

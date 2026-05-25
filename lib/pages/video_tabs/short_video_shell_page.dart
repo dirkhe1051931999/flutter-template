@@ -5,10 +5,11 @@ import 'package:oolaf_flutted/components/short_video/short_video_bottom_tab_bar.
 import 'package:oolaf_flutted/components/video_top_tabs/index.dart';
 import 'package:oolaf_flutted/pages/video_tabs/index.dart';
 import 'package:oolaf_flutted/pages/video_tabs/short_video_article_history_page.dart';
-import 'package:oolaf_flutted/pages/video_tabs/recomend_page.dart';
+import 'package:oolaf_flutted/pages/video_tabs/short_video_feed_page.dart';
 import 'package:oolaf_flutted/pages/video_tabs/short_video_blocked_manage_page.dart';
 import 'package:oolaf_flutted/pages/video_tabs/short_video_channel_manage_page.dart';
 import 'package:oolaf_flutted/pages/video_tabs/short_video_collection_page.dart';
+import 'package:oolaf_flutted/pages/video_tabs/short_video_hot_page.dart';
 import 'package:oolaf_flutted/pages/video_tabs/short_video_search_page.dart';
 import 'package:oolaf_flutted/pages/video_tabs/watch_history_page.dart';
 import 'package:oolaf_flutted/pages/video_tabs/short_video_offline_cache_page.dart';
@@ -26,6 +27,7 @@ import 'package:oolaf_flutted/utils/short_video_channel_order_persistence.dart';
 import 'package:oolaf_flutted/utils/short_video_preferences_persistence.dart';
 import 'package:oolaf_flutted/utils/short_video_search_history_persistence.dart';
 import 'package:oolaf_flutted/utils/video_manager.dart';
+import 'package:oolaf_flutted/components/network_img/index.dart';
 
 class ShortVideoPage extends StatefulWidget {
   const ShortVideoPage({super.key});
@@ -41,6 +43,7 @@ class _ShortVideoPageState extends State<ShortVideoPage> {
       Duration(milliseconds: 260);
   static const List<ShortVideoTabItem> _tabItems = <ShortVideoTabItem>[
     ShortVideoTabItem(label: '首页'),
+    ShortVideoTabItem(label: '热点'),
     ShortVideoTabItem(label: '我'),
   ];
 
@@ -50,10 +53,10 @@ class _ShortVideoPageState extends State<ShortVideoPage> {
   bool _isHomeTopTabSwitching = false;
   int _topTabLoadTicket = 0;
   List<String> _channelOrderIds = VideoTabsRegistry.defaultChannelOrderIds;
-  final List<GlobalKey<VideoTabRecomendPageState>> _feedPageKeys =
-      List<GlobalKey<VideoTabRecomendPageState>>.generate(
+  final List<GlobalKey<ShortVideoFeedPageState>> _feedPageKeys =
+      List<GlobalKey<ShortVideoFeedPageState>>.generate(
     VideoTabsRegistry.feedTabCount,
-    (_) => GlobalKey<VideoTabRecomendPageState>(),
+    (_) => GlobalKey<ShortVideoFeedPageState>(),
   );
 
   List<VideoTopTabItem> get _homeTabs {
@@ -63,7 +66,7 @@ class _ShortVideoPageState extends State<ShortVideoPage> {
     );
   }
 
-  GlobalKey<VideoTabRecomendPageState>? _keyOfTopTab(int index) {
+  GlobalKey<ShortVideoFeedPageState>? _keyOfTopTab(int index) {
     final tabs = _homeTabs;
     if (index < 0 || index >= tabs.length) {
       return null;
@@ -323,6 +326,9 @@ class _ShortVideoPageState extends State<ShortVideoPage> {
                 ),
               );
             }
+            if (index == 1) {
+              return const ShortVideoHotPage();
+            }
             return const _ShortVideoProfilePage();
           },
         );
@@ -451,7 +457,7 @@ class _ShortVideoProfilePageState extends State<_ShortVideoProfilePage> {
                             width: 68,
                             height: 68,
                             color: const Color(0x33FFFFFF),
-                            child: Image.network(
+                            child: const CustomNetworkImage(
                               _avatarUrl,
                               fit: BoxFit.cover,
                             ),

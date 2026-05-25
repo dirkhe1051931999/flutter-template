@@ -4,6 +4,7 @@ import 'package:oolaf_flutted/pages/video_tabs/watch_history_play_page.dart';
 import 'package:oolaf_flutted/utils/short_video_collection_persistence.dart';
 import 'package:oolaf_flutted/utils/short_video_playback_progress_persistence.dart';
 import 'package:oolaf_flutted/utils/short_video_watch_history_persistence.dart';
+import 'package:oolaf_flutted/components/network_img/index.dart';
 
 class ShortVideoCollectionPage extends StatefulWidget {
   const ShortVideoCollectionPage({
@@ -204,7 +205,7 @@ class _CollectionGridItem extends StatelessWidget {
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
-                    Image.network(
+                    CustomNetworkImage(
                       entry.coverUrl,
                       fit: BoxFit.cover,
                       errorBuilder: (_, __, ___) {

@@ -1,15 +1,27 @@
 import 'package:dio/dio.dart';
+import 'package:oolaf_flutted/app.config.dart';
 import 'package:oolaf_flutted/model/short_video/danmaku_item.dart';
 import 'package:oolaf_flutted/store/short_video/state.dart';
 import 'package:oolaf_flutted/utils/danmu_data.dart';
 import 'package:oolaf_flutted/utils/helper.dart';
 import 'package:oolaf_flutted/utils/request.dart';
 
-const String _shortVideoFeedUrl = 'https://nine.ifeng.com/recomlist';
-const String _phoenixTvChannelUrl = 'https://nine.ifeng.com/phoenixTvChannel';
-const String _shortVideoSearchUrl = 'https://nine.ifeng.com/searchTagList';
-const String _shortVideoHeadlineUrl = 'https://nine.ifeng.com/headline';
-const String _shortVideoNewsDocUrl = 'https://nine.ifeng.com/getNewsDocs';
+const String _shortVideoFeedPath = '/recomlist';
+const String _phoenixTvChannelPath = '/phoenixTvChannel';
+const String _shortVideoSearchPath = '/searchTagList';
+const String _shortVideoHeadlinePath = '/headline';
+const String _shortVideoNewsDocPath = '/getNewsDocs';
+
+const String _shortVideoFeedUrl =
+    '${AppConfig.shortVideoApiBaseUrl}$_shortVideoFeedPath';
+const String _phoenixTvChannelUrl =
+    '${AppConfig.shortVideoApiBaseUrl}$_phoenixTvChannelPath';
+const String _shortVideoSearchUrl =
+    '${AppConfig.shortVideoApiBaseUrl}$_shortVideoSearchPath';
+const String _shortVideoHeadlineUrl =
+    '${AppConfig.shortVideoApiBaseUrl}$_shortVideoHeadlinePath';
+const String _shortVideoNewsDocUrl =
+    '${AppConfig.shortVideoApiBaseUrl}$_shortVideoNewsDocPath';
 
 class PhoenixTvChannelRequest {
   const PhoenixTvChannelRequest({
@@ -107,7 +119,7 @@ int nextShortVideoDailyOpenNum() {
   return _shortVideoDailyOpenNumCounter;
 }
 
-const Map<String, String> _commonVideoFixedParams = {
+const Map<String, String> kShortVideoCommonFixedParams = {
   'action': 'down',
   'gv': '7.30.3',
   'av': '7.30.3',
@@ -121,10 +133,18 @@ const Map<String, String> _commonVideoFixedParams = {
   'ps': '1',
 };
 
+const Map<String, String> kShortVideoAndroid28DeviceFixedParams = {
+  'uid': '860250745769422',
+  'deviceid': '860250745769422',
+  'os': 'android_28',
+  'publishid': '2011',
+  'hw': 'asus_asus_ai2401_a',
+};
+
 const Map<String, String> _shortVideoFixedParams = {
   'id': 'RECOMVIDEO',
   'ch': 'sp',
-  ..._commonVideoFixedParams,
+  ...kShortVideoCommonFixedParams,
   'uid': '867241265475337',
   'deviceid': '867241265475337',
   'os': 'android_25',
@@ -135,51 +155,35 @@ const Map<String, String> _shortVideoFixedParams = {
 };
 
 const Map<String, String> _phoenixTvChannelFixedParams = {
-  ..._commonVideoFixedParams,
+  ...kShortVideoCommonFixedParams,
   'dailyOpenNum': '1',
-  'uid': '860250745769422',
-  'deviceid': '860250745769422',
-  'os': 'android_28',
-  'publishid': '2011',
-  'hw': 'asus_asus_ai2401_a',
+  ...kShortVideoAndroid28DeviceFixedParams,
   'st': '17787276464257',
   'sn': '5805d8aefff865576632c46fa573537f',
 };
 
 const Map<String, String> _shortVideoSearchFixedParams = {
-  ..._commonVideoFixedParams,
+  ...kShortVideoCommonFixedParams,
   'ch': 'search',
-  'uid': '860250745769422',
-  'deviceid': '860250745769422',
-  'os': 'android_28',
-  'publishid': '2011',
-  'hw': 'asus_asus_ai2401_a',
+  ...kShortVideoAndroid28DeviceFixedParams,
   'st': '17795024758969',
   'sn': '5b3cd6693f010e650df9032ee375cee8',
 };
 
 final Map<String, String> _shortVideoHeadlineFixedParams = {
-  ..._commonVideoFixedParams,
+  ...kShortVideoCommonFixedParams,
   'action': 'up',
   'ch': 'sy',
   'cache': 'no',
   'autoPlay': '1',
-  'uid': '860250745769422',
-  'deviceid': '860250745769422',
-  'os': 'android_28',
-  'publishid': '2011',
-  'hw': 'asus_asus_ai2401_a',
+  ...kShortVideoAndroid28DeviceFixedParams,
   'st': '17795178013487',
   'sn': 'acf7c19c610514545ba1cf872d44f4fd',
 };
 
 const Map<String, String> _shortVideoNewsDocFixedParams = {
-  ..._commonVideoFixedParams,
-  'uid': '860250745769422',
-  'deviceid': '860250745769422',
-  'os': 'android_28',
-  'publishid': '2011',
-  'hw': 'asus_asus_ai2401_a',
+  ...kShortVideoCommonFixedParams,
+  ...kShortVideoAndroid28DeviceFixedParams,
   'st': '17795178021309',
   'sn': '999f5261a94438e26cdb86eeaa7308fd',
 };
@@ -601,3 +605,4 @@ int? _asInt(dynamic value) {
   }
   return null;
 }
+

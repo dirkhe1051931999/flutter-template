@@ -7,6 +7,7 @@ import 'package:oolaf_flutted/store/oolaf_music/state.dart';
 import 'package:oolaf_flutted/utils/oolaf_audio_player.dart';
 import 'package:oolaf_flutted/components/oolaf_player/disc.dart';
 import 'package:oolaf_flutted/components/oolaf_player/progress_bar.dart';
+import 'package:oolaf_flutted/components/network_img/index.dart';
 
 class OolafPlayerSheet extends StatelessWidget {
   const OolafPlayerSheet({
@@ -90,7 +91,7 @@ class OolafPlayerSheet extends StatelessWidget {
                     children: [
                       ClipRRect(
                         borderRadius: BorderRadius.circular(18),
-                        child: Image.network(
+                        child: CustomNetworkImage(
                           artUrl,
                           width: 112,
                           height: 112,

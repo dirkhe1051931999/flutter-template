@@ -7,6 +7,7 @@ import 'package:oolaf_flutted/store/oolaf_music/action.dart';
 import 'package:oolaf_flutted/store/oolaf_music/state.dart';
 import 'package:oolaf_flutted/utils/oolaf_audio_player.dart';
 import 'package:oolaf_flutted/utils/oolaf_playback_persistence.dart';
+import 'package:oolaf_flutted/components/network_img/index.dart';
 
 const Color _themeColor = Color(0xFFD43C33);
 const String _artUrl = 'https://picsum.photos/seed/oolaf-music/512/512';
@@ -438,7 +439,7 @@ class _CollapsedBall extends StatelessWidget {
               ),
             ),
             ClipOval(
-              child: Image.network(
+              child: CustomNetworkImage(
                 _artUrl,
                 width: innerSize,
                 height: innerSize,

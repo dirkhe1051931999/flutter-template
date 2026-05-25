@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart' show SelectionArea, SelectableText;
+import 'package:oolaf_flutted/components/network_img/index.dart';
 
 class ShortVideoInteractionOverlay extends StatelessWidget {
   const ShortVideoInteractionOverlay({
@@ -263,7 +264,7 @@ class _AvatarActionButtonState extends State<_AvatarActionButton> {
                 ),
                 child: ClipOval(
                   child: hasAvatar
-                      ? Image.network(
+                      ? CustomNetworkImage(
                           widget.avatarUrl!,
                           fit: BoxFit.cover,
                           errorBuilder: (context, error, stackTrace) {

@@ -14,6 +14,7 @@ typedef RefreshTokenGetter = FutureOr<String?> Function();
 
 final httpClient = DioClient(baseUrl: AppConfig.baseUrl);
 final oolafHubClient = DioClient(baseUrl: AppConfig.oolafHubBaseUrl);
+final qWeatherClient = DioClient(baseUrl: AppConfig.qWeatherBaseUrl);
 
 class DioClient {
   DioClient({

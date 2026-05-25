@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:oolaf_flutted/pages/video_tabs/watch_history_play_page.dart';
 import 'package:oolaf_flutted/utils/short_video_playback_progress_persistence.dart';
 import 'package:oolaf_flutted/utils/short_video_watch_history_persistence.dart';
+import 'package:oolaf_flutted/components/network_img/index.dart';
 
 class ShortVideoWatchHistoryPage extends StatefulWidget {
   const ShortVideoWatchHistoryPage({super.key});
@@ -304,7 +305,7 @@ class _HistoryGridItem extends StatelessWidget {
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
-                    Image.network(
+                    CustomNetworkImage(
                       entry.coverUrl,
                       fit: BoxFit.cover,
                       errorBuilder: (_, __, ___) {

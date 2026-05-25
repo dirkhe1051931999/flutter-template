@@ -12,6 +12,18 @@ class AppConfig {
     'OOLAF_MUSIC_CDN_BASE_URL',
     defaultValue: 'https://s1.oolaf.top',
   );
+  static const shortVideoApiBaseUrl = String.fromEnvironment(
+    'SHORT_VIDEO_API_BASE_URL',
+    defaultValue: 'https://nine.ifeng.com',
+  );
+  static const qWeatherBaseUrl = String.fromEnvironment(
+    'QWEATHER_BASE_URL',
+    defaultValue: 'https://nm359gputx.re.qweatherapi.com',
+  );
+  static const qWeatherApiKey = String.fromEnvironment(
+    'QWEATHER_API_KEY',
+    defaultValue: 'be88e6cf8065496ab8e1021babe950de',
+  );
   static const appEnv = String.fromEnvironment(
     'APP_ENV',
     defaultValue: 'development',

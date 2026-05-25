@@ -1,7 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:oolaf_flutted/api/short_video/index.dart';
 import 'package:oolaf_flutted/components/video_top_tabs/index.dart';
-import 'package:oolaf_flutted/pages/video_tabs/recomend_page.dart';
+import 'package:oolaf_flutted/pages/video_tabs/short_video_feed_page.dart';
 import 'package:oolaf_flutted/pages/video_tabs/short_video_headline_page.dart';
 
 class VideoTabsRegistry {
@@ -126,7 +126,7 @@ class VideoTabsRegistry {
   }
 
   static List<VideoTopTabItem> buildTabs({
-    required List<GlobalKey<VideoTabRecomendPageState>> feedPageKeys,
+    required List<GlobalKey<ShortVideoFeedPageState>> feedPageKeys,
     List<String>? orderedChannelIds,
   }) {
     final orderedChannels = resolveChannelOrder(
@@ -137,7 +137,7 @@ class VideoTabsRegistry {
       VideoTopTabItem(
         id: recommendTabId,
         label: '推荐',
-        page: VideoTabRecomendPage(
+        page: ShortVideoFeedPage(
           key: feedPageKeys[0],
           initialFeedVisible: true,
         ),
@@ -155,7 +155,7 @@ class VideoTabsRegistry {
         VideoTopTabItem(
           id: channel.id,
           label: channel.label,
-          page: VideoTabRecomendPage(
+          page: ShortVideoFeedPage(
             key: feedPageKeys[i + 1],
             channelRequest: channel.request,
             initialFeedVisible: false,

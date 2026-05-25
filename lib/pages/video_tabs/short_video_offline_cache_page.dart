@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:oolaf_flutted/utils/short_video_offline_cache_persistence.dart';
+import 'package:oolaf_flutted/components/network_img/index.dart';
 
 class ShortVideoOfflineCachePage extends StatefulWidget {
   const ShortVideoOfflineCachePage({super.key});
@@ -96,7 +97,7 @@ class _ShortVideoOfflineCachePageState extends State<ShortVideoOfflineCachePage>
                             children: [
                               ClipRRect(
                                 borderRadius: BorderRadius.circular(8),
-                                child: Image.network(
+                                child: CustomNetworkImage(
                                   entry.coverUrl,
                                   width: 64,
                                   height: 64,

@@ -24,8 +24,8 @@ import 'package:oolaf_flutted/utils/video_manager.dart';
 import 'package:preload_page_view/preload_page_view.dart';
 import 'package:redux/redux.dart';
 
-class VideoTabRecomendPage extends StatefulWidget {
-  const VideoTabRecomendPage({
+class ShortVideoFeedPage extends StatefulWidget {
+  const ShortVideoFeedPage({
     super.key,
     this.channelRequest,
     this.initialFeedVisible = true,
@@ -35,10 +35,10 @@ class VideoTabRecomendPage extends StatefulWidget {
   final bool initialFeedVisible;
 
   @override
-  State<VideoTabRecomendPage> createState() => VideoTabRecomendPageState();
+  State<ShortVideoFeedPage> createState() => ShortVideoFeedPageState();
 }
 
-class VideoTabRecomendPageState extends State<VideoTabRecomendPage>
+class ShortVideoFeedPageState extends State<ShortVideoFeedPage>
     with WidgetsBindingObserver, RouteAware, AutomaticKeepAliveClientMixin {
   static const int _loadMoreThreshold = 5;
   static const double _pullRefreshTriggerOffset = 88;
@@ -109,7 +109,7 @@ class VideoTabRecomendPageState extends State<VideoTabRecomendPage>
   String get _videoManagerOwnerKey {
     final request = widget.channelRequest;
     if (request == null) {
-      return 'short_video_recomend_tab';
+      return 'short_video_feed_tab';
     }
     return 'short_video_channel_${request.channel}_${request.listId}';
   }

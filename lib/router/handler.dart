@@ -10,6 +10,7 @@ import 'package:oolaf_flutted/pages/request/index.dart';
 import 'package:oolaf_flutted/pages/scrollable_tabs/detail.dart';
 import 'package:oolaf_flutted/pages/scrollable_tabs/index.dart';
 import 'package:oolaf_flutted/pages/video_tabs/short_video_shell_page.dart';
+import 'package:oolaf_flutted/pages/weather/index.dart';
 import 'package:oolaf_flutted/pages/todolist/index.dart';
 import 'package:oolaf_flutted/utils/helper.dart';
 
@@ -158,5 +159,13 @@ var scrollableTabsDetailRouteHandler = Handler(
       id: id!,
       title: title ?? 'Flutter Template',
     );
+  },
+);
+var weatherRouteHandler = Handler(
+  handlerFunc: (
+    BuildContext? context,
+    Map<String, List<String>> params,
+  ) {
+    return const WeatherPage();
   },
 );

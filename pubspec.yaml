@@ -63,6 +63,7 @@ dependencies:
   media_kit_video: ^1.2.5
   media_kit_libs_video: ^1.0.5
   flutter_widget_from_html: ^0.15.0
+  flutter_svg: ^2.0.10+1
 
 dev_dependencies:
   flutter_test:
@@ -113,6 +114,8 @@ flutter:
   #   - images/a_dot_ham.jpeg
   assets:
     - assets/images/
+    - assets/weather/icons/
+    - assets/weather/cities.json
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware
 
@@ -153,3 +156,5 @@ flutter:
           weight: 300 # 对应 Light 的权重
         - asset: assets/fonts/NotoSansSC-Thin.otf
           weight: 100 # 对应 Thin 的权重
+
+
