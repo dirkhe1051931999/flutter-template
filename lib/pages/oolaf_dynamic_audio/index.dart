@@ -4,6 +4,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:oolaf_flutted/api/oolaf/music.dart';
+import 'package:oolaf_flutted/components/app_asset_icon/index.dart';
 import 'package:oolaf_flutted/components/app_sheet/index.dart';
 import 'package:oolaf_flutted/components/oolaf_music/music_list.dart';
 import 'package:oolaf_flutted/components/oolaf_player/floating_ball.dart';
@@ -242,10 +243,11 @@ class _OolafDynamicAudioPageState extends State<OolafDynamicAudioPage> {
                       onPressed: () {
                         Navigator.of(context).pop();
                       },
-                      child: const Icon(
-                        CupertinoIcons.xmark_circle_fill,
+                      child: const AppAssetIcon(
+                        assetName: 'close-circle',
                         size: 26,
                         color: Color(0xFF8E8E93),
+                        fallbackIcon: CupertinoIcons.xmark_circle_fill,
                       ),
                     ),
                   ],
@@ -300,10 +302,11 @@ class _OolafDynamicAudioPageState extends State<OolafDynamicAudioPage> {
                                 children: [
                                   const Padding(
                                     padding: EdgeInsets.only(top: 2),
-                                    child: Icon(
-                                      CupertinoIcons.music_note,
+                                    child: AppAssetIcon(
+                                      assetName: 'musical-note',
                                       color: themeColor,
                                       size: 18,
+                                      fallbackIcon: CupertinoIcons.music_note,
                                     ),
                                   ),
                                   const SizedBox(width: 10),
@@ -340,12 +343,13 @@ class _OolafDynamicAudioPageState extends State<OolafDynamicAudioPage> {
                                         await _toggleFavorite(track.cdnUrl);
                                         setSheetState(() {});
                                       },
-                                      child: Icon(
-                                        isFavorite
-                                            ? CupertinoIcons.star_fill
-                                            : CupertinoIcons.star,
+                                      child: AppAssetIcon(
+                                        assetName: isFavorite ? 'star' : 'star-outline',
                                         color: themeColor,
                                         size: 20,
+                                        fallbackIcon: isFavorite
+                                            ? CupertinoIcons.star_fill
+                                            : CupertinoIcons.star,
                                       ),
                                     ),
                                 ],
@@ -550,30 +554,33 @@ class _OolafDynamicAudioPageState extends State<OolafDynamicAudioPage> {
                   padding: EdgeInsets.zero,
                   minimumSize: const Size(36, 36),
                   onPressed: _openFavoriteSheet,
-                  child: const Icon(
-                    CupertinoIcons.star,
+                  child: const AppAssetIcon(
+                    assetName: 'star-outline',
                     color: themeColor,
                     size: 20,
+                    fallbackIcon: CupertinoIcons.star,
                   ),
                 ),
                 CupertinoButton(
                   padding: EdgeInsets.zero,
                   minimumSize: const Size(36, 36),
                   onPressed: _openSearchSheet,
-                  child: const Icon(
-                    CupertinoIcons.search,
+                  child: const AppAssetIcon(
+                    assetName: 'search',
                     color: themeColor,
                     size: 20,
+                    fallbackIcon: CupertinoIcons.search,
                   ),
                 ),
                 CupertinoButton(
                   padding: EdgeInsets.zero,
                   minimumSize: const Size(36, 36),
                   onPressed: _refreshIndex,
-                  child: const Icon(
-                    CupertinoIcons.refresh,
+                  child: const AppAssetIcon(
+                    assetName: 'refresh',
                     color: themeColor,
                     size: 20,
+                    fallbackIcon: CupertinoIcons.refresh,
                   ),
                 ),
               ],
@@ -591,9 +598,11 @@ class _OolafDynamicAudioPageState extends State<OolafDynamicAudioPage> {
                         Container(
                           margin: const EdgeInsets.fromLTRB(12, 12, 12, 10),
                           padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(22),
-                            gradient: const LinearGradient(
+                          decoration: const BoxDecoration(
+                            borderRadius: BorderRadius.all(
+                              Radius.circular(22),
+                            ),
+                            gradient: LinearGradient(
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
                               colors: [
@@ -601,7 +610,7 @@ class _OolafDynamicAudioPageState extends State<OolafDynamicAudioPage> {
                                 Color(0xFFFFF6F6),
                               ],
                             ),
-                            boxShadow: const [
+                            boxShadow: [
                               BoxShadow(
                                 color: Color(0x1A000000),
                                 blurRadius: 18,
@@ -639,7 +648,9 @@ class _OolafDynamicAudioPageState extends State<OolafDynamicAudioPage> {
                               ),
                               const SizedBox(width: 10),
                               ClipRRect(
-                                borderRadius: BorderRadius.circular(16),
+                                borderRadius: const BorderRadius.all(
+                                  Radius.circular(16),
+                                ),
                                 child: CustomNetworkImage(
                                   headerImageUrl,
                                   width: 64,
@@ -660,7 +671,9 @@ class _OolafDynamicAudioPageState extends State<OolafDynamicAudioPage> {
                           child: Padding(
                             padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
                             child: ClipRRect(
-                              borderRadius: BorderRadius.circular(22),
+                              borderRadius: const BorderRadius.all(
+                                Radius.circular(22),
+                              ),
                               child: DecoratedBox(
                                 decoration: const BoxDecoration(
                                   color: CupertinoColors.white,

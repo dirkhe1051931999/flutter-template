@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:intl/intl.dart';
+import 'package:oolaf_flutted/components/app_asset_icon/index.dart';
 import 'package:oolaf_flutted/components/weather/weather_icon.dart';
 import 'package:oolaf_flutted/model/weather/index.dart';
 
@@ -93,10 +94,11 @@ class WeatherHeroSection extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 6),
-                    const Icon(
-                      CupertinoIcons.chevron_down,
+                    const AppAssetIcon(
+                      assetName: 'chevron-down',
                       color: CupertinoColors.white,
                       size: 14,
+                      fallbackIcon: CupertinoIcons.chevron_down,
                     ),
                   ],
                 ),
@@ -192,10 +194,11 @@ class WeatherHeroSection extends StatelessWidget {
           ),
           child: Row(
             children: [
-              const Icon(
-                CupertinoIcons.cloud_rain,
+              const AppAssetIcon(
+                assetName: 'rainy',
                 color: CupertinoColors.white,
                 size: 18,
+                fallbackIcon: CupertinoIcons.cloud_rain,
               ),
               const SizedBox(width: 8),
               Expanded(

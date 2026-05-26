@@ -1,4 +1,5 @@
 import 'package:flutter/cupertino.dart';
+import 'package:oolaf_flutted/components/app_asset_icon/index.dart';
 import 'package:oolaf_flutted/utils/short_video_blocked_persistence.dart';
 
 class ShortVideoBlockedManagePage extends StatefulWidget {
@@ -154,10 +155,11 @@ class _BlockedSection extends StatelessWidget {
                 onPressed: () {
                   onRemove(value);
                 },
-                child: const Icon(
-                  CupertinoIcons.xmark_circle_fill,
+                child: const AppAssetIcon(
+                  assetName: 'close-circle',
                   color: CupertinoColors.systemRed,
                   size: 22,
+                  fallbackIcon: CupertinoIcons.xmark_circle_fill,
                 ),
               ),
             ),

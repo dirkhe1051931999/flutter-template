@@ -1,10 +1,14 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_redux/flutter_redux.dart';
 import 'package:flutter/services.dart';
+import 'dart:convert';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:oolaf_flutted/components/app_asset_icon/index.dart';
 import 'package:oolaf_flutted/store/index.dart';
 import 'package:oolaf_flutted/store/user/type.dart';
 import 'package:oolaf_flutted/tools/developer_tools_center.dart';
+import 'package:oolaf_flutted/utils/helper.dart';
+import 'package:oolaf_flutted/utils/ifeng_auth_storage.dart';
 
 class DeveloperToolsPage extends StatefulWidget {
   const DeveloperToolsPage({super.key});
@@ -14,6 +18,8 @@ class DeveloperToolsPage extends StatefulWidget {
 }
 
 class _DeveloperToolsPageState extends State<DeveloperToolsPage> {
+  static const String _ifengIdBaseUrl = 'https://id.ifeng.com';
+  static const String _ifengUserBaseUrl = 'https://user.iclient.ifeng.com';
   static const List<String> _tabs = <String>[
     '概览',
     '请求',
@@ -24,12 +30,15 @@ class _DeveloperToolsPageState extends State<DeveloperToolsPage> {
   ];
 
   PackageInfo? _packageInfo;
+  IfengAuthSession _ifengSession = IfengAuthSession.empty;
+  List<String> _ifengCookies = const <String>[];
   int _selectedTabIndex = 0;
 
   @override
   void initState() {
     super.initState();
     _loadPackageInfo();
+    _loadIfengDebugInfo();
   }
 
   Future<void> _loadPackageInfo() async {
@@ -39,6 +48,24 @@ class _DeveloperToolsPageState extends State<DeveloperToolsPage> {
     }
     setState(() {
       _packageInfo = info;
+    });
+  }
+
+  Future<void> _loadIfengDebugInfo() async {
+    final session = await IfengAuthStorage.loadSession();
+    final idCookieManager = await MyAppCookieManager.create(_ifengIdBaseUrl);
+    final userCookieManager = await MyAppCookieManager.create(_ifengUserBaseUrl);
+    final idCookies = await idCookieManager.getCookies();
+    final userCookies = await userCookieManager.getCookies();
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _ifengSession = session;
+      _ifengCookies = <String>[
+        ...idCookies.map((cookie) => '[id] ${cookie.name}=${cookie.value}'),
+        ...userCookies.map((cookie) => '[user] ${cookie.name}=${cookie.value}'),
+      ];
     });
   }
 
@@ -289,19 +316,41 @@ class _DeveloperToolsPageState extends State<DeveloperToolsPage> {
   List<Widget> _buildUserSection(UserInfo userInfo) {
     return [
       _SectionCard(
-        title: '当前用户信息',
+        title: '凤凰登录调试信息',
         trailing: _HeaderActions(
           onCopy: () {
-            _copyToClipboard(_buildUserInfoText(userInfo));
+            _copyToClipboard(_buildIfengDebugText());
           },
         ),
         children: [
-          _InfoRow(label: 'name', value: userInfo.name.isEmpty ? '-' : userInfo.name),
-          _InfoRow(label: 'age', value: userInfo.age < 0 ? '-' : '${userInfo.age}'),
-          _InfoRow(label: 'username', value: userInfo.username.isEmpty ? '-' : userInfo.username),
-          _InfoRow(label: 'email', value: userInfo.email.isEmpty ? '-' : userInfo.email),
-          _InfoRow(label: 'phone', value: userInfo.phone.isEmpty ? '-' : userInfo.phone),
-          _InfoRow(label: 'token', value: _maskToken(userInfo.token)),
+          _InfoRow(label: 'isLoggedIn', value: _ifengSession.isLoggedIn ? 'true' : 'false'),
+          _InfoRow(label: 'token', value: _maskToken(_ifengSession.token)),
+          _InfoRow(label: 'guid', value: _ifengSession.guid.isEmpty ? '-' : _ifengSession.guid),
+          _InfoRow(
+            label: 'username',
+            value: _ifengSession.username.isEmpty ? '-' : _ifengSession.username,
+          ),
+          _InfoRow(
+            label: 'nickname',
+            value: _ifengSession.nickname.isEmpty ? '-' : _ifengSession.nickname,
+          ),
+          _InfoRow(
+            label: 'userImage',
+            value: _ifengSession.userImage.isEmpty ? '-' : _ifengSession.userImage,
+          ),
+          _InfoRow(label: 'auth', value: _ifengSession.auth.isEmpty ? '-' : _ifengSession.auth),
+          _InfoRow(
+            label: 'smsFastPass',
+            value: _ifengSession.smsFastPass.isEmpty ? '-' : _stringifyMap(_ifengSession.smsFastPass),
+          ),
+          _InfoRow(
+            label: 'sessionRaw',
+            value: _buildIfengSessionRawText(),
+          ),
+          _InfoRow(
+            label: 'cookies',
+            value: _ifengCookies.isEmpty ? '-' : _ifengCookies.join('\n'),
+          ),
         ],
       ),
     ];
@@ -404,13 +453,29 @@ class _DeveloperToolsPageState extends State<DeveloperToolsPage> {
         .join('\n\n');
   }
 
-  String _buildUserInfoText(UserInfo userInfo) {
-    return 'name: ${userInfo.name.isEmpty ? '-' : userInfo.name}\n'
-        'age: ${userInfo.age < 0 ? '-' : userInfo.age}\n'
-        'username: ${userInfo.username.isEmpty ? '-' : userInfo.username}\n'
-        'email: ${userInfo.email.isEmpty ? '-' : userInfo.email}\n'
-        'phone: ${userInfo.phone.isEmpty ? '-' : userInfo.phone}\n'
-        'token: ${_maskToken(userInfo.token)}';
+  String _buildIfengDebugText() {
+    return 'isLoggedIn: ${_ifengSession.isLoggedIn}\n'
+        'token: ${_maskToken(_ifengSession.token)}\n'
+        'guid: ${_ifengSession.guid.isEmpty ? '-' : _ifengSession.guid}\n'
+        'username: ${_ifengSession.username.isEmpty ? '-' : _ifengSession.username}\n'
+        'nickname: ${_ifengSession.nickname.isEmpty ? '-' : _ifengSession.nickname}\n'
+        'userImage: ${_ifengSession.userImage.isEmpty ? '-' : _ifengSession.userImage}\n'
+        'auth: ${_ifengSession.auth.isEmpty ? '-' : _ifengSession.auth}\n'
+        'smsFastPass: ${_ifengSession.smsFastPass.isEmpty ? '-' : _stringifyMap(_ifengSession.smsFastPass)}\n'
+        'sessionRaw: ${_buildIfengSessionRawText()}\n'
+        'cookies: ${_ifengCookies.isEmpty ? '-' : _ifengCookies.join('\n')}';
+  }
+
+  String _buildIfengSessionRawText() {
+    final sessionJson = _ifengSession.toJson();
+    if (sessionJson.isEmpty) {
+      return '-';
+    }
+    return const JsonEncoder.withIndent('  ').convert(sessionJson);
+  }
+
+  String _stringifyMap(Map<String, dynamic> value) {
+    return value.entries.map((entry) => '${entry.key}: ${entry.value}').join(', ');
   }
 
   String _buildVideoStatusText(DeveloperVideoStatus status) {
@@ -449,9 +514,10 @@ class _HeaderActions extends StatelessWidget {
             padding: const EdgeInsets.only(left: 8),
             minimumSize: Size.zero,
             onPressed: onCopy,
-            child: const Icon(
-              CupertinoIcons.doc_on_doc,
+            child: const AppAssetIcon(
+              assetName: 'copy',
               size: 18,
+              fallbackIcon: CupertinoIcons.doc_on_doc,
             ),
           ),
         if (onClear != null)

@@ -1,4 +1,5 @@
 import 'package:flutter/cupertino.dart';
+import 'package:oolaf_flutted/components/app_asset_icon/index.dart';
 
 class CustomNetworkImage extends StatefulWidget {
   const CustomNetworkImage(
@@ -134,9 +135,10 @@ class _CustomNetworkImageState extends State<CustomNetworkImage>
         width: widget.width,
         height: widget.height,
         child: const Center(
-          child: Icon(
-            CupertinoIcons.photo,
+          child: AppAssetIcon(
+            assetName: 'image',
             color: Color(0xFF8E8E93),
+            fallbackIcon: CupertinoIcons.photo,
           ),
         ),
       ),

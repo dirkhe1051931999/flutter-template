@@ -7,6 +7,9 @@ class ShortVideoItem {
     this.updateTime,
     required this.videoUrl,
     required this.coverUrl,
+    this.type = 'phvideo',
+    this.commentsUrl,
+    this.commentsCount = '0',
   });
 
   final String id;
@@ -16,6 +19,9 @@ class ShortVideoItem {
   final String? updateTime;
   final String videoUrl;
   final String coverUrl;
+  final String type;
+  final String? commentsUrl;
+  final String commentsCount;
 }
 
 class ShortVideoState {

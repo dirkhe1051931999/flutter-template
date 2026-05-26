@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:oolaf_flutted/api/short_video/hot_tab.dart';
 import 'package:oolaf_flutted/api/short_video/index.dart';
+import 'package:oolaf_flutted/components/app_asset_icon/index.dart';
 import 'package:oolaf_flutted/pages/video_tabs/short_video_article_detail_page.dart';
 import 'package:oolaf_flutted/pages/video_tabs/short_video_hot_topic_detail_page.dart';
 import 'package:oolaf_flutted/pages/video_tabs/watch_history_play_page.dart';
@@ -444,6 +445,8 @@ class _HotTabFeedListState extends State<_HotTabFeedList>
             coverUrl: entry.coverUrl,
             videoUrl: entry.videoUrl,
             source: entry.source,
+            commentsUrl: entry.commentsUrl,
+            commentsCount: entry.commentsCount,
             watchedAtMillis: DateTime.now().millisecondsSinceEpoch,
           ),
         )
@@ -641,10 +644,11 @@ class _HotspotTopicCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 8),
-                const Icon(
-                  CupertinoIcons.chevron_right,
+                const AppAssetIcon(
+                  assetName: 'chevron-forward',
                   size: 16,
                   color: Color(0xFFB4B7BD),
+                  fallbackIcon: CupertinoIcons.chevron_right,
                 ),
               ],
             ),
@@ -697,10 +701,11 @@ class _HotspotTopicCard extends StatelessWidget {
                               padding: EdgeInsets.zero,
                               minimumSize: const Size(24, 24),
                               onPressed: onCopyLink,
-                              child: const Icon(
-                                CupertinoIcons.share,
+                              child: const AppAssetIcon(
+                                assetName: 'share-social',
                                 size: 16,
                                 color: Color(0xFFB4B7BD),
+                                fallbackIcon: CupertinoIcons.share,
                               ),
                             ),
                           ],
@@ -819,10 +824,11 @@ class _MustSeeVideoCard extends StatelessWidget {
                               padding: EdgeInsets.zero,
                               minimumSize: const Size(24, 24),
                               onPressed: onCopyLink,
-                              child: const Icon(
-                                CupertinoIcons.share,
+                              child: const AppAssetIcon(
+                                assetName: 'share-social',
                                 size: 16,
                                 color: Color(0xFFB4B7BD),
+                                fallbackIcon: CupertinoIcons.share,
                               ),
                             ),
                           ],
@@ -888,10 +894,11 @@ class _FeedCover extends StatelessWidget {
               color: const Color(0xFFF0F2F5),
               child: imageUrl.isEmpty
                   ? const Center(
-                      child: Icon(
-                        CupertinoIcons.photo,
+                      child: AppAssetIcon(
+                        assetName: 'image',
                         size: 24,
                         color: Color(0xFFB8BDC6),
+                        fallbackIcon: CupertinoIcons.photo,
                       ),
                     )
                   : CustomNetworkImage(

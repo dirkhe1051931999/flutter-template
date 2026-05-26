@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/gestures.dart';
+import 'package:oolaf_flutted/components/app_asset_icon/index.dart';
 
 enum VideoTopTabChangeSource { tap, swipe }
 
@@ -224,10 +225,11 @@ class _VideoTopTabsState extends State<VideoTopTabs> {
                             padding: const EdgeInsets.all(6),
                             minimumSize: Size.zero,
                             onPressed: widget.onTapSearch,
-                            child: const Icon(
-                              CupertinoIcons.search,
+                            child: const AppAssetIcon(
+                              assetName: 'search',
                               color: CupertinoColors.white,
                               size: 19,
+                              fallbackIcon: CupertinoIcons.search,
                             ),
                           ),
                         if (widget.onTapManage != null)
@@ -235,10 +237,11 @@ class _VideoTopTabsState extends State<VideoTopTabs> {
                             padding: const EdgeInsets.all(6),
                             minimumSize: Size.zero,
                             onPressed: widget.onTapManage,
-                            child: const Icon(
-                              CupertinoIcons.add,
+                            child: const AppAssetIcon(
+                              assetName: 'add',
                               color: CupertinoColors.white,
                               size: 20,
+                              fallbackIcon: CupertinoIcons.add,
                             ),
                           ),
                       ],

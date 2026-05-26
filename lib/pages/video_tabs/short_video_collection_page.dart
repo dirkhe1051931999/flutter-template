@@ -1,4 +1,5 @@
 import 'package:flutter/cupertino.dart';
+import 'package:oolaf_flutted/components/app_asset_icon/index.dart';
 import 'package:oolaf_flutted/pages/video_tabs/watch_history_page.dart';
 import 'package:oolaf_flutted/pages/video_tabs/watch_history_play_page.dart';
 import 'package:oolaf_flutted/utils/short_video_collection_persistence.dart';
@@ -84,6 +85,9 @@ class _ShortVideoCollectionPageState extends State<ShortVideoCollectionPage> {
             coverUrl: entry.coverUrl,
             videoUrl: entry.videoUrl,
             source: entry.source,
+            type: entry.type,
+            commentsUrl: entry.commentsUrl,
+            commentsCount: entry.commentsCount,
             watchedAtMillis: entry.savedAtMillis,
           ),
         )
@@ -212,9 +216,10 @@ class _CollectionGridItem extends StatelessWidget {
                         return const ColoredBox(
                           color: Color(0xFFE5E5EA),
                           child: Center(
-                            child: Icon(
-                              CupertinoIcons.exclamationmark_triangle,
+                            child: AppAssetIcon(
+                              assetName: 'warning',
                               color: Color(0xFF8E8E93),
+                              fallbackIcon: CupertinoIcons.exclamationmark_triangle,
                             ),
                           ),
                         );

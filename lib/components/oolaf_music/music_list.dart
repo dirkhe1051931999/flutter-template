@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_redux/flutter_redux.dart';
+import 'package:oolaf_flutted/components/app_asset_icon/index.dart';
 import 'package:oolaf_flutted/model/oolaf_music/index.dart';
 import 'package:oolaf_flutted/store/index.dart';
 import 'package:oolaf_flutted/store/oolaf_music/action.dart';
@@ -504,27 +505,31 @@ class _OolafMusicListRowState extends State<_OolafMusicListRow> {
         child: Row(
           children: [
             if (widget.isFolder)
-              Icon(
-                widget.isExpanded
-                    ? CupertinoIcons.chevron_down
-                    : CupertinoIcons.chevron_right,
+              AppAssetIcon(
+                assetName:
+                    widget.isExpanded ? 'chevron-down' : 'chevron-forward',
                 size: 18,
                 color: Colors.black54,
+                fallbackIcon: widget.isExpanded
+                    ? CupertinoIcons.chevron_down
+                    : CupertinoIcons.chevron_right,
               )
             else
               const SizedBox(width: 18),
             const SizedBox(width: 8),
             if (widget.isFolder)
-              const Icon(
-                CupertinoIcons.folder_fill,
+              const AppAssetIcon(
+                assetName: 'folder',
                 size: 18,
                 color: Color(0xFF8E8E93),
+                fallbackIcon: CupertinoIcons.folder_fill,
               )
             else
-              const Icon(
-                CupertinoIcons.music_note,
+              const AppAssetIcon(
+                assetName: 'musical-note',
                 size: 18,
                 color: Color(0xFF8E8E93),
+                fallbackIcon: CupertinoIcons.music_note,
               ),
             const SizedBox(width: 10),
             Expanded(
@@ -546,12 +551,13 @@ class _OolafMusicListRowState extends State<_OolafMusicListRow> {
                 padding: EdgeInsets.zero,
                 minimumSize: const Size(36, 36),
                 onPressed: widget.onToggleFavorite,
-                child: Icon(
-                  widget.isFavorite
-                      ? CupertinoIcons.star_fill
-                      : CupertinoIcons.star,
+                child: AppAssetIcon(
+                  assetName: widget.isFavorite ? 'star' : 'star-outline',
                   size: 18,
                   color: themeColor,
+                  fallbackIcon: widget.isFavorite
+                      ? CupertinoIcons.star_fill
+                      : CupertinoIcons.star,
                 ),
               ),
             if (!widget.isFolder)
@@ -563,15 +569,17 @@ class _OolafMusicListRowState extends State<_OolafMusicListRow> {
                           child: CupertinoActivityIndicator(radius: 11),
                         )
                       : widget.isPlaying
-                          ? const Icon(
-                              CupertinoIcons.pause_circle_fill,
+                          ? const AppAssetIcon(
+                              assetName: 'pause-circle',
                               size: 22,
                               color: themeColor,
+                              fallbackIcon: CupertinoIcons.pause_circle_fill,
                             )
-                          : const Icon(
-                              CupertinoIcons.play_circle_fill,
+                          : const AppAssetIcon(
+                              assetName: 'play-circle',
                               size: 22,
                               color: themeColor,
+                              fallbackIcon: CupertinoIcons.play_circle_fill,
                             )
                   : widget.isRowLoading
                       ? const SizedBox(
@@ -579,10 +587,11 @@ class _OolafMusicListRowState extends State<_OolafMusicListRow> {
                           height: 22,
                           child: CupertinoActivityIndicator(radius: 11),
                         )
-                      : const Icon(
-                          CupertinoIcons.play_circle,
+                      : const AppAssetIcon(
+                          assetName: 'play-circle-outline',
                           size: 22,
                           color: themeColor,
+                          fallbackIcon: CupertinoIcons.play_circle,
                         ),
           ],
         ),

@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:oolaf_flutted/components/app_asset_icon/index.dart';
 
 class WeatherIcon extends StatelessWidget {
   const WeatherIcon({
@@ -26,10 +27,11 @@ class WeatherIcon extends StatelessWidget {
         return SizedBox(
           width: size,
           height: size,
-          child: Icon(
-            CupertinoIcons.sun_max,
+          child: AppAssetIcon(
+            assetName: 'sunny',
             size: size,
             color: color,
+            fallbackIcon: CupertinoIcons.sun_max,
           ),
         );
       },

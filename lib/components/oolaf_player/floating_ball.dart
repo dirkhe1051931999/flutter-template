@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_redux/flutter_redux.dart';
+import 'package:oolaf_flutted/components/app_asset_icon/index.dart';
 import 'package:oolaf_flutted/components/oolaf_player/player_sheet.dart';
 import 'package:oolaf_flutted/store/index.dart';
 import 'package:oolaf_flutted/store/oolaf_music/action.dart';
@@ -347,12 +348,13 @@ class _BottomMiniPlayer extends StatelessWidget {
                       },
                       child: isBuffering
                           ? const CupertinoActivityIndicator(radius: 10)
-                          : Icon(
-                              state.isPlaying
-                                  ? CupertinoIcons.pause
-                                  : CupertinoIcons.play,
+                          : AppAssetIcon(
+                              assetName: state.isPlaying ? 'pause' : 'play',
                               color: _themeColor,
                               size: 20,
+                              fallbackIcon: state.isPlaying
+                                  ? CupertinoIcons.pause
+                                  : CupertinoIcons.play,
                             ),
                     ),
                     CupertinoButton(
@@ -361,20 +363,22 @@ class _BottomMiniPlayer extends StatelessWidget {
                       onPressed: () {
                         onNext();
                       },
-                      child: const Icon(
-                        CupertinoIcons.forward,
+                      child: const AppAssetIcon(
+                        assetName: 'play-skip-forward',
                         color: _themeColor,
                         size: 20,
+                        fallbackIcon: CupertinoIcons.forward,
                       ),
                     ),
                     CupertinoButton(
                       padding: EdgeInsets.zero,
                       minimumSize: const Size(34, 34),
                       onPressed: onCollapse,
-                      child: const Icon(
-                        CupertinoIcons.chevron_down,
+                      child: const AppAssetIcon(
+                        assetName: 'chevron-down',
                         color: Color(0xFF8E8E93),
                         size: 18,
+                        fallbackIcon: CupertinoIcons.chevron_down,
                       ),
                     ),
                     CupertinoButton(
@@ -383,10 +387,11 @@ class _BottomMiniPlayer extends StatelessWidget {
                       onPressed: () {
                         onClose();
                       },
-                      child: const Icon(
-                        CupertinoIcons.xmark,
+                      child: const AppAssetIcon(
+                        assetName: 'close',
                         color: Color(0xFF8E8E93),
                         size: 18,
+                        fallbackIcon: CupertinoIcons.xmark,
                       ),
                     ),
                   ],
@@ -450,10 +455,11 @@ class _CollapsedBall extends StatelessWidget {
                     height: innerSize,
                     color: const Color(0xFFF2F3F4),
                     alignment: Alignment.center,
-                    child: const Icon(
-                      CupertinoIcons.music_note,
+                    child: const AppAssetIcon(
+                      assetName: 'musical-note',
                       color: _themeColor,
                       size: 22,
+                      fallbackIcon: CupertinoIcons.music_note,
                     ),
                   );
                 },
@@ -518,10 +524,11 @@ class _CollapsedBall extends StatelessWidget {
                   ),
                   child: Padding(
                     padding: EdgeInsets.all(2),
-                    child: Icon(
-                      CupertinoIcons.play_fill,
+                    child: AppAssetIcon(
+                      assetName: 'play',
                       size: 12,
                       color: _themeColor,
+                      fallbackIcon: CupertinoIcons.play_fill,
                     ),
                   ),
                 ),

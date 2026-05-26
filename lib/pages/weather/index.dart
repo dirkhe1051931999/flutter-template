@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:oolaf_flutted/api/weather/index.dart';
+import 'package:oolaf_flutted/components/app_asset_icon/index.dart';
 import 'package:oolaf_flutted/model/weather/index.dart';
 import 'package:oolaf_flutted/pages/weather/weather_city_search_page.dart';
 import 'package:oolaf_flutted/pages/weather/widgets/weather_forecast_section.dart';
@@ -149,10 +150,11 @@ class _WeatherPageState extends State<WeatherPage>
                           child: const Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(
-                                CupertinoIcons.back,
+                              AppAssetIcon(
+                                assetName: 'arrow-back',
                                 color: Color(0xFF5856D6),
                                 size: 20,
+                                fallbackIcon: CupertinoIcons.back,
                               ),
                               SizedBox(width: 2),
                               Text(
@@ -172,11 +174,12 @@ class _WeatherPageState extends State<WeatherPage>
                           onPressed: _isRefreshing ? null : _refresh,
                           child: RotationTransition(
                             turns: _refreshAnimationController,
-                            child: Icon(
-                              CupertinoIcons.refresh,
+                            child: AppAssetIcon(
+                              assetName: 'refresh',
                               color: _isRefreshing
                                   ? const Color(0xFF94A3B8)
                                   : const Color(0xFF5856D6),
+                              fallbackIcon: CupertinoIcons.refresh,
                             ),
                           ),
                         ),

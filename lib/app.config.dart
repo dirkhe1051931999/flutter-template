@@ -16,6 +16,10 @@ class AppConfig {
     'SHORT_VIDEO_API_BASE_URL',
     defaultValue: 'https://nine.ifeng.com',
   );
+  static const shortVideoCommentApiBaseUrl = String.fromEnvironment(
+    'SHORT_VIDEO_COMMENT_API_BASE_URL',
+    defaultValue: 'https://comment.ifeng.com',
+  );
   static const qWeatherBaseUrl = String.fromEnvironment(
     'QWEATHER_BASE_URL',
     defaultValue: 'https://nm359gputx.re.qweatherapi.com',

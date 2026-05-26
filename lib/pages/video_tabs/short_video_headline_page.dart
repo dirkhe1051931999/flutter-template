@@ -3,6 +3,9 @@ import 'dart:ui';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart' show SelectionArea, SelectableText;
 import 'package:flutter/services.dart';
+import 'package:oolaf_flutted/components/app_asset_icon/index.dart';
+import 'package:oolaf_flutted/components/short_video/interaction_overlay.dart';
+import 'package:oolaf_flutted/components/short_video/real_comment_sheet.dart';
 import 'package:oolaf_flutted/pages/video_tabs/short_video_article_detail_page.dart';
 import 'package:oolaf_flutted/api/short_video/index.dart';
 import 'package:oolaf_flutted/components/short_video/short_video_player_wrapper.dart';
@@ -156,6 +159,9 @@ class _ShortVideoHeadlinePageState extends State<ShortVideoHeadlinePage>
     if (pageIndex < 0 || pageIndex >= _items.length) {
       return -1;
     }
+    if (_items[pageIndex].type != HeadlineFeedItemType.phvideo) {
+      return -1;
+    }
     var count = -1;
     for (var i = 0; i <= pageIndex; i += 1) {
       if (_items[i].type == HeadlineFeedItemType.phvideo) {
@@ -265,6 +271,12 @@ class _ShortVideoHeadlinePageState extends State<ShortVideoHeadlinePage>
             onCopyLink: () async {
               await Clipboard.setData(ClipboardData(text: video.videoUrl));
             },
+            onTapComment: () {
+              showRealShortVideoCommentSheet(
+                context,
+                item: video,
+              );
+            },
           );
         }
 
@@ -300,6 +312,7 @@ class _HeadlineVideoPageItem extends StatelessWidget {
     required this.onSwipeUp,
     required this.onSwipeDown,
     required this.onCopyLink,
+    required this.onTapComment,
   });
 
   final ShortVideoItem item;
@@ -307,6 +320,7 @@ class _HeadlineVideoPageItem extends StatelessWidget {
   final VoidCallback onSwipeUp;
   final VoidCallback onSwipeDown;
   final Future<void> Function() onCopyLink;
+  final VoidCallback onTapComment;
 
   @override
   Widget build(BuildContext context) {
@@ -326,42 +340,19 @@ class _HeadlineVideoPageItem extends StatelessWidget {
           },
           onCopyLink: onCopyLink,
         ),
-        Positioned(
-          left: 16,
-          right: 16,
-          bottom: 96,
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              color: const Color(0x66000000),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    item.title,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: CupertinoColors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    item.source ?? '凤凰视频',
-                    style: const TextStyle(
-                      color: Color(0xCCFFFFFF),
-                      fontSize: 13,
-                    ),
-                  ),
-                ],
-              ),
-            ),
+        ShortVideoInteractionOverlay(
+          avatarUrl: item.avatarUrl,
+          source: item.source ?? '凤凰视频',
+          title: item.title,
+          updateTime: item.updateTime ?? '',
+          isFavorite: false,
+          onTapFavorite: () {},
+          onTapComment: onTapComment,
+          onTapShare: () async {
+            await onCopyLink();
+          },
+          commentCountLabel: formatShortVideoCommentCount(
+            int.tryParse(item.commentsCount) ?? 0,
           ),
         ),
       ],
@@ -591,10 +582,11 @@ class _HeadlineDocPageItem extends StatelessWidget {
                                       onPressed: () {
                                         _copyDocPreview(context);
                                       },
-                                      child: const Icon(
-                                        CupertinoIcons.doc_on_doc,
+                                      child: const AppAssetIcon(
+                                        assetName: 'copy',
                                         color: Color(0xB3FFFFFF),
                                         size: 18,
+                                        fallbackIcon: CupertinoIcons.doc_on_doc,
                                       ),
                                     ),
                                   ],

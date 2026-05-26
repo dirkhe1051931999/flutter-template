@@ -2,10 +2,11 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_redux/flutter_redux.dart';
 import 'package:oolaf_flutted/api/short_video/index.dart';
+import 'package:oolaf_flutted/components/app_asset_icon/index.dart';
 import 'package:oolaf_flutted/components/app_sheet/index.dart';
-import 'package:oolaf_flutted/components/short_video/comment_sheet.dart';
 import 'package:oolaf_flutted/components/short_video/danmaku_overlay.dart';
 import 'package:oolaf_flutted/components/short_video/interaction_overlay.dart';
+import 'package:oolaf_flutted/components/short_video/real_comment_sheet.dart';
 import 'package:oolaf_flutted/components/short_video/short_video_player_wrapper.dart';
 import 'package:oolaf_flutted/model/short_video/danmaku_item.dart';
 import 'package:oolaf_flutted/router/route_observer.dart';
@@ -302,6 +303,9 @@ class ShortVideoFeedPageState extends State<ShortVideoFeedPage>
         coverUrl: item.coverUrl,
         videoUrl: item.videoUrl,
         source: item.source,
+        type: item.type,
+        commentsUrl: item.commentsUrl,
+        commentsCount: item.commentsCount,
         watchedAtMillis: DateTime.now().millisecondsSinceEpoch,
       ),
     );
@@ -315,6 +319,9 @@ class ShortVideoFeedPageState extends State<ShortVideoFeedPage>
       coverUrl: item.coverUrl,
       videoUrl: item.videoUrl,
       source: item.source,
+      type: item.type,
+      commentsUrl: item.commentsUrl,
+      commentsCount: item.commentsCount,
       savedAtMillis: DateTime.now().millisecondsSinceEpoch,
     );
   }
@@ -354,6 +361,10 @@ class ShortVideoFeedPageState extends State<ShortVideoFeedPage>
     if (index < 0 || index >= _items.length) {
       return;
     }
+    final store = _store;
+    if (store != null && !store.state.shortVideo.danmakuEnabled) {
+      return;
+    }
     final item = _items[index];
     final videoId = item.id;
     if (videoId.isEmpty) {
@@ -366,7 +377,7 @@ class ShortVideoFeedPageState extends State<ShortVideoFeedPage>
 
     _danmakuLoadingVideoIds.add(videoId);
     try {
-      final items = await getDanmaku(videoId);
+      final items = await getDanmaku(item);
       if (!mounted) {
         return;
       }
@@ -506,7 +517,7 @@ class ShortVideoFeedPageState extends State<ShortVideoFeedPage>
         }
 
         Widget actionTile({
-          required IconData icon,
+          required Widget icon,
           required String label,
           required Future<void> Function() onPressed,
           bool isDanger = false,
@@ -529,13 +540,7 @@ class ShortVideoFeedPageState extends State<ShortVideoFeedPage>
                         : const Color(0x29FFFFFF),
                     borderRadius: BorderRadius.circular(16),
                   ),
-                  child: Icon(
-                    icon,
-                    size: 24,
-                    color: isDanger
-                        ? CupertinoColors.systemRed
-                        : CupertinoColors.white,
-                  ),
+                  child: icon,
                 ),
                 const SizedBox(height: 8),
                 Text(
@@ -630,24 +635,44 @@ class ShortVideoFeedPageState extends State<ShortVideoFeedPage>
               const SizedBox(height: 12),
               actionGrid([
                 actionTile(
-                  icon: isFavorite
-                      ? CupertinoIcons.heart_slash_fill
-                      : CupertinoIcons.heart_fill,
+                  icon: AppAssetIcon(
+                    assetName: 'heart',
+                    size: 24,
+                    color: CupertinoColors.white,
+                    fallbackIcon: isFavorite
+                        ? CupertinoIcons.heart_slash_fill
+                        : CupertinoIcons.heart_fill,
+                  ),
                   label: isFavorite ? '取消喜欢' : '喜欢',
                   onPressed: () => _toggleFavorite(item),
                 ),
                 actionTile(
-                  icon: CupertinoIcons.time,
+                  icon: const AppAssetIcon(
+                    assetName: 'time',
+                    size: 24,
+                    color: CupertinoColors.white,
+                    fallbackIcon: CupertinoIcons.time,
+                  ),
                   label: '稍后再看',
                   onPressed: () => _saveWatchLater(item),
                 ),
                 actionTile(
-                  icon: CupertinoIcons.link,
+                  icon: const AppAssetIcon(
+                    assetName: 'link',
+                    size: 24,
+                    color: CupertinoColors.white,
+                    fallbackIcon: CupertinoIcons.link,
+                  ),
                   label: '复制链接',
                   onPressed: () => _copyShareText(item),
                 ),
                 actionTile(
-                  icon: CupertinoIcons.cloud_download,
+                  icon: const AppAssetIcon(
+                    assetName: 'cloud-download',
+                    size: 24,
+                    color: CupertinoColors.white,
+                    fallbackIcon: CupertinoIcons.cloud_download,
+                  ),
                   label: '离线缓存',
                   onPressed: () => _saveOfflineCache(item),
                 ),
@@ -675,7 +700,11 @@ class ShortVideoFeedPageState extends State<ShortVideoFeedPage>
               const SizedBox(height: 12),
               actionGrid([
                 actionTile(
-                  icon: CupertinoIcons.hand_thumbsdown_fill,
+                  icon: const Icon(
+                    CupertinoIcons.hand_thumbsdown_fill,
+                    size: 24,
+                    color: CupertinoColors.systemRed,
+                  ),
                   label: '不感兴趣',
                   isDanger: true,
                   onPressed: () => _markNotInterested(
@@ -686,7 +715,12 @@ class ShortVideoFeedPageState extends State<ShortVideoFeedPage>
                   ),
                 ),
                 actionTile(
-                  icon: CupertinoIcons.person_crop_circle_badge_xmark,
+                  icon: const AppAssetIcon(
+                    assetName: 'person-remove',
+                    size: 24,
+                    color: CupertinoColors.systemRed,
+                    fallbackIcon: CupertinoIcons.person_crop_circle_badge_xmark,
+                  ),
                   label: '不看该来源',
                   isDanger: true,
                   onPressed: () => _markNotInterested(
@@ -697,7 +731,12 @@ class ShortVideoFeedPageState extends State<ShortVideoFeedPage>
                   ),
                 ),
                 actionTile(
-                  icon: CupertinoIcons.text_badge_xmark,
+                  icon: const AppAssetIcon(
+                    assetName: 'text-remove',
+                    size: 24,
+                    color: CupertinoColors.systemRed,
+                    fallbackIcon: CupertinoIcons.text_badge_xmark,
+                  ),
                   label: '屏蔽标题词',
                   isDanger: true,
                   onPressed: () => _markNotInterested(
@@ -1506,11 +1545,17 @@ class ShortVideoFeedPageState extends State<ShortVideoFeedPage>
                             _toggleFavorite(item);
                           },
                           onTapComment: () {
-                            showShortVideoCommentSheet(context);
+                            showRealShortVideoCommentSheet(
+                              context,
+                              item: item,
+                            );
                           },
                           onTapShare: () {
                             _copyShareText(item);
                           },
+                          commentCountLabel: formatShortVideoCommentCount(
+                            int.tryParse(item.commentsCount) ?? 0,
+                          ),
                           onLongPressAvatarStart: () {
                             _handleAvatarLongPressStart();
                           },
@@ -1576,12 +1621,15 @@ class ShortVideoFeedPageState extends State<ShortVideoFeedPage>
                                             ),
                                           )
                                         else
-                                          Icon(
-                                            shouldRefreshByRelease
-                                                ? CupertinoIcons.arrow_up
-                                                : CupertinoIcons.arrow_down,
+                                          AppAssetIcon(
+                                            assetName: shouldRefreshByRelease
+                                                ? 'arrow-up'
+                                                : 'arrow-down',
                                             color: CupertinoColors.white,
                                             size: 14,
+                                            fallbackIcon: shouldRefreshByRelease
+                                                ? CupertinoIcons.arrow_up
+                                                : CupertinoIcons.arrow_down,
                                           ),
                                         const SizedBox(width: 8),
                                         Text(

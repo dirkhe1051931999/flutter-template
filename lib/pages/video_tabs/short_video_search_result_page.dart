@@ -2,6 +2,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:oolaf_flutted/api/short_video/index.dart';
+import 'package:oolaf_flutted/components/app_asset_icon/index.dart';
 import 'package:oolaf_flutted/pages/video_tabs/short_video_search_player_page.dart';
 import 'package:oolaf_flutted/store/short_video/state.dart';
 import 'package:oolaf_flutted/utils/short_video_blocked_persistence.dart';
@@ -173,6 +174,9 @@ class _ShortVideoSearchResultPageState
       coverUrl: item.coverUrl,
       videoUrl: item.videoUrl,
       source: item.source,
+      type: item.type,
+      commentsUrl: item.commentsUrl,
+      commentsCount: item.commentsCount,
       savedAtMillis: DateTime.now().millisecondsSinceEpoch,
     );
   }
@@ -716,9 +720,10 @@ class _SearchResultGridItem extends StatelessWidget {
                         return const ColoredBox(
                           color: Color(0xFFE5E5EA),
                           child: Center(
-                            child: Icon(
-                              CupertinoIcons.exclamationmark_triangle,
+                            child: AppAssetIcon(
+                              assetName: 'warning',
                               color: Color(0xFF8E8E93),
+                              fallbackIcon: CupertinoIcons.exclamationmark_triangle,
                             ),
                           ),
                         );
@@ -802,30 +807,49 @@ class _SearchResultGridItem extends StatelessWidget {
                 children: [
                   Expanded(
                     child: _GridActionButton(
-                      icon: isFavorite
-                          ? CupertinoIcons.heart_fill
-                          : CupertinoIcons.heart,
-                      color: isFavorite
-                          ? CupertinoColors.systemRed
-                          : const Color(0xFF8E8E93),
+                      icon: AppAssetIcon(
+                        assetName: 'heart',
+                        size: 18,
+                        color: isFavorite
+                            ? CupertinoColors.systemRed
+                            : const Color(0xFF8E8E93),
+                        fallbackIcon: isFavorite
+                            ? CupertinoIcons.heart_fill
+                            : CupertinoIcons.heart,
+                      ),
                       onTap: onTapFavorite,
                     ),
                   ),
                   Expanded(
                     child: _GridActionButton(
-                      icon: CupertinoIcons.time,
+                      icon: const AppAssetIcon(
+                        assetName: 'time',
+                        size: 18,
+                        color: Color(0xFF8E8E93),
+                        fallbackIcon: CupertinoIcons.time,
+                      ),
                       onTap: onTapWatchLater,
                     ),
                   ),
                   Expanded(
                     child: _GridActionButton(
-                      icon: CupertinoIcons.cloud_download,
+                      icon: const AppAssetIcon(
+                        assetName: 'cloud-download',
+                        size: 18,
+                        color: Color(0xFF8E8E93),
+                        fallbackIcon: CupertinoIcons.cloud_download,
+                      ),
                       onTap: onTapOfflineCache,
                     ),
                   ),
                   Expanded(
                     child: _GridActionButton(
-                      icon: CupertinoIcons.share,
+                      icon: const AppAssetIcon(
+                        assetName: 'share-social',
+                        size: 18,
+                        color: Color(0xFF8E8E93),
+                        fallbackIcon: CupertinoIcons.share,
+                      ),
                       onTap: onTapShare,
                     ),
                   ),
@@ -843,12 +867,10 @@ class _GridActionButton extends StatelessWidget {
   const _GridActionButton({
     required this.icon,
     required this.onTap,
-    this.color = const Color(0xFF8E8E93),
   });
 
-  final IconData icon;
+  final Widget icon;
   final VoidCallback onTap;
-  final Color color;
 
   @override
   Widget build(BuildContext context) {
@@ -856,7 +878,7 @@ class _GridActionButton extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 4),
       minimumSize: Size.zero,
       onPressed: onTap,
-      child: Icon(icon, size: 18, color: color),
+      child: icon,
     );
   }
 }
@@ -873,10 +895,11 @@ class _SearchResultAvatarFallback extends StatelessWidget {
         color: Color(0x66FFFFFF),
         shape: BoxShape.circle,
       ),
-      child: const Icon(
-        CupertinoIcons.person_fill,
+      child: const AppAssetIcon(
+        assetName: 'person',
         size: 12,
         color: CupertinoColors.white,
+        fallbackIcon: CupertinoIcons.person_fill,
       ),
     );
   }

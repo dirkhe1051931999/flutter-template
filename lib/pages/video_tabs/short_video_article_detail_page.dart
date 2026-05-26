@@ -1,5 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart' show SelectionArea, SelectableText;
+import 'package:oolaf_flutted/components/article/doc_comment_section.dart';
+import 'package:oolaf_flutted/components/app_asset_icon/index.dart';
 import 'package:oolaf_flutted/pages/video_tabs/short_video_article_body_helper.dart';
 import 'package:oolaf_flutted/pages/video_tabs/short_video_gallery_preview.dart'
     show ShortVideoGalleryPreviewImage, galleryWrapWithDesktopFriendlyScrollBehavior;
@@ -25,7 +27,7 @@ Widget wrapWithDesktopFriendlyScrollBehavior(Widget child) {
   return galleryWrapWithDesktopFriendlyScrollBehavior(child);
 }
 
-class ShortVideoArticleDetailPage extends StatelessWidget {
+class ShortVideoArticleDetailPage extends StatefulWidget {
   const ShortVideoArticleDetailPage({
     super.key,
     required this.detail,
@@ -34,6 +36,20 @@ class ShortVideoArticleDetailPage extends StatelessWidget {
 
   final HeadlineNewsDocDetail detail;
   final String coverUrl;
+
+  @override
+  State<ShortVideoArticleDetailPage> createState() =>
+      _ShortVideoArticleDetailPageState();
+}
+
+class _ShortVideoArticleDetailPageState extends State<ShortVideoArticleDetailPage> {
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
 
   Future<void> _copyAll(
     BuildContext context, {
@@ -62,11 +78,11 @@ class ShortVideoArticleDetailPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final articleBody = ShortVideoArticleBodyHelper.parse(
-      title: detail.title,
-      source: detail.source,
-      updateTime: detail.updateTime,
-      htmlText: detail.htmlText,
-      coverUrl: coverUrl,
+      title: widget.detail.title,
+      source: widget.detail.source,
+      updateTime: widget.detail.updateTime,
+      htmlText: widget.detail.htmlText,
+      coverUrl: widget.coverUrl,
     );
     final articleBodyWidgets = ShortVideoArticleBodyHelper.buildWidgets(
       context: context,
@@ -77,7 +93,7 @@ class ShortVideoArticleDetailPage extends StatelessWidget {
     return CupertinoPageScaffold(
       navigationBar: CupertinoNavigationBar(
         middle: Text(
-          detail.title,
+          widget.detail.title,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
@@ -90,44 +106,64 @@ class ShortVideoArticleDetailPage extends StatelessWidget {
               plainText: articleBody.plainText,
             );
           },
-          child: const Icon(CupertinoIcons.doc_on_doc, size: 20),
+          child: const AppAssetIcon(
+            assetName: 'copy',
+            size: 20,
+            fallbackIcon: CupertinoIcons.doc_on_doc,
+          ),
         ),
         previousPageTitle: '返回',
       ),
       child: SafeArea(
         child: wrapWithDesktopFriendlyScrollBehavior(
           SelectionArea(
-            child: ListView(
-              padding: const EdgeInsets.fromLTRB(14, 10, 14, 24),
-              children: [
-                SelectableText(
-                  detail.title,
-                  style: const TextStyle(
-                    color: Color(0xFF1C1C1E),
-                    fontSize: 24,
-                    fontWeight: FontWeight.w700,
-                    height: 1.35,
+            child: CustomScrollView(
+              controller: _scrollController,
+              slivers: [
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(14, 10, 14, 24),
+                  sliver: SliverToBoxAdapter(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        SelectableText(
+                          widget.detail.title,
+                          style: const TextStyle(
+                            color: Color(0xFF1C1C1E),
+                            fontSize: 24,
+                            fontWeight: FontWeight.w700,
+                            height: 1.35,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        SelectableText(
+                          '${widget.detail.source}  ${widget.detail.updateTime}'.trim(),
+                          style: const TextStyle(
+                            color: Color(0xFF8E8E93),
+                            fontSize: 13,
+                          ),
+                        ),
+                        if (widget.coverUrl.isNotEmpty) ...[
+                          const SizedBox(height: 14),
+                          ShortVideoGalleryPreviewImage(
+                            imageUrl: widget.coverUrl,
+                            galleryImageUrls: articleBody.imageUrls,
+                          ),
+                        ],
+                        if (articleBodyWidgets.isNotEmpty) ...[
+                          const SizedBox(height: 14),
+                          ...articleBodyWidgets,
+                        ],
+                        const SizedBox(height: 24),
+                        DocCommentSection(
+                          docId: widget.detail.id,
+                          initialCommentsCount: widget.detail.commentsCount,
+                          scrollController: _scrollController,
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-                const SizedBox(height: 8),
-                SelectableText(
-                  '${detail.source}  ${detail.updateTime}'.trim(),
-                  style: const TextStyle(
-                    color: Color(0xFF8E8E93),
-                    fontSize: 13,
-                  ),
-                ),
-                if (coverUrl.isNotEmpty) ...[
-                  const SizedBox(height: 14),
-                  ShortVideoGalleryPreviewImage(
-                    imageUrl: coverUrl,
-                    galleryImageUrls: articleBody.imageUrls,
-                  ),
-                ],
-                if (articleBodyWidgets.isNotEmpty) ...[
-                  const SizedBox(height: 14),
-                  ...articleBodyWidgets,
-                ],
               ],
             ),
           ),

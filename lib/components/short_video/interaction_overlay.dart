@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart' show SelectionArea, SelectableText;
+import 'package:oolaf_flutted/components/app_asset_icon/index.dart';
 import 'package:oolaf_flutted/components/network_img/index.dart';
 
 class ShortVideoInteractionOverlay extends StatelessWidget {
@@ -15,6 +16,7 @@ class ShortVideoInteractionOverlay extends StatelessWidget {
     required this.onTapFavorite,
     required this.onTapComment,
     required this.onTapShare,
+    this.commentCountLabel = '评论',
     this.onLongPressAvatarStart,
     this.onLongPressAvatarEnd,
     this.isAvatarSpeedActive = false,
@@ -29,6 +31,7 @@ class ShortVideoInteractionOverlay extends StatelessWidget {
   final VoidCallback onTapFavorite;
   final VoidCallback onTapComment;
   final VoidCallback onTapShare;
+  final String commentCountLabel;
   final VoidCallback? onLongPressAvatarStart;
   final VoidCallback? onLongPressAvatarEnd;
   final bool isAvatarSpeedActive;
@@ -126,22 +129,36 @@ class ShortVideoInteractionOverlay extends StatelessWidget {
                     ),
                     const SizedBox(height: 18),
                     _IconButton(
-                      icon: CupertinoIcons.heart_fill,
+                      icon: AppAssetIcon(
+                        assetName: 'heart',
+                        size: 34,
+                        color: isFavorite
+                            ? CupertinoColors.systemRed
+                            : CupertinoColors.white,
+                        fallbackIcon: CupertinoIcons.heart_fill,
+                      ),
                       label: isFavorite ? '已喜欢' : '喜欢',
-                      color: isFavorite
-                          ? CupertinoColors.systemRed
-                          : CupertinoColors.white,
                       onTap: onTapFavorite,
                     ),
                     const SizedBox(height: 18),
                     _IconButton(
-                      icon: CupertinoIcons.chat_bubble_text_fill,
-                      label: '评论',
+                      icon: const AppAssetIcon(
+                        assetName: 'chatbubble',
+                        size: 34,
+                        color: CupertinoColors.white,
+                        fallbackIcon: CupertinoIcons.chat_bubble_text_fill,
+                      ),
+                      label: commentCountLabel,
                       onTap: onTapComment,
                     ),
                     const SizedBox(height: 18),
                     _IconButton(
-                      icon: CupertinoIcons.share_solid,
+                      icon: const AppAssetIcon(
+                        assetName: 'share-social',
+                        size: 34,
+                        color: CupertinoColors.white,
+                        fallbackIcon: CupertinoIcons.share_solid,
+                      ),
                       label: '分享',
                       onTap: onTapShare,
                     ),
@@ -153,10 +170,11 @@ class ShortVideoInteractionOverlay extends StatelessWidget {
                         color: const Color(0x33FFFFFF),
                         borderRadius: BorderRadius.circular(14),
                       ),
-                      child: const Icon(
-                        CupertinoIcons.music_note,
-                        color: CupertinoColors.white,
+                      child: const AppAssetIcon(
+                        assetName: 'musical-note',
                         size: 22,
+                        color: CupertinoColors.white,
+                        fallbackIcon: CupertinoIcons.music_note,
                       ),
                     ),
                   ],
@@ -322,10 +340,11 @@ class _AvatarFallback extends StatelessWidget {
     return const ColoredBox(
       color: Color(0x33FFFFFF),
       child: Center(
-        child: Icon(
-          CupertinoIcons.person_fill,
+        child: AppAssetIcon(
+          assetName: 'person',
           color: CupertinoColors.white,
           size: 22,
+          fallbackIcon: CupertinoIcons.person_fill,
         ),
       ),
     );
@@ -337,13 +356,11 @@ class _IconButton extends StatelessWidget {
     required this.icon,
     required this.label,
     required this.onTap,
-    this.color = CupertinoColors.white,
   });
 
-  final IconData icon;
+  final Widget icon;
   final String label;
   final VoidCallback onTap;
-  final Color color;
 
   @override
   Widget build(BuildContext context) {
@@ -352,7 +369,7 @@ class _IconButton extends StatelessWidget {
       onPressed: onTap,
       child: Column(
         children: [
-          Icon(icon, color: color, size: 34),
+          icon,
           const SizedBox(height: 6),
           Text(
             label,

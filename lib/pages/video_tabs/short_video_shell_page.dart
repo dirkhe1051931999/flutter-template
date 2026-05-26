@@ -1,6 +1,9 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/gestures.dart';
+import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_redux/flutter_redux.dart';
+import 'package:oolaf_flutted/api/ifeng_auth/index.dart';
+import 'package:oolaf_flutted/components/app_asset_icon/index.dart';
 import 'package:oolaf_flutted/components/short_video/short_video_bottom_tab_bar.dart';
 import 'package:oolaf_flutted/components/video_top_tabs/index.dart';
 import 'package:oolaf_flutted/pages/video_tabs/index.dart';
@@ -10,13 +13,16 @@ import 'package:oolaf_flutted/pages/video_tabs/short_video_blocked_manage_page.d
 import 'package:oolaf_flutted/pages/video_tabs/short_video_channel_manage_page.dart';
 import 'package:oolaf_flutted/pages/video_tabs/short_video_collection_page.dart';
 import 'package:oolaf_flutted/pages/video_tabs/short_video_hot_page.dart';
+import 'package:oolaf_flutted/pages/video_tabs/short_video_login_page.dart';
 import 'package:oolaf_flutted/pages/video_tabs/short_video_search_page.dart';
 import 'package:oolaf_flutted/pages/video_tabs/watch_history_page.dart';
 import 'package:oolaf_flutted/pages/video_tabs/short_video_offline_cache_page.dart';
+import 'package:oolaf_flutted/model/ifeng_auth/index.dart';
 import 'package:oolaf_flutted/store/index.dart';
 import 'package:oolaf_flutted/store/oolaf_music/action.dart';
 import 'package:oolaf_flutted/store/short_video/action.dart';
 import 'package:oolaf_flutted/store/short_video/state.dart';
+import 'package:oolaf_flutted/utils/ifeng_auth_storage.dart';
 import 'package:oolaf_flutted/utils/oolaf_audio_player.dart';
 import 'package:oolaf_flutted/utils/short_video_blocked_persistence.dart';
 import 'package:oolaf_flutted/utils/short_video_article_history_persistence.dart';
@@ -359,6 +365,188 @@ class _ShortVideoProfilePageState extends State<_ShortVideoProfilePage> {
   static const _profileCoverUrl = 'https://picsum.photos/1200/500';
 
   double _headerStretchHeight = 0;
+  IfengAuthSession _authSession = IfengAuthSession.empty;
+  IfengUserProfileModel? _userProfile;
+  bool _isLoadingProfile = false;
+
+  bool get _isLoggedIn => _authSession.isLoggedIn;
+
+  @override
+  void initState() {
+    super.initState();
+    _restoreAuthState();
+  }
+
+  Future<void> _restoreAuthState() async {
+    final session = await IfengAuthStorage.loadSession();
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _authSession = session;
+    });
+    if (session.isLoggedIn) {
+      await _loadUserProfile();
+    }
+  }
+
+  Future<void> _loadUserProfile() async {
+    if (!_authSession.isLoggedIn || _isLoadingProfile) {
+      return;
+    }
+    setState(() {
+      _isLoadingProfile = true;
+    });
+    try {
+      final profile = await getIfengUserProfile();
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _userProfile = profile;
+      });
+    } catch (_) {
+      if (mounted) {
+        EasyLoading.showToast('获取用户信息失败');
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoadingProfile = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _openLoginPage() async {
+    final result = await Navigator.of(context).push<bool>(
+      CupertinoPageRoute<bool>(
+        builder: (_) => const ShortVideoLoginPage(),
+      ),
+    );
+    if (!mounted || result != true) {
+      return;
+    }
+    await _restoreAuthState();
+  }
+
+  Future<bool> _ensureLoggedIn() async {
+    if (_isLoggedIn) {
+      return true;
+    }
+    final result = await Navigator.of(context).push<bool>(
+      CupertinoPageRoute<bool>(
+        builder: (_) => const ShortVideoLoginPage(),
+      ),
+    );
+    if (!mounted || result != true) {
+      return false;
+    }
+    await _restoreAuthState();
+    return _authSession.isLoggedIn;
+  }
+
+  Future<void> _handleLogout() async {
+    if (!_isLoggedIn) {
+      return;
+    }
+    try {
+      await logoutIfengUser();
+    } catch (_) {}
+    await IfengAuthStorage.clearSession();
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _authSession = IfengAuthSession.empty;
+      _userProfile = null;
+    });
+    EasyLoading.showToast('已退出登录');
+  }
+
+  Future<void> _handleMyFavorite() async {
+    if (!await _ensureLoggedIn()) {
+      return;
+    }
+    if (!mounted) {
+      return;
+    }
+    Navigator.of(context).push(
+      CupertinoPageRoute<void>(
+        builder: (_) => const ShortVideoCollectionPage(
+          title: '我的喜欢',
+          emptyText: '暂无喜欢的视频',
+          persistence: ShortVideoCollectionPersistence.favorites,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _handleWatchLater() async {
+    if (!await _ensureLoggedIn()) {
+      return;
+    }
+    if (!mounted) {
+      return;
+    }
+    Navigator.of(context).push(
+      CupertinoPageRoute<void>(
+        builder: (_) => const ShortVideoCollectionPage(
+          title: '稍后再看',
+          emptyText: '暂无稍后观看的视频',
+          persistence: ShortVideoCollectionPersistence.watchLater,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _handleMyQrcode() async {
+    if (!await _ensureLoggedIn()) {
+      return;
+    }
+    EasyLoading.showToast('二维码功能开发中');
+  }
+
+  String get _displayName {
+    if (_isLoggedIn) {
+      final nickname = _userProfile?.nickname.trim() ?? '';
+      if (nickname.isNotEmpty) {
+        return nickname;
+      }
+      final savedNickname = _authSession.nickname.trim();
+      if (savedNickname.isNotEmpty) {
+        return savedNickname;
+      }
+      return _authSession.username;
+    }
+    return '立即登录';
+  }
+
+  String get _displaySubtitle {
+    if (_isLoggedIn) {
+      final guid = _authSession.guid.trim();
+      if (guid.isNotEmpty) {
+        return 'ID: $guid';
+      }
+      return '已登录';
+    }
+    return '登录后查看收藏、历史和更多内容';
+  }
+
+  String get _displayAvatarUrl {
+    if (!_isLoggedIn) {
+      return '';
+    }
+    final avatar = _userProfile?.userImage.trim() ?? '';
+    if (avatar.isNotEmpty) {
+      return avatar;
+    }
+    final savedAvatar = _authSession.userImage.trim();
+    if (savedAvatar.isNotEmpty) {
+      return savedAvatar;
+    }
+    return _avatarUrl;
+  }
 
   bool _handleScroll(ScrollNotification notification) {
     if (notification.metrics.axis != Axis.vertical) {
@@ -432,64 +620,111 @@ class _ShortVideoProfilePageState extends State<_ShortVideoProfilePage> {
               children: [
                 Container(
                   height: _profileHeaderBaseHeight + _headerStretchHeight,
-                  decoration: const BoxDecoration(
-                    image: DecorationImage(
-                      image: NetworkImage(_profileCoverUrl),
-                      fit: BoxFit.cover,
-                    ),
+                  decoration: BoxDecoration(
+                    color: _isLoggedIn
+                        ? null
+                        : const Color(0xFFF2F3F4),
+                    image: _isLoggedIn
+                        ? const DecorationImage(
+                            image: NetworkImage(_profileCoverUrl),
+                            fit: BoxFit.cover,
+                          )
+                        : null,
+                    border: _isLoggedIn
+                        ? null
+                        : Border.all(color: const Color(0xFFE3E5E8)),
                   ),
-                  child: Container(
-                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-                    decoration: const BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Color(0x40000000),
-                          Color(0x8A000000),
-                        ],
+                  child: CupertinoButton(
+                    padding: EdgeInsets.zero,
+                    onPressed: _isLoggedIn ? null : _openLoginPage,
+                    child: Container(
+                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+                      decoration: BoxDecoration(
+                        gradient: _isLoggedIn
+                            ? const LinearGradient(
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
+                                colors: [
+                                  Color(0x40000000),
+                                  Color(0x8A000000),
+                                ],
+                              )
+                            : null,
                       ),
-                    ),
-                    child: Row(
-                      children: [
-                        ClipOval(
-                          child: Container(
-                            width: 68,
-                            height: 68,
-                            color: const Color(0x33FFFFFF),
-                            child: const CustomNetworkImage(
-                              _avatarUrl,
-                              fit: BoxFit.cover,
+                      child: Row(
+                        children: [
+                          ClipOval(
+                            child: Container(
+                              width: 68,
+                              height: 68,
+                              decoration: BoxDecoration(
+                                color: _isLoggedIn
+                                    ? const Color(0x33FFFFFF)
+                                    : CupertinoColors.white,
+                                border: Border.all(
+                                  color: _isLoggedIn
+                                      ? const Color(0x66FFFFFF)
+                                      : const Color(0xFFD9DCE1),
+                                ),
+                              ),
+                              child: _isLoggedIn
+                                  ? CustomNetworkImage(
+                                      _displayAvatarUrl,
+                                      fit: BoxFit.cover,
+                                    )
+                                  : const Icon(
+                                      CupertinoIcons.person_crop_circle_fill,
+                                      size: 38,
+                                      color: Color(0xFFB8BDC7),
+                                    ),
                             ),
                           ),
-                        ),
-                        const SizedBox(width: 12),
-                        const Expanded(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                '演示用户',
-                                style: TextStyle(
-                                  color: CupertinoColors.white,
-                                  fontSize: 22,
-                                  fontWeight: FontWeight.w700,
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  _displayName,
+                                  style: TextStyle(
+                                    color: _isLoggedIn
+                                        ? CupertinoColors.white
+                                        : const Color(0xFF1C1C1E),
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.w700,
+                                  ),
                                 ),
-                              ),
-                              SizedBox(height: 6),
-                              Text(
-                                'ID: oolaf_demo_1024',
-                                style: TextStyle(
-                                  color: Color(0xB3FFFFFF),
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w500,
+                                const SizedBox(height: 6),
+                                Text(
+                                  _displaySubtitle,
+                                  style: TextStyle(
+                                    color: _isLoggedIn
+                                        ? const Color(0xB3FFFFFF)
+                                        : const Color(0xFF8E8E93),
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w500,
+                                  ),
                                 ),
-                              ),
-                            ],
+                                if (_isLoggedIn && _userProfile != null) ...[
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    '关注 ${_userProfile!.followCount}  ·  粉丝 ${_userProfile!.fansCount}  ·  ${_userProfile!.credit.title1}',
+                                    style: const TextStyle(
+                                      color: Color(0xCCFFFFFF),
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ] else if (_isLoadingProfile) ...[
+                                  const SizedBox(height: 8),
+                                  const CupertinoActivityIndicator(),
+                                ],
+                              ],
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -501,7 +736,10 @@ class _ShortVideoProfilePageState extends State<_ShortVideoProfilePage> {
                   children: [
                     CupertinoListTile(
                       title: const Text('设置'),
-                      leading: const Icon(CupertinoIcons.gear_alt_fill),
+                      leading: const AppAssetIcon(
+                        assetName: 'settings',
+                        fallbackIcon: CupertinoIcons.gear_alt_fill,
+                      ),
                       trailing: const CupertinoListTileChevron(),
                       onTap: () {
                         Navigator.of(context).push(
@@ -521,7 +759,10 @@ class _ShortVideoProfilePageState extends State<_ShortVideoProfilePage> {
                   children: [
                     CupertinoListTile(
                       title: const Text('观看历史'),
-                      leading: const Icon(CupertinoIcons.time),
+                      leading: const AppAssetIcon(
+                        assetName: 'time',
+                        fallbackIcon: CupertinoIcons.time,
+                      ),
                       trailing: const CupertinoListTileChevron(),
                       onTap: () {
                         Navigator.of(context).push(
@@ -533,7 +774,10 @@ class _ShortVideoProfilePageState extends State<_ShortVideoProfilePage> {
                     ),
                     CupertinoListTile(
                       title: const Text('文章查看历史'),
-                      leading: const Icon(CupertinoIcons.doc_text),
+                      leading: const AppAssetIcon(
+                        assetName: 'document-text',
+                        fallbackIcon: CupertinoIcons.doc_text,
+                      ),
                       trailing: const CupertinoListTileChevron(),
                       onTap: () {
                         Navigator.of(context).push(
@@ -545,25 +789,19 @@ class _ShortVideoProfilePageState extends State<_ShortVideoProfilePage> {
                     ),
                     CupertinoListTile(
                       title: const Text('我的喜欢'),
-                      leading: const Icon(CupertinoIcons.heart_fill),
+                      leading: const AppAssetIcon(
+                        assetName: 'heart',
+                        fallbackIcon: CupertinoIcons.heart_fill,
+                      ),
                       trailing: const CupertinoListTileChevron(),
-                      onTap: () {
-                        Navigator.of(context).push(
-                          CupertinoPageRoute<void>(
-                            builder: (_) => const ShortVideoCollectionPage(
-                              title: '我的喜欢',
-                              emptyText: '暂无喜欢的视频',
-                              persistence:
-                                  ShortVideoCollectionPersistence.favorites,
-                            ),
-                          ),
-                        );
-                      },
+                      onTap: _handleMyFavorite,
                     ),
                     CupertinoListTile(
                       title: const Text('离线缓存'),
-                      leading:
-                          const Icon(CupertinoIcons.arrow_down_circle_fill),
+                      leading: const AppAssetIcon(
+                        assetName: 'arrow-down-circle',
+                        fallbackIcon: CupertinoIcons.arrow_down_circle_fill,
+                      ),
                       trailing: const CupertinoListTileChevron(),
                       onTap: () {
                         Navigator.of(context).push(
@@ -575,24 +813,19 @@ class _ShortVideoProfilePageState extends State<_ShortVideoProfilePage> {
                     ),
                     CupertinoListTile(
                       title: const Text('稍后再看'),
-                      leading: const Icon(CupertinoIcons.bookmark_fill),
+                      leading: const AppAssetIcon(
+                        assetName: 'bookmark',
+                        fallbackIcon: CupertinoIcons.bookmark_fill,
+                      ),
                       trailing: const CupertinoListTileChevron(),
-                      onTap: () {
-                        Navigator.of(context).push(
-                          CupertinoPageRoute<void>(
-                            builder: (_) => const ShortVideoCollectionPage(
-                              title: '稍后再看',
-                              emptyText: '暂无稍后观看的视频',
-                              persistence:
-                                  ShortVideoCollectionPersistence.watchLater,
-                            ),
-                          ),
-                        );
-                      },
+                      onTap: _handleWatchLater,
                     ),
                     CupertinoListTile(
                       title: const Text('屏蔽管理'),
-                      leading: const Icon(CupertinoIcons.eye_slash_fill),
+                      leading: const AppAssetIcon(
+                        assetName: 'eye-off',
+                        fallbackIcon: CupertinoIcons.eye_slash_fill,
+                      ),
                       trailing: const CupertinoListTileChevron(),
                       onTap: () {
                         Navigator.of(context).push(
@@ -602,17 +835,41 @@ class _ShortVideoProfilePageState extends State<_ShortVideoProfilePage> {
                         );
                       },
                     ),
-                    const CupertinoListTile(
-                      title: Text('我的二维码'),
-                      leading: Icon(CupertinoIcons.qrcode),
-                      trailing: CupertinoListTileChevron(),
+                    CupertinoListTile(
+                      title: const Text('我的二维码'),
+                      leading: const AppAssetIcon(
+                        assetName: 'qr-code',
+                        fallbackIcon: CupertinoIcons.qrcode,
+                      ),
+                      trailing: const CupertinoListTileChevron(),
+                      onTap: _handleMyQrcode,
                     ),
                     CupertinoListTile(
                       title: const Text('清理缓存'),
-                      leading: const Icon(CupertinoIcons.delete_solid),
+                      leading: const AppAssetIcon(
+                        assetName: 'trash',
+                        fallbackIcon: CupertinoIcons.delete_solid,
+                      ),
                       trailing: const CupertinoListTileChevron(),
                       onTap: _clearShortVideoCache,
                     ),
+                    if (_isLoggedIn)
+                      CupertinoListTile(
+                        title: const Text(
+                          '退出登录',
+                          style: TextStyle(
+                            color: CupertinoColors.systemRed,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        leading: const AppAssetIcon(
+                          assetName: 'log-out',
+                          color: CupertinoColors.systemRed,
+                          fallbackIcon: CupertinoIcons.square_arrow_right,
+                        ),
+                        trailing: const CupertinoListTileChevron(),
+                        onTap: _handleLogout,
+                      ),
                   ],
                 ),
               ],

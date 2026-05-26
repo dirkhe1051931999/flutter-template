@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:oolaf_flutted/api/short_video/comment.dart';
 import 'package:oolaf_flutted/app.config.dart';
 import 'package:oolaf_flutted/model/short_video/danmaku_item.dart';
 import 'package:oolaf_flutted/store/short_video/state.dart';
@@ -22,6 +23,13 @@ const String _shortVideoHeadlineUrl =
     '${AppConfig.shortVideoApiBaseUrl}$_shortVideoHeadlinePath';
 const String _shortVideoNewsDocUrl =
     '${AppConfig.shortVideoApiBaseUrl}$_shortVideoNewsDocPath';
+
+const int _commentDanmakuTargetCount = 24;
+const int _commentDanmakuFetchPageSize = 30;
+const int _commentDanmakuTimelineWindowMs = 75 * 1000;
+
+final Map<String, List<DanmakuItem>> _commentDanmakuCache =
+    <String, List<DanmakuItem>>{};
 
 class PhoenixTvChannelRequest {
   const PhoenixTvChannelRequest({
@@ -102,6 +110,7 @@ class HeadlineNewsDocDetail {
     required this.title,
     required this.source,
     required this.updateTime,
+    required this.commentsCount,
     required this.htmlText,
   });
 
@@ -109,6 +118,7 @@ class HeadlineNewsDocDetail {
   final String title;
   final String source;
   final String updateTime;
+  final String commentsCount;
   final String htmlText;
 }
 
@@ -316,8 +326,133 @@ Future<HeadlineNewsDocDetail?> getShortVideoNewsDocDetail({
   }
 }
 
-Future<List<DanmakuItem>> getDanmaku(String videoId) async {
-  return generateMockDanmakuItems(videoId);
+Future<List<DanmakuItem>> getDanmaku(ShortVideoItem item) async {
+  if (item.type == 'phvideo') {
+    final commentDanmakuItems = await _getCommentDanmakuItems(item);
+    if (commentDanmakuItems.isNotEmpty) {
+      return commentDanmakuItems;
+    }
+  }
+  return generateMockDanmakuItems(item.id);
+}
+
+Future<List<DanmakuItem>> _getCommentDanmakuItems(ShortVideoItem item) async {
+  final docUrl = item.commentsUrl?.trim().isNotEmpty == true
+      ? item.commentsUrl!.trim()
+      : item.id;
+  if (docUrl.isEmpty) {
+    return const <DanmakuItem>[];
+  }
+
+  final cacheKey = '${item.id}::$docUrl';
+  final cached = _commentDanmakuCache[cacheKey];
+  if (cached != null) {
+    return cached;
+  }
+
+  final result = await getShortVideoComments(
+    query: ShortVideoCommentQuery(
+      docUrl: docUrl,
+      page: 1,
+      pageSize: _commentDanmakuFetchPageSize,
+      sortBy: ShortVideoCommentSortBy.hot,
+    ),
+  );
+  final danmakuItems = _buildCommentDanmakuItems(
+    comments: result.comments,
+    seed: cacheKey,
+  );
+  _commentDanmakuCache[cacheKey] = danmakuItems;
+  return danmakuItems;
+}
+
+List<DanmakuItem> _buildCommentDanmakuItems({
+  required List<ShortVideoCommentItem> comments,
+  required String seed,
+}) {
+  if (comments.isEmpty) {
+    return const <DanmakuItem>[];
+  }
+
+  final uniqueTexts = <String>{};
+  final filteredComments = <ShortVideoCommentItem>[];
+  for (final comment in comments) {
+    final normalized = _normalizeDanmakuText(comment.content);
+    if (normalized == null) {
+      continue;
+    }
+    if (!uniqueTexts.add(normalized)) {
+      continue;
+    }
+    filteredComments.add(comment.copyWith(content: normalized));
+    if (filteredComments.length >= _commentDanmakuTargetCount) {
+      break;
+    }
+  }
+
+  if (filteredComments.isEmpty) {
+    return const <DanmakuItem>[];
+  }
+
+  final random = seed.hashCode;
+  final count = filteredComments.length;
+  const windowMs = _commentDanmakuTimelineWindowMs;
+  final spacingMs = count <= 1 ? 0 : (windowMs / count).floor();
+  const colors = <String>[
+    '#FFFFFF',
+    '#FFE7A7',
+    '#B7F1FF',
+    '#FFC7D8',
+    '#D5FFBF',
+  ];
+
+  return List<DanmakuItem>.generate(count, (index) {
+    final comment = filteredComments[index];
+    final jitterSeed = (random + index * 97).abs();
+    final jitterMs = count <= 1 ? 0 : (jitterSeed % 1200) - 600;
+    final atMs =
+        (2000 + index * spacingMs + jitterMs).clamp(1200, windowMs).toInt();
+    final isHot = index < 6 || comment.likeCount >= 20;
+    return DanmakuItem(
+      atMs: atMs,
+      text: comment.content,
+      type: isHot ? 'hot' : 'normal',
+      color: colors[jitterSeed % colors.length],
+      priority: isHot ? 2 : 1,
+    );
+  });
+}
+
+String? _normalizeDanmakuText(String rawText) {
+  final normalized = rawText.replaceAll(RegExp(r'\s+'), ' ').trim();
+  if (normalized.isEmpty) {
+    return null;
+  }
+  if (normalized.length > 18) {
+    return null;
+  }
+  if (!_containsMeaningfulDanmakuCharacter(normalized)) {
+    return null;
+  }
+  const blockedTexts = <String>{
+    '转发微博',
+    '图片评论',
+    '网页链接',
+  };
+  if (blockedTexts.contains(normalized)) {
+    return null;
+  }
+  return normalized;
+}
+
+bool _containsMeaningfulDanmakuCharacter(String text) {
+  for (final rune in text.runes) {
+    final char = String.fromCharCode(rune);
+    if (RegExp(r'[A-Za-z0-9\u4E00-\u9FFF]').hasMatch(char)) {
+      return true;
+    }
+  }
+  return false;
 }
 
 List<HeadlineFeedItem> _extractHeadlineFeedItems(dynamic responseData) {
@@ -406,6 +541,10 @@ HeadlineNewsDocDetail? _extractHeadlineNewsDocDetail(dynamic responseData) {
         '',
     updateTime:
         _asString(body['updateTime']) ?? _asString(body['editTime']) ?? '',
+    commentsCount: _asString(body['commentsCount']) ??
+        _asString(body['commentsall']) ??
+        _asString(body['comments']) ??
+        '0',
     htmlText: htmlText,
   );
 }
@@ -517,6 +656,9 @@ ShortVideoItem? _mapToShortVideoItem(Map<String, dynamic> raw) {
     updateTime: updateTime,
     videoUrl: videoUrl,
     coverUrl: coverUrl ?? '',
+    type: 'phvideo',
+    commentsUrl: _pickCommentsUrl(raw),
+    commentsCount: _pickCommentsCount(raw),
   );
 }
 
@@ -547,6 +689,32 @@ String? _pickVideoUrl(Map<String, dynamic> raw) {
   }
 
   return null;
+}
+
+String? _pickCommentsUrl(Map<String, dynamic> raw) {
+  final direct = _asString(raw['commentsUrl']) ?? _asString(raw['comments_url']);
+  if (direct != null && direct.isNotEmpty) {
+    return direct;
+  }
+
+  final link = raw['link'];
+  if (link is Map<String, dynamic>) {
+    final fromLink = _asString(link['commentsUrl']) ??
+        _asString(link['comments_url']) ??
+        _asString(link['doc_url']);
+    if (fromLink != null && fromLink.isNotEmpty) {
+      return fromLink;
+    }
+  }
+
+  return _asString(raw['staticId']) ?? _asString(raw['documentId']);
+}
+
+String _pickCommentsCount(Map<String, dynamic> raw) {
+  return _asString(raw['commentsCount']) ??
+      _asString(raw['commentsall']) ??
+      _asString(raw['comments']) ??
+      '0';
 }
 
 String? _pickCoverUrl(Map<String, dynamic> raw) {

@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:oolaf_flutted/api/short_video/hot_tab.dart';
 import 'package:oolaf_flutted/api/short_video/index.dart';
+import 'package:oolaf_flutted/components/app_asset_icon/index.dart';
 import 'package:oolaf_flutted/pages/video_tabs/short_video_article_detail_page.dart';
 import 'package:oolaf_flutted/pages/video_tabs/watch_history_play_page.dart';
 import 'package:oolaf_flutted/utils/short_video_article_history_persistence.dart';
@@ -67,6 +68,8 @@ class _ShortVideoHotTopicDetailPageState
             coverUrl: item.primaryCoverUrl,
             videoUrl: item.videoUrl,
             source: item.source,
+            commentsUrl: item.commentsUrl,
+            commentsCount: item.commentsCount,
             watchedAtMillis: DateTime.now().millisecondsSinceEpoch,
           ),
         )
@@ -207,7 +210,10 @@ class _ShortVideoHotTopicDetailPageState
                           padding: EdgeInsets.zero,
                           minimumSize: const Size(24, 24),
                           onPressed: _copyShareLink,
-                          child: const Icon(CupertinoIcons.share),
+                          child: const AppAssetIcon(
+                            assetName: 'share-social',
+                            fallbackIcon: CupertinoIcons.share,
+                          ),
                         ),
                       ),
                       SliverToBoxAdapter(

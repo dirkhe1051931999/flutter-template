@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_redux/flutter_redux.dart';
+import 'package:oolaf_flutted/components/app_asset_icon/index.dart';
 import 'package:oolaf_flutted/store/index.dart';
 import 'package:oolaf_flutted/store/oolaf_music/action.dart';
 import 'package:oolaf_flutted/store/oolaf_music/state.dart';
@@ -196,15 +197,18 @@ class OolafPlayerSheet extends StatelessWidget {
                           StoreProvider.of<AppState>(context)
                               .dispatch(OolafSetLoopModeAction(next));
                         },
-                        icon: Icon(
-                          switch (state.loopMode) {
+                        icon: AppAssetIcon(
+                          assetName: state.loopMode == OolafLoopMode.one
+                              ? 'repeat-1'
+                              : 'repeat',
+                          color: state.loopMode == OolafLoopMode.off
+                              ? const Color(0xFF8E8E93)
+                              : themeColor,
+                          fallbackIcon: switch (state.loopMode) {
                             OolafLoopMode.off => CupertinoIcons.repeat,
                             OolafLoopMode.all => CupertinoIcons.repeat,
                             OolafLoopMode.one => CupertinoIcons.repeat_1,
                           },
-                          color: state.loopMode == OolafLoopMode.off
-                              ? const Color(0xFF8E8E93)
-                              : themeColor,
                         ),
                       ),
                       const SizedBox(width: 10),
@@ -212,10 +216,11 @@ class OolafPlayerSheet extends StatelessWidget {
                         onPressed: () {
                           onPrev();
                         },
-                        icon: const Icon(
-                          CupertinoIcons.backward_fill,
+                        icon: const AppAssetIcon(
+                          assetName: 'play-skip-back',
                           color: themeColor,
                           size: 28,
+                          fallbackIcon: CupertinoIcons.backward_fill,
                         ),
                       ),
                       const SizedBox(width: 6),
@@ -233,12 +238,15 @@ class OolafPlayerSheet extends StatelessWidget {
                                 height: 52,
                                 child: CupertinoActivityIndicator(radius: 16),
                               )
-                            : Icon(
-                                state.isPlaying
-                                    ? CupertinoIcons.pause_circle_fill
-                                    : CupertinoIcons.play_circle_fill,
+                            : AppAssetIcon(
+                                assetName: state.isPlaying
+                                    ? 'pause-circle'
+                                    : 'play-circle',
                                 color: themeColor,
                                 size: 64,
+                                fallbackIcon: state.isPlaying
+                                    ? CupertinoIcons.pause_circle_fill
+                                    : CupertinoIcons.play_circle_fill,
                               ),
                       ),
                       const SizedBox(width: 6),
@@ -246,10 +254,11 @@ class OolafPlayerSheet extends StatelessWidget {
                         onPressed: () {
                           onNext();
                         },
-                        icon: const Icon(
-                          CupertinoIcons.forward_fill,
+                        icon: const AppAssetIcon(
+                          assetName: 'play-skip-forward',
                           color: themeColor,
                           size: 28,
+                          fallbackIcon: CupertinoIcons.forward_fill,
                         ),
                       ),
                     ],

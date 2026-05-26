@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_redux/flutter_redux.dart';
+import 'package:oolaf_flutted/components/app_asset_icon/index.dart';
 import 'package:oolaf_flutted/store/index.dart';
 import 'package:oolaf_flutted/store/oolaf_music/action.dart';
 import 'package:oolaf_flutted/store/oolaf_music/state.dart';
@@ -108,10 +109,11 @@ class OolafMiniPlayer extends StatelessWidget {
                                         minWidth: 40,
                                         minHeight: 40,
                                       ),
-                                      icon: const Icon(
-                                        CupertinoIcons.backward_fill,
+                                      icon: const AppAssetIcon(
+                                        assetName: 'play-skip-back',
                                         color: themeColor,
                                         size: 20,
+                                        fallbackIcon: CupertinoIcons.backward_fill,
                                       ),
                                     ),
                                   StoreConnector<AppState,
@@ -146,14 +148,15 @@ class OolafMiniPlayer extends StatelessWidget {
                                                   radius: 12,
                                                 ),
                                               )
-                                            : Icon(
-                                                state.isPlaying
-                                                    ? CupertinoIcons
-                                                        .pause_circle_fill
-                                                    : CupertinoIcons
-                                                        .play_circle_fill,
+                                            : AppAssetIcon(
+                                                assetName: state.isPlaying
+                                                    ? 'pause-circle'
+                                                    : 'play-circle',
                                                 color: themeColor,
                                                 size: 40,
+                                                fallbackIcon: state.isPlaying
+                                                    ? CupertinoIcons.pause_circle_fill
+                                                    : CupertinoIcons.play_circle_fill,
                                               ),
                                       );
                                     },
@@ -168,10 +171,11 @@ class OolafMiniPlayer extends StatelessWidget {
                                         minWidth: 40,
                                         minHeight: 40,
                                       ),
-                                      icon: const Icon(
-                                        CupertinoIcons.forward_fill,
+                                      icon: const AppAssetIcon(
+                                        assetName: 'play-skip-forward',
                                         color: themeColor,
                                         size: 20,
+                                        fallbackIcon: CupertinoIcons.forward_fill,
                                       ),
                                     ),
                                 ],

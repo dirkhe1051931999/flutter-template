@@ -11,6 +11,9 @@ class ShortVideoCollectionEntry {
     required this.videoUrl,
     required this.savedAtMillis,
     this.source,
+    this.type = 'phvideo',
+    this.commentsUrl,
+    this.commentsCount = '0',
   });
 
   final String videoId;
@@ -19,6 +22,9 @@ class ShortVideoCollectionEntry {
   final String coverUrl;
   final String videoUrl;
   final String? source;
+  final String type;
+  final String? commentsUrl;
+  final String commentsCount;
   final int savedAtMillis;
 
   DateTime get savedAt => DateTime.fromMillisecondsSinceEpoch(savedAtMillis);
@@ -31,6 +37,9 @@ class ShortVideoCollectionEntry {
       'coverUrl': coverUrl,
       'videoUrl': videoUrl,
       'source': source,
+      'type': type,
+      'commentsUrl': commentsUrl,
+      'commentsCount': commentsCount,
       'savedAtMillis': savedAtMillis,
     };
   }
@@ -46,6 +55,9 @@ class ShortVideoCollectionEntry {
     final coverUrl = json['coverUrl'];
     final videoUrl = json['videoUrl'];
     final source = json['source'];
+    final type = json['type'];
+    final commentsUrl = json['commentsUrl'];
+    final commentsCount = json['commentsCount'];
     final savedAtMillis = json['savedAtMillis'];
 
     if (videoId is! String ||
@@ -63,6 +75,13 @@ class ShortVideoCollectionEntry {
       coverUrl: coverUrl,
       videoUrl: videoUrl,
       source: source is String ? source : null,
+      type: type is String && type.isNotEmpty ? type : 'phvideo',
+      commentsUrl: commentsUrl is String && commentsUrl.isNotEmpty
+          ? commentsUrl
+          : null,
+      commentsCount: commentsCount is String && commentsCount.isNotEmpty
+          ? commentsCount
+          : '0',
       savedAtMillis: savedAtMillis,
     );
   }

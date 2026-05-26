@@ -1,4 +1,5 @@
 import 'package:flutter/cupertino.dart';
+import 'package:oolaf_flutted/components/app_asset_icon/index.dart';
 import 'package:oolaf_flutted/components/short_video/like_animation_layer.dart';
 import 'package:oolaf_flutted/components/short_video/video_progress_bar.dart';
 import 'package:oolaf_flutted/tools/developer_tools_center.dart';
@@ -176,10 +177,11 @@ class _ShortVideoPlayerWrapperState extends State<ShortVideoPlayerWrapper> {
                           },
                           child: const Padding(
                             padding: EdgeInsets.all(12),
-                            child: Icon(
-                              CupertinoIcons.play_fill,
+                            child: AppAssetIcon(
+                              assetName: 'play',
                               color: Color(0x33FFFFFF),
                               size: 76,
+                              fallbackIcon: CupertinoIcons.play_fill,
                             ),
                           ),
                         ),
@@ -327,10 +329,11 @@ class _ShortVideoPlaybackErrorOverlay extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(
-                CupertinoIcons.exclamationmark_triangle_fill,
+              const AppAssetIcon(
+                assetName: 'warning',
                 color: CupertinoColors.white,
                 size: 34,
+                fallbackIcon: CupertinoIcons.exclamationmark_triangle_fill,
               ),
               const SizedBox(height: 12),
               Text(

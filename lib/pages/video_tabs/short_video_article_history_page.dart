@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:oolaf_flutted/api/short_video/index.dart';
+import 'package:oolaf_flutted/components/app_asset_icon/index.dart';
 import 'package:oolaf_flutted/pages/video_tabs/short_video_article_detail_page.dart';
 import 'package:oolaf_flutted/utils/short_video_article_history_persistence.dart';
 import 'package:oolaf_flutted/components/network_img/index.dart';
@@ -312,10 +313,11 @@ class _ArticleHistorySectionWidget extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(width: 8),
-                      const Icon(
-                        CupertinoIcons.chevron_right,
+                      const AppAssetIcon(
+                        assetName: 'chevron-forward',
                         size: 16,
                         color: Color(0xFFAEAEB2),
+                        fallbackIcon: CupertinoIcons.chevron_right,
                       ),
                     ],
                   ),

@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/cupertino.dart';
+import 'package:oolaf_flutted/components/app_asset_icon/index.dart';
 import 'package:oolaf_flutted/pages/video_tabs/short_video_search_result_page.dart';
 import 'package:oolaf_flutted/tools/developer_tools_entry.dart';
 import 'package:oolaf_flutted/utils/short_video_search_history_persistence.dart';
@@ -281,10 +282,11 @@ class _ShortVideoSearchPageState extends State<ShortVideoSearchPage> {
                     onPressed: () {
                       Navigator.of(context).pop();
                     },
-                    child: const Icon(
-                      CupertinoIcons.back,
+                    child: const AppAssetIcon(
+                      assetName: 'arrow-back',
                       size: 22,
                       color: CupertinoColors.black,
+                      fallbackIcon: CupertinoIcons.back,
                     ),
                   ),
                   Expanded(
@@ -423,10 +425,11 @@ class _ShortVideoSearchPageState extends State<ShortVideoSearchPage> {
                       child: const Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(
-                            CupertinoIcons.refresh,
+                          AppAssetIcon(
+                            assetName: 'refresh',
                             size: 14,
                             color: Color(0xFF8E8E93),
+                            fallbackIcon: CupertinoIcons.refresh,
                           ),
                           SizedBox(width: 4),
                           Text(
@@ -549,10 +552,11 @@ class _HistoryChip extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(2, 4, 8, 4),
               minimumSize: Size.zero,
               onPressed: onDelete,
-              child: const Icon(
-                CupertinoIcons.clear_circled_solid,
+              child: const AppAssetIcon(
+                assetName: 'close-circle',
                 size: 14,
                 color: Color(0xFFAEAEB2),
+                fallbackIcon: CupertinoIcons.clear_circled_solid,
               ),
             ),
           ],

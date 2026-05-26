@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:oolaf_flutted/components/app_asset_icon/index.dart';
 import 'package:oolaf_flutted/pages/video_tabs/index.dart';
 
 class ShortVideoChannelManagePage extends StatefulWidget {
@@ -110,9 +111,10 @@ class _ShortVideoChannelManagePageState extends State<ShortVideoChannelManagePag
                 ),
                 trailing: ReorderableDragStartListener(
                   index: index,
-                  child: const Icon(
-                    CupertinoIcons.line_horizontal_3,
+                  child: const AppAssetIcon(
+                    assetName: 'reorder-three',
                     color: Color(0xFF8E8E93),
+                    fallbackIcon: CupertinoIcons.line_horizontal_3,
                   ),
                 ),
               ),

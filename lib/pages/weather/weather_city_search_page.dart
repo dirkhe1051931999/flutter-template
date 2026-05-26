@@ -1,4 +1,5 @@
 import 'package:flutter/cupertino.dart';
+import 'package:oolaf_flutted/components/app_asset_icon/index.dart';
 import 'package:oolaf_flutted/model/weather/index.dart';
 import 'package:oolaf_flutted/repositories/weather_city_repository.dart';
 
@@ -130,10 +131,11 @@ class _WeatherCitySearchPageState extends State<WeatherCitySearchPage> {
                                   ),
                                 ),
                                 if (isSelected)
-                                  const Icon(
-                                    CupertinoIcons.check_mark_circled_solid,
+                                  const AppAssetIcon(
+                                    assetName: 'checkmark-circle',
                                     color: Color(0xFF2E7EF7),
                                     size: 22,
+                                    fallbackIcon: CupertinoIcons.check_mark_circled_solid,
                                   ),
                               ],
                             ),

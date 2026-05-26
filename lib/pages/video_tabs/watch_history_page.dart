@@ -1,4 +1,5 @@
 import 'package:flutter/cupertino.dart';
+import 'package:oolaf_flutted/components/app_asset_icon/index.dart';
 import 'package:oolaf_flutted/pages/video_tabs/watch_history_play_page.dart';
 import 'package:oolaf_flutted/utils/short_video_playback_progress_persistence.dart';
 import 'package:oolaf_flutted/utils/short_video_watch_history_persistence.dart';
@@ -312,9 +313,10 @@ class _HistoryGridItem extends StatelessWidget {
                         return const ColoredBox(
                           color: Color(0xFFE5E5EA),
                           child: Center(
-                            child: Icon(
-                              CupertinoIcons.exclamationmark_triangle,
+                            child: AppAssetIcon(
+                              assetName: 'warning',
                               color: Color(0xFF8E8E93),
+                              fallbackIcon: CupertinoIcons.exclamationmark_triangle,
                             ),
                           ),
                         );

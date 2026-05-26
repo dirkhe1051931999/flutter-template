@@ -114,6 +114,7 @@ flutter:
   #   - images/a_dot_ham.jpeg
   assets:
     - assets/images/
+    - assets/icons/
     - assets/weather/icons/
     - assets/weather/cities.json
   # An image asset can refer to one or more resolution-specific "variants", see
@@ -150,7 +151,7 @@ flutter:
           weight: 700 # 对应 Bold 的权重
         - asset: assets/fonts/NotoSansSC-Medium.otf
           weight: 500 # 对应 Medium 的权重
-        - asset: assets/fonts/NotoSansSC-Regular.otf
+        - asset: assets/fonts/regular.otf
           weight: 400 # 对应 Regular 的权重
         - asset: assets/fonts/NotoSansSC-Light.otf
           weight: 300 # 对应 Light 的权重

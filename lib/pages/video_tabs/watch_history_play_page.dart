@@ -3,8 +3,10 @@ import 'dart:async';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_redux/flutter_redux.dart';
+import 'package:oolaf_flutted/components/app_asset_icon/index.dart';
 import 'package:oolaf_flutted/components/app_sheet/index.dart';
 import 'package:oolaf_flutted/components/short_video/interaction_overlay.dart';
+import 'package:oolaf_flutted/components/short_video/real_comment_sheet.dart';
 import 'package:oolaf_flutted/components/short_video/short_video_player_wrapper.dart';
 import 'package:oolaf_flutted/router/route_observer.dart';
 import 'package:oolaf_flutted/store/index.dart';
@@ -173,6 +175,9 @@ class _ShortVideoWatchHistoryPlayPageState
       coverUrl: entry.coverUrl,
       videoUrl: entry.videoUrl,
       source: entry.source,
+      type: entry.type,
+      commentsUrl: entry.commentsUrl,
+      commentsCount: entry.commentsCount,
       savedAtMillis: DateTime.now().millisecondsSinceEpoch,
     );
   }
@@ -308,7 +313,7 @@ class _ShortVideoWatchHistoryPlayPageState
         }
 
         Widget actionTile({
-          required IconData icon,
+          required Widget icon,
           required String label,
           required Future<void> Function() onPressed,
           bool isDanger = false,
@@ -331,13 +336,7 @@ class _ShortVideoWatchHistoryPlayPageState
                         : const Color(0x29FFFFFF),
                     borderRadius: BorderRadius.circular(16),
                   ),
-                  child: Icon(
-                    icon,
-                    size: 24,
-                    color: isDanger
-                        ? CupertinoColors.systemRed
-                        : CupertinoColors.white,
-                  ),
+                  child: icon,
                 ),
                 const SizedBox(height: 8),
                 Text(
@@ -432,24 +431,44 @@ class _ShortVideoWatchHistoryPlayPageState
               const SizedBox(height: 12),
               actionGrid([
                 actionTile(
-                  icon: isFavorite
-                      ? CupertinoIcons.heart_slash_fill
-                      : CupertinoIcons.heart_fill,
+                  icon: AppAssetIcon(
+                    assetName: 'heart',
+                    size: 24,
+                    color: CupertinoColors.white,
+                    fallbackIcon: isFavorite
+                        ? CupertinoIcons.heart_slash_fill
+                        : CupertinoIcons.heart_fill,
+                  ),
                   label: isFavorite ? '取消喜欢' : '喜欢',
                   onPressed: () => _toggleFavorite(entry),
                 ),
                 actionTile(
-                  icon: CupertinoIcons.time,
+                  icon: const AppAssetIcon(
+                    assetName: 'time',
+                    size: 24,
+                    color: CupertinoColors.white,
+                    fallbackIcon: CupertinoIcons.time,
+                  ),
                   label: '稍后再看',
                   onPressed: () => _saveWatchLater(entry),
                 ),
                 actionTile(
-                  icon: CupertinoIcons.link,
+                  icon: const AppAssetIcon(
+                    assetName: 'link',
+                    size: 24,
+                    color: CupertinoColors.white,
+                    fallbackIcon: CupertinoIcons.link,
+                  ),
                   label: '复制链接',
                   onPressed: () => _copyShareText(entry),
                 ),
                 actionTile(
-                  icon: CupertinoIcons.cloud_download,
+                  icon: const AppAssetIcon(
+                    assetName: 'cloud-download',
+                    size: 24,
+                    color: CupertinoColors.white,
+                    fallbackIcon: CupertinoIcons.cloud_download,
+                  ),
                   label: '离线缓存',
                   onPressed: () => _saveOfflineCache(entry),
                 ),
@@ -477,7 +496,12 @@ class _ShortVideoWatchHistoryPlayPageState
               const SizedBox(height: 12),
               actionGrid([
                 actionTile(
-                  icon: CupertinoIcons.hand_thumbsdown_fill,
+                  icon: const AppAssetIcon(
+                    assetName: 'thumbs-down',
+                    size: 24,
+                    color: CupertinoColors.systemRed,
+                    fallbackIcon: CupertinoIcons.hand_thumbsdown_fill,
+                  ),
                   label: '不感兴趣',
                   isDanger: true,
                   onPressed: () => _markNotInterested(
@@ -488,7 +512,12 @@ class _ShortVideoWatchHistoryPlayPageState
                   ),
                 ),
                 actionTile(
-                  icon: CupertinoIcons.person_crop_circle_badge_xmark,
+                  icon: const AppAssetIcon(
+                    assetName: 'person-remove',
+                    size: 24,
+                    color: CupertinoColors.systemRed,
+                    fallbackIcon: CupertinoIcons.person_crop_circle_badge_xmark,
+                  ),
                   label: '不看该来源',
                   isDanger: true,
                   onPressed: () => _markNotInterested(
@@ -499,7 +528,12 @@ class _ShortVideoWatchHistoryPlayPageState
                   ),
                 ),
                 actionTile(
-                  icon: CupertinoIcons.text_badge_xmark,
+                  icon: const AppAssetIcon(
+                    assetName: 'text-remove',
+                    size: 24,
+                    color: CupertinoColors.systemRed,
+                    fallbackIcon: CupertinoIcons.text_badge_xmark,
+                  ),
                   label: '屏蔽标题词',
                   isDanger: true,
                   onPressed: () => _markNotInterested(
@@ -798,10 +832,28 @@ class _ShortVideoWatchHistoryPlayPageState
                         onTapFavorite: () {
                           _toggleFavorite(entry);
                         },
-                        onTapComment: () {},
+                        onTapComment: () {
+                          showRealShortVideoCommentSheet(
+                            context,
+                            item: ShortVideoItem(
+                              id: entry.videoId,
+                              source: entry.source,
+                              title: entry.title,
+                              updateTime: entry.updateTime,
+                              videoUrl: entry.videoUrl,
+                              coverUrl: entry.coverUrl,
+                              type: entry.type,
+                              commentsUrl: entry.commentsUrl,
+                              commentsCount: entry.commentsCount,
+                            ),
+                          );
+                        },
                         onTapShare: () {
                           _copyShareText(entry);
                         },
+                        commentCountLabel: formatShortVideoCommentCount(
+                          int.tryParse(entry.commentsCount) ?? 0,
+                        ),
                         onLongPressAvatarStart: () {
                           _handleAvatarLongPressStart();
                         },

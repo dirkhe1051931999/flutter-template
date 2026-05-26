@@ -111,6 +111,7 @@ class HotTabFeedItem {
     required this.detailUrl,
     required this.shareUrl,
     required this.videoUrl,
+    required this.commentsUrl,
     required this.durationSeconds,
     required this.playCountText,
     required this.eventName,
@@ -130,6 +131,7 @@ class HotTabFeedItem {
   final String detailUrl;
   final String shareUrl;
   final String videoUrl;
+  final String commentsUrl;
   final int durationSeconds;
   final String playCountText;
   final String eventName;
@@ -166,6 +168,7 @@ class HotTabDetailNewsItem {
     required this.detailUrl,
     required this.shareUrl,
     required this.videoUrl,
+    required this.commentsUrl,
     required this.durationSeconds,
     required this.playCountText,
   });
@@ -181,6 +184,7 @@ class HotTabDetailNewsItem {
   final String detailUrl;
   final String shareUrl;
   final String videoUrl;
+  final String commentsUrl;
   final int durationSeconds;
   final String playCountText;
 
@@ -334,6 +338,7 @@ HotTabFeedItem? _mapToHotTabFeedItem(
     detailUrl: _asString(link?['url']) ?? '',
     shareUrl: _asString(link?['weburl']) ?? _asString(shareInfo?['weburl']) ?? '',
     videoUrl: videoUrl,
+    commentsUrl: _pickCommentsUrl(raw),
     durationSeconds: _asInt(phvideo?['length']) ?? 0,
     playCountText: _asString(phvideo?['playTimeStr']) ?? '',
     eventName: eventName,
@@ -429,6 +434,7 @@ HotTabDetailNewsItem? _mapToHotTabDetailNewsItem(Map<String, dynamic> raw) {
     detailUrl: _asString(link?['url']) ?? '',
     shareUrl: _asString(link?['weburl']) ?? _asString(shareInfo?['weburl']) ?? '',
     videoUrl: videoUrl,
+    commentsUrl: _pickCommentsUrl(raw),
     durationSeconds: _asInt(phvideo?['length']) ?? 0,
     playCountText: _asString(phvideo?['playTimeStr']) ?? '',
   );
@@ -465,6 +471,25 @@ String? _pickVideoUrl(Map<String, dynamic> raw) {
   }
 
   return null;
+}
+
+String _pickCommentsUrl(Map<String, dynamic> raw) {
+  final direct = _asString(raw['commentsUrl']) ?? _asString(raw['comments_url']);
+  if (direct != null && direct.isNotEmpty) {
+    return direct;
+  }
+
+  final link = raw['link'];
+  if (link is Map<String, dynamic>) {
+    final fromLink = _asString(link['commentsUrl']) ??
+        _asString(link['comments_url']) ??
+        _asString(link['doc_url']);
+    if (fromLink != null && fromLink.isNotEmpty) {
+      return fromLink;
+    }
+  }
+
+  return _asString(raw['staticId']) ?? _asString(raw['documentId']) ?? '';
 }
 
 String? _pickCoverUrl(Map<String, dynamic> raw) {

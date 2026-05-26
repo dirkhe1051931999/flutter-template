@@ -1,4 +1,5 @@
 import 'package:flutter/cupertino.dart';
+import 'package:oolaf_flutted/components/app_asset_icon/index.dart';
 import 'package:oolaf_flutted/utils/short_video_offline_cache_persistence.dart';
 import 'package:oolaf_flutted/components/network_img/index.dart';
 
@@ -146,9 +147,10 @@ class _ShortVideoOfflineCachePageState extends State<ShortVideoOfflineCachePage>
                                 onPressed: () {
                                   _removeSingle(entry.videoId);
                                 },
-                                child: const Icon(
-                                  CupertinoIcons.delete,
+                                child: const AppAssetIcon(
+                                  assetName: 'trash',
                                   color: CupertinoColors.systemRed,
+                                  fallbackIcon: CupertinoIcons.delete,
                                 ),
                               ),
                             ],

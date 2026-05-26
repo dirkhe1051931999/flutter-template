@@ -2,6 +2,7 @@ import 'dart:ui';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/gestures.dart';
+import 'package:oolaf_flutted/components/app_asset_icon/index.dart';
 import 'package:oolaf_flutted/components/network_img/index.dart';
 
 const Set<PointerDeviceKind> _desktopFriendlyGalleryDragDevices =
@@ -235,10 +236,11 @@ class _ShortVideoImageGalleryPageState extends State<_ShortVideoImageGalleryPage
                             onPressed: () {
                               Navigator.of(context).pop();
                             },
-                            child: const Icon(
-                              CupertinoIcons.clear,
+                            child: const AppAssetIcon(
+                              assetName: 'close',
                               color: CupertinoColors.white,
                               size: 22,
+                              fallbackIcon: CupertinoIcons.clear,
                             ),
                           ),
                         ),

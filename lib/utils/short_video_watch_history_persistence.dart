@@ -11,6 +11,9 @@ class ShortVideoWatchHistoryEntry {
     required this.videoUrl,
     required this.watchedAtMillis,
     this.source,
+    this.type = 'phvideo',
+    this.commentsUrl,
+    this.commentsCount = '0',
   });
 
   final String videoId;
@@ -19,6 +22,9 @@ class ShortVideoWatchHistoryEntry {
   final String coverUrl;
   final String videoUrl;
   final String? source;
+  final String type;
+  final String? commentsUrl;
+  final String commentsCount;
   final int watchedAtMillis;
 
   DateTime get watchedAt => DateTime.fromMillisecondsSinceEpoch(watchedAtMillis);
@@ -30,6 +36,9 @@ class ShortVideoWatchHistoryEntry {
     String? coverUrl,
     String? videoUrl,
     String? source,
+    String? type,
+    String? commentsUrl,
+    String? commentsCount,
     int? watchedAtMillis,
   }) {
     return ShortVideoWatchHistoryEntry(
@@ -39,6 +48,9 @@ class ShortVideoWatchHistoryEntry {
       coverUrl: coverUrl ?? this.coverUrl,
       videoUrl: videoUrl ?? this.videoUrl,
       source: source ?? this.source,
+      type: type ?? this.type,
+      commentsUrl: commentsUrl ?? this.commentsUrl,
+      commentsCount: commentsCount ?? this.commentsCount,
       watchedAtMillis: watchedAtMillis ?? this.watchedAtMillis,
     );
   }
@@ -51,6 +63,9 @@ class ShortVideoWatchHistoryEntry {
       'coverUrl': coverUrl,
       'videoUrl': videoUrl,
       'source': source,
+      'type': type,
+      'commentsUrl': commentsUrl,
+      'commentsCount': commentsCount,
       'watchedAtMillis': watchedAtMillis,
     };
   }
@@ -66,6 +81,9 @@ class ShortVideoWatchHistoryEntry {
     final coverUrl = json['coverUrl'];
     final videoUrl = json['videoUrl'];
     final source = json['source'];
+    final type = json['type'];
+    final commentsUrl = json['commentsUrl'];
+    final commentsCount = json['commentsCount'];
     final watchedAtMillis = json['watchedAtMillis'];
 
     if (videoId is! String ||
@@ -83,6 +101,13 @@ class ShortVideoWatchHistoryEntry {
       coverUrl: coverUrl,
       videoUrl: videoUrl,
       source: source is String ? source : null,
+      type: type is String && type.isNotEmpty ? type : 'phvideo',
+      commentsUrl: commentsUrl is String && commentsUrl.isNotEmpty
+          ? commentsUrl
+          : null,
+      commentsCount: commentsCount is String && commentsCount.isNotEmpty
+          ? commentsCount
+          : '0',
       watchedAtMillis: watchedAtMillis,
     );
   }
