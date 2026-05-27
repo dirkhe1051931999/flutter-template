@@ -38,9 +38,34 @@ class _ShortVideoHeadlinePageState extends State<ShortVideoHeadlinePage>
   int _activeIndex = 0;
   int _requestGeneration = 0;
   bool _docSpeedBoosting = false;
+  String? _commentSheetVideoId;
   List<HeadlineFeedItem> _items = const <HeadlineFeedItem>[];
 
   String get _ownerKey => 'short_video_headline_tab';
+
+  bool _isCommentSheetOpenFor(ShortVideoItem item) {
+    return _commentSheetVideoId == item.id;
+  }
+
+  Future<void> _openCommentSheet(ShortVideoItem item) async {
+    if (mounted) {
+      setState(() {
+        _commentSheetVideoId = item.id;
+      });
+    }
+    try {
+      await showRealShortVideoCommentSheet(
+        context,
+        item: item,
+      );
+    } finally {
+      if (mounted && _commentSheetVideoId == item.id) {
+        setState(() {
+          _commentSheetVideoId = null;
+        });
+      }
+    }
+  }
 
   @override
   bool get wantKeepAlive => true;
@@ -266,16 +291,14 @@ class _ShortVideoHeadlinePageState extends State<ShortVideoHeadlinePage>
           return _HeadlineVideoPageItem(
             item: video,
             controller: _controllerOfItem(item),
+            alignVideoToTop: _isCommentSheetOpenFor(video),
             onSwipeUp: () => _jumpToPage(_activeIndex + 1),
             onSwipeDown: () => _jumpToPage(_activeIndex - 1),
             onCopyLink: () async {
               await Clipboard.setData(ClipboardData(text: video.videoUrl));
             },
             onTapComment: () {
-              showRealShortVideoCommentSheet(
-                context,
-                item: video,
-              );
+              _openCommentSheet(video);
             },
           );
         }
@@ -309,6 +332,7 @@ class _HeadlineVideoPageItem extends StatelessWidget {
   const _HeadlineVideoPageItem({
     required this.item,
     required this.controller,
+    required this.alignVideoToTop,
     required this.onSwipeUp,
     required this.onSwipeDown,
     required this.onCopyLink,
@@ -317,6 +341,7 @@ class _HeadlineVideoPageItem extends StatelessWidget {
 
   final ShortVideoItem item;
   final OolafVideoController? controller;
+  final bool alignVideoToTop;
   final VoidCallback onSwipeUp;
   final VoidCallback onSwipeDown;
   final Future<void> Function() onCopyLink;
@@ -329,6 +354,7 @@ class _HeadlineVideoPageItem extends StatelessWidget {
       children: [
         ShortVideoPlayerWrapper(
           controller: controller,
+          landscapeContainTopInset: alignVideoToTop ? 0 : null,
           onSingleTap: () {},
           onLongPress: () {},
           onDoubleTap: () {},

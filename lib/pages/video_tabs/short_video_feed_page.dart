@@ -82,6 +82,7 @@ class ShortVideoFeedPageState extends State<ShortVideoFeedPage>
       <String, List<DanmakuItem>>{};
   final Set<String> _danmakuLoadingVideoIds = <String>{};
   bool _isProgressInteracting = false;
+  String? _commentSheetVideoId;
 
   OolafVideoController? _activeStatusObservedController;
   VoidCallback? _activeStatusListener;
@@ -90,6 +91,30 @@ class ShortVideoFeedPageState extends State<ShortVideoFeedPage>
   String? _lastAutoNextTriggeredVideoId;
 
   bool get _isChannelFeed => widget.channelRequest != null;
+
+  bool _isCommentSheetOpenFor(ShortVideoItem item) {
+    return _commentSheetVideoId == item.id;
+  }
+
+  Future<void> _openCommentSheet(ShortVideoItem item) async {
+    if (mounted) {
+      setState(() {
+        _commentSheetVideoId = item.id;
+      });
+    }
+    try {
+      await showRealShortVideoCommentSheet(
+        context,
+        item: item,
+      );
+    } finally {
+      if (mounted && _commentSheetVideoId == item.id) {
+        setState(() {
+          _commentSheetVideoId = null;
+        });
+      }
+    }
+  }
 
   ShortVideoItem? get currentActiveItem {
     if (_items.isEmpty || _activeIndex < 0 || _activeIndex >= _items.length) {
@@ -532,15 +557,15 @@ class ShortVideoFeedPageState extends State<ShortVideoFeedPage>
             child: Column(
               children: [
                 Container(
-                  height: 52,
-                  width: 52,
+                  height: 40,
+                  width: 40,
                   decoration: BoxDecoration(
                     color: isDanger
                         ? const Color(0x29FF453A)
                         : const Color(0x29FFFFFF),
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                  child: icon,
+                  child: Center(child: icon),
                 ),
                 const SizedBox(height: 8),
                 Text(
@@ -637,7 +662,7 @@ class ShortVideoFeedPageState extends State<ShortVideoFeedPage>
                 actionTile(
                   icon: AppAssetIcon(
                     assetName: 'heart',
-                    size: 24,
+                    size: 12,
                     color: CupertinoColors.white,
                     fallbackIcon: isFavorite
                         ? CupertinoIcons.heart_slash_fill
@@ -649,7 +674,7 @@ class ShortVideoFeedPageState extends State<ShortVideoFeedPage>
                 actionTile(
                   icon: const AppAssetIcon(
                     assetName: 'time',
-                    size: 24,
+                    size: 12,
                     color: CupertinoColors.white,
                     fallbackIcon: CupertinoIcons.time,
                   ),
@@ -659,7 +684,7 @@ class ShortVideoFeedPageState extends State<ShortVideoFeedPage>
                 actionTile(
                   icon: const AppAssetIcon(
                     assetName: 'link',
-                    size: 24,
+                    size: 12,
                     color: CupertinoColors.white,
                     fallbackIcon: CupertinoIcons.link,
                   ),
@@ -669,7 +694,7 @@ class ShortVideoFeedPageState extends State<ShortVideoFeedPage>
                 actionTile(
                   icon: const AppAssetIcon(
                     assetName: 'cloud-download',
-                    size: 24,
+                    size: 12,
                     color: CupertinoColors.white,
                     fallbackIcon: CupertinoIcons.cloud_download,
                   ),
@@ -702,7 +727,7 @@ class ShortVideoFeedPageState extends State<ShortVideoFeedPage>
                 actionTile(
                   icon: const Icon(
                     CupertinoIcons.hand_thumbsdown_fill,
-                    size: 24,
+                    size: 12,
                     color: CupertinoColors.systemRed,
                   ),
                   label: '不感兴趣',
@@ -717,7 +742,7 @@ class ShortVideoFeedPageState extends State<ShortVideoFeedPage>
                 actionTile(
                   icon: const AppAssetIcon(
                     assetName: 'person-remove',
-                    size: 24,
+                    size: 12,
                     color: CupertinoColors.systemRed,
                     fallbackIcon: CupertinoIcons.person_crop_circle_badge_xmark,
                   ),
@@ -733,7 +758,7 @@ class ShortVideoFeedPageState extends State<ShortVideoFeedPage>
                 actionTile(
                   icon: const AppAssetIcon(
                     assetName: 'text-remove',
-                    size: 24,
+                    size: 12,
                     color: CupertinoColors.systemRed,
                     fallbackIcon: CupertinoIcons.text_badge_xmark,
                   ),
@@ -1458,6 +1483,8 @@ class ShortVideoFeedPageState extends State<ShortVideoFeedPage>
                         child: ShortVideoPlayerWrapper(
                           controller: controller,
                           progressBarBottomOffset: progressBarBottomOffset,
+                          landscapeContainTopInset:
+                              _isCommentSheetOpenFor(item) ? 0 : null,
                           onProgressInteractionChanged: (visible) {
                             if (_isProgressInteracting == visible || !mounted) {
                               return;
@@ -1545,10 +1572,7 @@ class ShortVideoFeedPageState extends State<ShortVideoFeedPage>
                             _toggleFavorite(item);
                           },
                           onTapComment: () {
-                            showRealShortVideoCommentSheet(
-                              context,
-                              item: item,
-                            );
+                            _openCommentSheet(item);
                           },
                           onTapShare: () {
                             _copyShareText(item);

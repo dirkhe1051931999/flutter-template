@@ -3,12 +3,8 @@ import 'dart:async';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
-import 'package:oolaf_flutted/api/ifeng_auth/index.dart';
-import 'package:oolaf_flutted/model/ifeng_auth/index.dart';
-import 'package:oolaf_flutted/components/short_video/login_captcha_dialog.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:oolaf_flutted/utils/ifeng_auth_storage.dart';
-import 'package:oolaf_flutted/utils/ifeng_request.dart';
+import 'package:oolaf_flutted/utils/ifeng_auth_flow.dart';
 
 class ShortVideoLoginPage extends StatefulWidget {
   const ShortVideoLoginPage({super.key});
@@ -58,22 +54,11 @@ class _ShortVideoLoginPageState extends State<ShortVideoLoginPage>
   }
 
   String? _validateMobile(String? value) {
-    final text = (value ?? '').trim();
-    if (text.isEmpty) {
-      return '请输入手机号';
-    }
-    if (!RegExp(r'^1\d{10}$').hasMatch(text)) {
-      return '请输入正确手机号';
-    }
-    return null;
+    return IfengAuthFlow.validateMobile(value);
   }
 
   String? _validateSmsCode(String? value) {
-    final text = (value ?? '').trim();
-    if (text.isEmpty) {
-      return '请输入验证码';
-    }
-    return null;
+    return IfengAuthFlow.validateSmsCode(value);
   }
 
   Future<void> _restoreCountdownState() async {
@@ -167,73 +152,10 @@ class _ShortVideoLoginPageState extends State<ShortVideoLoginPage>
 
     try {
       final mobile = _mobileController.text.trim();
-      final smsResult = await sendIfengLoginSms(mobile: mobile);
-      if (smsResult.requiresCaptcha) {
-        while (mounted) {
-          IfengCaptchaModel? captcha;
-          try {
-            captcha = await getIfengCaptcha();
-          } catch (error) {
-            debugPrint('short_video_login getCaptcha error: $error');
-            EasyLoading.showToast('获取验证码图片失败');
-            return;
-          }
-          if (captcha == null) {
-            EasyLoading.showToast('获取验证码图片失败');
-            return;
-          }
-          if (!mounted) {
-            return;
-          }
-          final dialogResult = await showLoginCaptchaDialog(
-            context: context,
-            payload: LoginCaptchaDialogPayload(
-              captchaId: captcha.id,
-              imageUrl: captcha.imageUrl,
-              words: captcha.words,
-            ),
-          );
-          if (!mounted) {
-            return;
-          }
-          if (dialogResult == null) {
-            return;
-          }
-          final positionsJson = encodeCaptchaPositions(
-            dialogResult.positions.map((item) => item.toJson()).toList(growable: false),
-          );
-          IfengSmsSendResultModel verifyResult;
-          try {
-            verifyResult = await verifyIfengCaptchaAndSendSms(
-              mobile: mobile,
-              captchaId: dialogResult.captchaId,
-              positionsJson: positionsJson,
-            );
-          } catch (error) {
-            debugPrint('short_video_login verify captcha send sms error: $error');
-            EasyLoading.showToast('验证码校验失败，已刷新验证码');
-            continue;
-          }
-          if (verifyResult.likelySmsSent) {
-            EasyLoading.showToast('发送验证码成功');
-            _startCountdown();
-            return;
-          }
-          EasyLoading.showToast(
-            verifyResult.message.isNotEmpty
-                ? '${verifyResult.message}，已刷新验证码'
-                : '验证码发送失败，已刷新验证码',
-          );
-        }
-        return;
-      }
-      if (smsResult.likelySmsSent) {
-        EasyLoading.showToast('发送验证码成功');
-        _startCountdown();
-        return;
-      }
-      EasyLoading.showToast(
-        smsResult.message.isNotEmpty ? smsResult.message : '发送验证码失败',
+      await IfengAuthFlow.sendLoginSmsWithCaptchaFallback(
+        context: context,
+        mobile: mobile,
+        onSmsSent: _startCountdown,
       );
     } catch (error) {
       debugPrint('short_video_login send sms fatal error: $error');
@@ -259,65 +181,19 @@ class _ShortVideoLoginPageState extends State<ShortVideoLoginPage>
     setState(() {
       _isSubmitting = true;
     });
-    EasyLoading.show(status: '校验手机号...');
 
     try {
       final mobile = _mobileController.text.trim();
       final smsCode = _smsCodeController.text.trim();
-      String ltoken;
-      try {
-        ltoken = await checkIfengMobileBeforeLogin(mobile: mobile);
-      } catch (_) {
-        EasyLoading.dismiss();
-        EasyLoading.showToast('手机号校验失败，请稍后重试');
-        return;
-      }
-      EasyLoading.show(status: '校验验证码...');
-      IfengAuthSessionModel? session;
-      try {
-        session = await loginIfengBySms(
-          mobile: mobile,
-          smsCode: smsCode,
-          ltoken: ltoken,
-        );
-      } catch (_) {
-        EasyLoading.dismiss();
-        EasyLoading.showToast('短信验证码校验失败，请重试');
-        return;
-      }
-      if (session == null) {
-        EasyLoading.dismiss();
-        EasyLoading.showToast('短信验证码错误或已失效');
-        return;
-      }
-      EasyLoading.show(status: '同步账号资料...');
-      IfengUserProfileModel? completedProfile;
-      try {
-        completedProfile = await completeIfengLogin(session: session);
-      } catch (_) {
-        EasyLoading.dismiss();
-        EasyLoading.showToast('账号登录链路失败，请稍后重试');
-        return;
-      }
-      await IfengAuthStorage.saveSession(
-        IfengAuthSession(
-          token: session.token,
-          guid: session.guid,
-          username: session.username,
-          nickname: completedProfile?.nickname.isNotEmpty == true
-              ? completedProfile!.nickname
-              : session.nickname,
-          userImage: completedProfile?.userImage.isNotEmpty == true
-              ? completedProfile!.userImage
-              : session.userImage,
-          auth: session.auth.isNotEmpty ? session.auth : '4A24BA8FCD63FF5F',
-          smsFastPass: session.smsFastPass,
-        ),
+      final success = await IfengAuthFlow.loginWithSmsCode(
+        mobile: mobile,
+        smsCode: smsCode,
       );
+      if (!success) {
+        return;
+      }
       _smsCodeController.clear();
       await _clearCountdownState();
-      EasyLoading.dismiss();
-      EasyLoading.showToast('登录成功');
       if (!mounted) {
         return;
       }
@@ -338,6 +214,7 @@ class _ShortVideoLoginPageState extends State<ShortVideoLoginPage>
   Widget build(BuildContext context) {
     return CupertinoPageScaffold(
       backgroundColor: const Color(0xFFF4F5F7),
+      resizeToAvoidBottomInset: false,
       navigationBar: const CupertinoNavigationBar(
         middle: Text('登录'),
       ),
@@ -491,6 +368,7 @@ class _LoginField extends StatelessWidget {
     return TextFormField(
       controller: controller,
       keyboardType: keyboardType,
+      scrollPadding: EdgeInsets.zero,
       validator: validator,
       style: const TextStyle(
         color: Color(0xFF0D253D),

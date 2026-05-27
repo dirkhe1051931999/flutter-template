@@ -58,9 +58,46 @@ class _ShortVideoWatchHistoryPlayPageState
   double _currentPlaybackRate = 1.0;
   double? _avatarLongPressRestoreRate;
   bool _isProgressInteracting = false;
+  String? _commentSheetVideoId;
 
   OolafVideoController? _activeStatusObservedController;
   VoidCallback? _activeStatusListener;
+
+  bool _isCommentSheetOpenFor(ShortVideoWatchHistoryEntry entry) {
+    return _commentSheetVideoId == entry.videoId;
+  }
+
+  Future<void> _openCommentSheet(ShortVideoWatchHistoryEntry entry) async {
+    final item = ShortVideoItem(
+      id: entry.videoId,
+      source: entry.source,
+      title: entry.title,
+      updateTime: entry.updateTime,
+      videoUrl: entry.videoUrl,
+      coverUrl: entry.coverUrl,
+      type: entry.type,
+      commentsUrl: entry.commentsUrl,
+      commentsCount: entry.commentsCount,
+    );
+    if (mounted) {
+      setState(() {
+        _commentSheetVideoId = entry.videoId;
+      });
+    }
+    try {
+      await showRealShortVideoCommentSheet(
+        context,
+        item: item,
+      );
+    } finally {
+      if (mounted && _commentSheetVideoId == entry.videoId) {
+        setState(() {
+          _commentSheetVideoId = null;
+        });
+      }
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -328,15 +365,15 @@ class _ShortVideoWatchHistoryPlayPageState
             child: Column(
               children: [
                 Container(
-                  height: 52,
-                  width: 52,
+                  height: 40,
+                  width: 40,
                   decoration: BoxDecoration(
                     color: isDanger
                         ? const Color(0x29FF453A)
                         : const Color(0x29FFFFFF),
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                  child: icon,
+                  child: Center(child: icon),
                 ),
                 const SizedBox(height: 8),
                 Text(
@@ -433,7 +470,7 @@ class _ShortVideoWatchHistoryPlayPageState
                 actionTile(
                   icon: AppAssetIcon(
                     assetName: 'heart',
-                    size: 24,
+                    size: 12,
                     color: CupertinoColors.white,
                     fallbackIcon: isFavorite
                         ? CupertinoIcons.heart_slash_fill
@@ -445,7 +482,7 @@ class _ShortVideoWatchHistoryPlayPageState
                 actionTile(
                   icon: const AppAssetIcon(
                     assetName: 'time',
-                    size: 24,
+                    size: 12,
                     color: CupertinoColors.white,
                     fallbackIcon: CupertinoIcons.time,
                   ),
@@ -455,7 +492,7 @@ class _ShortVideoWatchHistoryPlayPageState
                 actionTile(
                   icon: const AppAssetIcon(
                     assetName: 'link',
-                    size: 24,
+                    size: 12,
                     color: CupertinoColors.white,
                     fallbackIcon: CupertinoIcons.link,
                   ),
@@ -465,7 +502,7 @@ class _ShortVideoWatchHistoryPlayPageState
                 actionTile(
                   icon: const AppAssetIcon(
                     assetName: 'cloud-download',
-                    size: 24,
+                    size: 12,
                     color: CupertinoColors.white,
                     fallbackIcon: CupertinoIcons.cloud_download,
                   ),
@@ -498,7 +535,7 @@ class _ShortVideoWatchHistoryPlayPageState
                 actionTile(
                   icon: const AppAssetIcon(
                     assetName: 'thumbs-down',
-                    size: 24,
+                    size: 12,
                     color: CupertinoColors.systemRed,
                     fallbackIcon: CupertinoIcons.hand_thumbsdown_fill,
                   ),
@@ -514,7 +551,7 @@ class _ShortVideoWatchHistoryPlayPageState
                 actionTile(
                   icon: const AppAssetIcon(
                     assetName: 'person-remove',
-                    size: 24,
+                    size: 12,
                     color: CupertinoColors.systemRed,
                     fallbackIcon: CupertinoIcons.person_crop_circle_badge_xmark,
                   ),
@@ -530,7 +567,7 @@ class _ShortVideoWatchHistoryPlayPageState
                 actionTile(
                   icon: const AppAssetIcon(
                     assetName: 'text-remove',
-                    size: 24,
+                    size: 12,
                     color: CupertinoColors.systemRed,
                     fallbackIcon: CupertinoIcons.text_badge_xmark,
                   ),
@@ -770,6 +807,9 @@ class _ShortVideoWatchHistoryPlayPageState
                     RepaintBoundary(
                       child: ShortVideoPlayerWrapper(
                         controller: controller,
+                        landscapeContainTopInset: _isCommentSheetOpenFor(entry)
+                            ? MediaQuery.of(context).padding.top
+                            : null,
                         onProgressInteractionChanged: (visible) {
                           if (_isProgressInteracting == visible || !mounted) {
                             return;
@@ -833,20 +873,7 @@ class _ShortVideoWatchHistoryPlayPageState
                           _toggleFavorite(entry);
                         },
                         onTapComment: () {
-                          showRealShortVideoCommentSheet(
-                            context,
-                            item: ShortVideoItem(
-                              id: entry.videoId,
-                              source: entry.source,
-                              title: entry.title,
-                              updateTime: entry.updateTime,
-                              videoUrl: entry.videoUrl,
-                              coverUrl: entry.coverUrl,
-                              type: entry.type,
-                              commentsUrl: entry.commentsUrl,
-                              commentsCount: entry.commentsCount,
-                            ),
-                          );
+                          _openCommentSheet(entry);
                         },
                         onTapShare: () {
                           _copyShareText(entry);

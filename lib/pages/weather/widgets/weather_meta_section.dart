@@ -5,18 +5,13 @@ import 'package:oolaf_flutted/model/weather/index.dart';
 class WeatherMetaSection extends StatelessWidget {
   const WeatherMetaSection({
     super.key,
-    required this.weather,
     required this.today,
   });
 
-  final WeatherDailyForecastResponse weather;
   final WeatherDailyForecast today;
 
   @override
   Widget build(BuildContext context) {
-    final sources = weather.refer.sources.join(' / ');
-    final license = weather.refer.license.join(' / ');
-
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 16, 16, 24),
       padding: const EdgeInsets.all(18),
@@ -98,10 +93,6 @@ class WeatherMetaSection extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 16),
-          _InfoLine(label: 'fxLink', value: weather.fxLink),
-          _InfoLine(label: '数据来源', value: sources.isEmpty ? '--' : sources),
-          _InfoLine(label: '许可说明', value: license.isEmpty ? '--' : license),
         ],
       ),
     );
@@ -192,44 +183,6 @@ class _MetaMetricCard extends StatelessWidget {
           ),
         );
       },
-    );
-  }
-}
-
-class _InfoLine extends StatelessWidget {
-  const _InfoLine({
-    required this.label,
-    required this.value,
-  });
-
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 10),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: const TextStyle(
-              color: Color(0xFF64748B),
-              fontSize: 12,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            value,
-            style: const TextStyle(
-              color: Color(0xFF111827),
-              fontSize: 14,
-              height: 1.5,
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

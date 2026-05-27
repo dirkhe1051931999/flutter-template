@@ -2,12 +2,18 @@ import 'package:flutter/cupertino.dart';
 import 'package:oolaf_flutted/api/weather/index.dart';
 import 'package:oolaf_flutted/components/app_asset_icon/index.dart';
 import 'package:oolaf_flutted/model/weather/index.dart';
+import 'package:oolaf_flutted/model/weather/types/weather_air_quality.dart';
+import 'package:oolaf_flutted/model/weather/types/weather_indices_forecast.dart';
+import 'package:oolaf_flutted/model/weather/types/weather_warning.dart';
 import 'package:oolaf_flutted/pages/weather/weather_city_search_page.dart';
+import 'package:oolaf_flutted/pages/weather/widgets/weather_air_quality_section.dart';
 import 'package:oolaf_flutted/pages/weather/widgets/weather_forecast_section.dart';
 import 'package:oolaf_flutted/pages/weather/widgets/weather_hero_section.dart';
 import 'package:oolaf_flutted/pages/weather/widgets/weather_hourly_section.dart';
+import 'package:oolaf_flutted/pages/weather/widgets/weather_indices_section.dart';
 import 'package:oolaf_flutted/pages/weather/widgets/weather_meta_section.dart';
 import 'package:oolaf_flutted/pages/weather/widgets/weather_state_card.dart';
+import 'package:oolaf_flutted/pages/weather/widgets/weather_warning_section.dart';
 
 class WeatherPage extends StatefulWidget {
   const WeatherPage({super.key});
@@ -18,10 +24,13 @@ class WeatherPage extends StatefulWidget {
 
 class _WeatherPageState extends State<WeatherPage>
     with SingleTickerProviderStateMixin {
+  static const List<String> _dailyForecastRanges = ['3d', '7d', '10d', '15d', '30d'];
+
   WeatherCity _activeCity = WeatherCityCatalog.xian;
   Future<WeatherDashboardData>? _weatherFuture;
   late final AnimationController _refreshAnimationController;
   bool _isRefreshing = false;
+  String _activeDailyForecastRange = '3d';
 
   @override
   void initState() {
@@ -41,12 +50,21 @@ class _WeatherPageState extends State<WeatherPage>
 
   Future<WeatherDashboardData> _loadWeather(WeatherCity city) async {
     final responses = await Future.wait([
-      getWeatherDailyForecast(city: city),
+      getWeatherDailyForecast(
+        city: city,
+        days: _activeDailyForecastRange,
+      ),
       getWeatherHourlyForecast(city: city),
+      getWeatherIndicesForecast(city: city),
+      getWeatherAirQuality(city: city),
+      getWeatherWarning(city: city),
     ]);
 
     final dailyResponse = responses[0] as WeatherDailyForecastResponse;
     final hourlyResponse = responses[1] as WeatherHourlyForecastResponse;
+    final indicesResponse = responses[2] as WeatherIndicesForecastResponse;
+    final airQualityResponse = responses[3] as WeatherAirQualityResponse;
+    final warningResponse = responses[4] as WeatherWarningResponse;
 
     final now = DateTime.now();
     final currentHour = DateTime(now.year, now.month, now.day, now.hour);
@@ -61,6 +79,9 @@ class _WeatherPageState extends State<WeatherPage>
     return WeatherDashboardData(
       daily: dailyResponse,
       hourly: hourlyResponse,
+      indices: indicesResponse,
+      airQuality: airQualityResponse,
+      warning: warningResponse,
       visibleHourly: filteredHourly,
     );
   }
@@ -71,6 +92,34 @@ class _WeatherPageState extends State<WeatherPage>
       _isRefreshing = true;
       _weatherFuture = future;
     });
+    _refreshAnimationController.repeat();
+    await future;
+    if (!mounted) {
+      return;
+    }
+    _refreshAnimationController.stop();
+    _refreshAnimationController.reset();
+    setState(() {
+      _isRefreshing = false;
+    });
+  }
+
+  Future<void> _toggleDailyForecastRange() async {
+    final currentIndex = _dailyForecastRanges.indexOf(_activeDailyForecastRange);
+    final nextRange = currentIndex >= _dailyForecastRanges.length - 1
+        ? _dailyForecastRanges.first
+        : _dailyForecastRanges[currentIndex + 1];
+
+    setState(() {
+      _isRefreshing = true;
+      _activeDailyForecastRange = nextRange;
+    });
+
+    final future = _loadWeather(_activeCity);
+    setState(() {
+      _weatherFuture = future;
+    });
+
     _refreshAnimationController.repeat();
     await future;
     if (!mounted) {
@@ -100,6 +149,7 @@ class _WeatherPageState extends State<WeatherPage>
     setState(() {
       _isRefreshing = true;
       _activeCity = selectedCity;
+      _activeDailyForecastRange = '3d';
       _weatherFuture = _loadWeather(selectedCity);
     });
     _refreshAnimationController.repeat();
@@ -124,6 +174,9 @@ class _WeatherPageState extends State<WeatherPage>
           final dashboard = snapshot.data;
           final weather = dashboard?.daily;
           final hourly = dashboard?.visibleHourly ?? const <WeatherHourlyForecast>[];
+          final indices = dashboard?.indices.daily ?? const <WeatherIndicesForecast>[];
+          final airQuality = dashboard?.airQuality;
+          final warning = dashboard?.warning;
           final today = weather?.daily.isNotEmpty == true ? weather!.daily.first : null;
 
           return CustomScrollView(
@@ -247,12 +300,28 @@ class _WeatherPageState extends State<WeatherPage>
                   SliverToBoxAdapter(
                     child: WeatherHourlySection(hourlyForecasts: hourly),
                   ),
+                if (warning != null && warning.hasAlerts)
+                  SliverToBoxAdapter(
+                    child: WeatherWarningSection(warning: warning),
+                  ),
                 SliverToBoxAdapter(
-                  child: WeatherForecastSection(forecasts: weather.daily),
+                  child: WeatherForecastSection(
+                    forecasts: weather.daily,
+                    activeRange: _activeDailyForecastRange,
+                    onToggleRange: _toggleDailyForecastRange,
+                    isLoadingMore: _isRefreshing,
+                  ),
                 ),
+                if (airQuality != null)
+                  SliverToBoxAdapter(
+                    child: WeatherAirQualitySection(airQuality: airQuality),
+                  ),
+                if (indices.isNotEmpty)
+                  SliverToBoxAdapter(
+                    child: WeatherIndicesSection(indices: indices),
+                  ),
                 SliverToBoxAdapter(
                   child: WeatherMetaSection(
-                    weather: weather,
                     today: today,
                   ),
                 ),
@@ -269,10 +338,16 @@ class WeatherDashboardData {
   const WeatherDashboardData({
     required this.daily,
     required this.hourly,
+    required this.indices,
+    required this.airQuality,
+    required this.warning,
     required this.visibleHourly,
   });
 
   final WeatherDailyForecastResponse daily;
   final WeatherHourlyForecastResponse hourly;
+  final WeatherIndicesForecastResponse indices;
+  final WeatherAirQualityResponse airQuality;
+  final WeatherWarningResponse warning;
   final List<WeatherHourlyForecast> visibleHourly;
 }

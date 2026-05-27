@@ -371,10 +371,33 @@ class _ShortVideoProfilePageState extends State<_ShortVideoProfilePage> {
 
   bool get _isLoggedIn => _authSession.isLoggedIn;
 
+  void _handleAuthSessionChanged() {
+    final nextSession = IfengAuthStorage.sessionNotifier.value;
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _authSession = nextSession;
+      if (!nextSession.isLoggedIn) {
+        _userProfile = null;
+      }
+    });
+    if (nextSession.isLoggedIn) {
+      _loadUserProfile();
+    }
+  }
+
   @override
   void initState() {
     super.initState();
+    IfengAuthStorage.sessionNotifier.addListener(_handleAuthSessionChanged);
     _restoreAuthState();
+  }
+
+  @override
+  void dispose() {
+    IfengAuthStorage.sessionNotifier.removeListener(_handleAuthSessionChanged);
+    super.dispose();
   }
 
   Future<void> _restoreAuthState() async {

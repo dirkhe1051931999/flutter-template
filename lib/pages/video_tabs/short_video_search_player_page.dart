@@ -51,6 +51,8 @@ class _ShortVideoSearchPlayerPageState extends State<ShortVideoSearchPlayerPage>
   static const int _loadMoreThreshold = 4;
   static const String _controllerIdPrefix = 'short_video_search:';
   static const double _searchPlayerProgressBarBottomOffset = 16;
+  static const double _searchTopBarVisualHeight = 44;
+  static const double _searchTopBarTopGap = 8;
 
   final PreloadPageController _pageController = PreloadPageController();
   final VideoManager _videoManager = VideoManager();
@@ -75,6 +77,7 @@ class _ShortVideoSearchPlayerPageState extends State<ShortVideoSearchPlayerPage>
   double? _avatarLongPressRestoreRate;
   bool _isProgressInteracting = false;
   Set<String> _favoriteVideoIds = const <String>{};
+  String? _commentSheetVideoId;
   ShortVideoBlockedSnapshot _blockedSnapshot = const ShortVideoBlockedSnapshot(
     videoIds: <String>{},
     sources: <String>{},
@@ -92,6 +95,36 @@ class _ShortVideoSearchPlayerPageState extends State<ShortVideoSearchPlayerPage>
       return null;
     }
     return _items[_activeIndex];
+  }
+
+  bool _isCommentSheetOpenFor(ShortVideoItem item) {
+    return _commentSheetVideoId == item.id;
+  }
+
+  double _commentSheetTopInset(BuildContext context) {
+    return MediaQuery.of(context).padding.top +
+        _searchTopBarTopGap +
+        _searchTopBarVisualHeight;
+  }
+
+  Future<void> _openCommentSheet(ShortVideoItem item) async {
+    if (mounted) {
+      setState(() {
+        _commentSheetVideoId = item.id;
+      });
+    }
+    try {
+      await showRealShortVideoCommentSheet(
+        context,
+        item: item,
+      );
+    } finally {
+      if (mounted && _commentSheetVideoId == item.id) {
+        setState(() {
+          _commentSheetVideoId = null;
+        });
+      }
+    }
   }
 
   String _controllerIdOf(ShortVideoItem item) {
@@ -466,15 +499,15 @@ class _ShortVideoSearchPlayerPageState extends State<ShortVideoSearchPlayerPage>
             child: Column(
               children: [
                 Container(
-                  height: 52,
-                  width: 52,
+                  height: 40,
+                  width: 40,
                   decoration: BoxDecoration(
                     color: isDanger
                         ? const Color(0x29FF453A)
                         : const Color(0x29FFFFFF),
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                  child: icon,
+                  child: Center(child: icon),
                 ),
                 const SizedBox(height: 8),
                 Text(
@@ -569,7 +602,7 @@ class _ShortVideoSearchPlayerPageState extends State<ShortVideoSearchPlayerPage>
                 actionTile(
                   icon: AppAssetIcon(
                     assetName: 'heart',
-                    size: 24,
+                    size: 12,
                     color: CupertinoColors.white,
                     fallbackIcon: isFavorite
                         ? CupertinoIcons.heart_slash_fill
@@ -581,7 +614,7 @@ class _ShortVideoSearchPlayerPageState extends State<ShortVideoSearchPlayerPage>
                 actionTile(
                   icon: const AppAssetIcon(
                     assetName: 'time',
-                    size: 24,
+                    size: 12,
                     color: CupertinoColors.white,
                     fallbackIcon: CupertinoIcons.time,
                   ),
@@ -591,7 +624,7 @@ class _ShortVideoSearchPlayerPageState extends State<ShortVideoSearchPlayerPage>
                 actionTile(
                   icon: const AppAssetIcon(
                     assetName: 'link',
-                    size: 24,
+                    size: 12,
                     color: CupertinoColors.white,
                     fallbackIcon: CupertinoIcons.link,
                   ),
@@ -601,7 +634,7 @@ class _ShortVideoSearchPlayerPageState extends State<ShortVideoSearchPlayerPage>
                 actionTile(
                   icon: const AppAssetIcon(
                     assetName: 'cloud-download',
-                    size: 24,
+                    size: 12,
                     color: CupertinoColors.white,
                     fallbackIcon: CupertinoIcons.cloud_download,
                   ),
@@ -634,7 +667,7 @@ class _ShortVideoSearchPlayerPageState extends State<ShortVideoSearchPlayerPage>
                 actionTile(
                   icon: const AppAssetIcon(
                     assetName: 'thumbs-down',
-                    size: 24,
+                    size: 12,
                     color: CupertinoColors.systemRed,
                     fallbackIcon: CupertinoIcons.hand_thumbsdown_fill,
                   ),
@@ -650,7 +683,7 @@ class _ShortVideoSearchPlayerPageState extends State<ShortVideoSearchPlayerPage>
                 actionTile(
                   icon: const AppAssetIcon(
                     assetName: 'person-remove',
-                    size: 24,
+                    size: 12,
                     color: CupertinoColors.systemRed,
                     fallbackIcon: CupertinoIcons.person_crop_circle_badge_xmark,
                   ),
@@ -666,7 +699,7 @@ class _ShortVideoSearchPlayerPageState extends State<ShortVideoSearchPlayerPage>
                 actionTile(
                   icon: const AppAssetIcon(
                     assetName: 'text-remove',
-                    size: 24,
+                    size: 12,
                     color: CupertinoColors.systemRed,
                     fallbackIcon: CupertinoIcons.text_badge_xmark,
                   ),
@@ -1090,6 +1123,10 @@ class _ShortVideoSearchPlayerPageState extends State<ShortVideoSearchPlayerPage>
                             progressBarBottomOffset:
                                 _searchPlayerProgressBarBottomOffset +
                                     MediaQuery.of(context).viewPadding.bottom,
+                            landscapeContainTopInset:
+                                _isCommentSheetOpenFor(item)
+                                ? _commentSheetTopInset(context)
+                                : null,
                             onProgressInteractionChanged: (visible) {
                               if (_isProgressInteracting == visible ||
                                   !mounted) {
@@ -1146,10 +1183,7 @@ class _ShortVideoSearchPlayerPageState extends State<ShortVideoSearchPlayerPage>
                               _toggleFavorite(item);
                             },
                             onTapComment: () {
-                              showRealShortVideoCommentSheet(
-                                context,
-                                item: item,
-                              );
+                              _openCommentSheet(item);
                             },
                             onTapShare: () {
                               _copyShareText(item);
@@ -1171,7 +1205,7 @@ class _ShortVideoSearchPlayerPageState extends State<ShortVideoSearchPlayerPage>
                   },
                 ),
           Positioned(
-            top: MediaQuery.of(context).padding.top + 8,
+            top: MediaQuery.of(context).padding.top + _searchTopBarTopGap,
             left: 12,
             right: 12,
             child: Row(

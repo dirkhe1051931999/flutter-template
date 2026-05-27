@@ -268,6 +268,7 @@ class _ShortVideoSearchPageState extends State<ShortVideoSearchPage> {
 
     return CupertinoPageScaffold(
       backgroundColor: const Color(0xFFF4F5F7),
+      resizeToAvoidBottomInset: false,
       child: SafeArea(
         child: Column(
           children: [

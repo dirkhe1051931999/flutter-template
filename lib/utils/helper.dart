@@ -121,6 +121,109 @@ class MyAppCookieManager {
   }
 }
 
+String? formatRelativeCommentTime(
+  dynamic primaryValue, {
+  dynamic secondaryValue,
+  dynamic fallbackValue,
+  DateTime? now,
+}) {
+  final publishAt = parseFlexibleDateTime(primaryValue) ??
+      parseFlexibleDateTime(secondaryValue) ??
+      parseFlexibleDateTime(fallbackValue);
+  if (publishAt == null) {
+    return _asNonEmptyString(primaryValue) ??
+        _asNonEmptyString(secondaryValue) ??
+        _asNonEmptyString(fallbackValue);
+  }
+
+  final currentTime = now ?? DateTime.now();
+  final localPublishAt = publishAt.isUtc ? publishAt.toLocal() : publishAt;
+  final diff = currentTime.difference(localPublishAt);
+  final startOfToday = DateTime(
+    currentTime.year,
+    currentTime.month,
+    currentTime.day,
+  );
+  final startOfPublishDay = DateTime(
+    localPublishAt.year,
+    localPublishAt.month,
+    localPublishAt.day,
+  );
+  final dayDiff = startOfToday.difference(startOfPublishDay).inDays;
+
+  if (dayDiff == 0) {
+    if (!diff.isNegative && diff < const Duration(minutes: 1)) {
+      return '刚刚';
+    }
+    return formatHourMinute(localPublishAt);
+  }
+
+  if (dayDiff == 1) {
+    return '昨天 ${formatHourMinute(localPublishAt)}';
+  }
+
+  if (dayDiff == 2) {
+    return '前天 ${formatHourMinute(localPublishAt)}';
+  }
+
+  if (localPublishAt.year == currentTime.year) {
+    return '${pad2(localPublishAt.month)}-${pad2(localPublishAt.day)}';
+  }
+
+  return '${localPublishAt.year}-${pad2(localPublishAt.month)}-${pad2(localPublishAt.day)}';
+}
+
+DateTime? parseFlexibleDateTime(dynamic value) {
+  if (value is int) {
+    return _dateTimeFromEpoch(value);
+  }
+  if (value is String) {
+    final trimmed = value.trim();
+    if (trimmed.isEmpty) {
+      return null;
+    }
+    final epochValue = int.tryParse(trimmed);
+    if (epochValue != null) {
+      return _dateTimeFromEpoch(epochValue);
+    }
+
+    final normalized = trimmed.replaceAll('/', '-');
+    final parsed = DateTime.tryParse(normalized);
+    if (parsed != null) {
+      return parsed;
+    }
+
+    final withSpace = normalized.replaceFirst(' ', 'T');
+    return DateTime.tryParse(withSpace);
+  }
+  return null;
+}
+
+String formatHourMinute(DateTime value) {
+  return '${pad2(value.hour)}:${pad2(value.minute)}';
+}
+
+String pad2(int value) {
+  return value.toString().padLeft(2, '0');
+}
+
+DateTime? _dateTimeFromEpoch(int value) {
+  if (value <= 0) {
+    return null;
+  }
+  final isMilliseconds = value.abs() >= 1000000000000;
+  return DateTime.fromMillisecondsSinceEpoch(
+    isMilliseconds ? value : value * 1000,
+  );
+}
+
+String? _asNonEmptyString(dynamic value) {
+  if (value is String && value.trim().isNotEmpty) {
+    return value.trim();
+  }
+  return null;
+}
+
 /// 递归更新 Map
 Map<String, dynamic> recursiveMerge(
     Map<String, dynamic> original, Map<String, dynamic> changes) {

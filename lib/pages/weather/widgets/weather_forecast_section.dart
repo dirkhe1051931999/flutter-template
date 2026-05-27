@@ -7,9 +7,36 @@ class WeatherForecastSection extends StatelessWidget {
   const WeatherForecastSection({
     super.key,
     required this.forecasts,
+    required this.activeRange,
+    required this.onToggleRange,
+    required this.isLoadingMore,
   });
 
   final List<WeatherDailyForecast> forecasts;
+  final String activeRange;
+  final Future<void> Function() onToggleRange;
+  final bool isLoadingMore;
+
+  String get _titleLabel {
+    return '未来${activeRange.replaceAll('d', '')}天';
+  }
+
+  String get _buttonLabel {
+    switch (activeRange) {
+      case '3d':
+        return '展开到未来7天';
+      case '7d':
+        return '展开到未来10天';
+      case '10d':
+        return '展开到未来15天';
+      case '15d':
+        return '展开到未来30天';
+      case '30d':
+        return '收起到未来3天';
+      default:
+        return '展开更多';
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -30,16 +57,39 @@ class WeatherForecastSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            '7天预报',
-            style: CupertinoTheme.of(context)
-                .textTheme
-                .navLargeTitleTextStyle
-                .copyWith(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w700,
-                  color: const Color(0xFF111827),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  _titleLabel,
+                  style: CupertinoTheme.of(context)
+                      .textTheme
+                      .navLargeTitleTextStyle
+                      .copyWith(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w700,
+                        color: const Color(0xFF111827),
+                      ),
                 ),
+              ),
+              CupertinoButton(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                minimumSize: const Size(32, 32),
+                borderRadius: BorderRadius.circular(999),
+                color: const Color(0xFFF0F7FF),
+                onPressed: isLoadingMore ? null : onToggleRange,
+                child: isLoadingMore
+                    ? const CupertinoActivityIndicator(radius: 7)
+                    : Text(
+                        _buttonLabel,
+                        style: const TextStyle(
+                          color: Color(0xFF2E7EF7),
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+              ),
+            ],
           ),
           const SizedBox(height: 8),
           ...forecasts.asMap().entries.map((entry) {

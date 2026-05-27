@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class IfengAuthSession {
@@ -71,21 +72,28 @@ class IfengAuthStorage {
   IfengAuthStorage._();
 
   static const String _sessionKey = 'ifeng_auth_session_v1';
+  static final ValueNotifier<IfengAuthSession> sessionNotifier =
+      ValueNotifier<IfengAuthSession>(IfengAuthSession.empty);
 
   static Future<IfengAuthSession> loadSession() async {
     final prefs = await SharedPreferences.getInstance();
     final raw = prefs.getString(_sessionKey);
     if (raw == null || raw.isEmpty) {
+      sessionNotifier.value = IfengAuthSession.empty;
       return IfengAuthSession.empty;
     }
 
     try {
       final decoded = jsonDecode(raw);
       if (decoded is! Map<String, dynamic>) {
+        sessionNotifier.value = IfengAuthSession.empty;
         return IfengAuthSession.empty;
       }
-      return IfengAuthSession.fromJson(decoded);
+      final session = IfengAuthSession.fromJson(decoded);
+      sessionNotifier.value = session;
+      return session;
     } catch (_) {
+      sessionNotifier.value = IfengAuthSession.empty;
       return IfengAuthSession.empty;
     }
   }
@@ -93,10 +101,12 @@ class IfengAuthStorage {
   static Future<void> saveSession(IfengAuthSession session) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_sessionKey, jsonEncode(session.toJson()));
+    sessionNotifier.value = session;
   }
 
   static Future<void> clearSession() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_sessionKey);
+    sessionNotifier.value = IfengAuthSession.empty;
   }
 }

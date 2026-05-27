@@ -313,9 +313,11 @@ ShortVideoCommentItem? _mapToCommentItem(Map<String, dynamic> raw) {
     content: content,
     replyToUserId: _asString(raw['reply_uid']),
     replyToUserName: _asString(raw['reply_uname']),
-    publishTimeText: _asString(raw['create_time_format']) ??
-        _asString(raw['create_time']) ??
-        _asString(raw['comment_date']) ??
+    publishTimeText: formatRelativeCommentTime(
+          raw['create_time'],
+          secondaryValue: raw['comment_date'],
+          fallbackValue: raw['create_time_format'],
+        ) ??
         '',
     likeCount: _asInt(raw['uptimes']) ?? _asInt(raw['like_count']) ?? 0,
     replyCount: replyCount,

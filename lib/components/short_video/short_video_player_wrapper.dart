@@ -22,6 +22,8 @@ class ShortVideoPlayerWrapper extends StatefulWidget {
     this.onMarkUnavailable,
     this.progressBarBottomOffset = 0,
     this.fit,
+    this.landscapeContainCenterYFactor = 0.4,
+    this.landscapeContainTopInset,
   });
 
   final OolafVideoController? controller;
@@ -38,6 +40,8 @@ class ShortVideoPlayerWrapper extends StatefulWidget {
   final Future<void> Function()? onMarkUnavailable;
   final double progressBarBottomOffset;
   final BoxFit? fit;
+  final double landscapeContainCenterYFactor;
+  final double? landscapeContainTopInset;
 
   @override
   State<ShortVideoPlayerWrapper> createState() =>
@@ -147,63 +151,77 @@ class _ShortVideoPlayerWrapperState extends State<ShortVideoPlayerWrapper> {
               final isLandscape = _isLandscapeVideo(videoSize);
               final fit =
                   widget.fit ?? (isLandscape ? BoxFit.contain : BoxFit.cover);
+              final useCustomLandscapeLayout =
+                  isLandscape && fit == BoxFit.contain;
 
-              return Stack(
-                fit: StackFit.expand,
-                children: [
-                  controller.buildView(fit: fit),
-                  ValueListenableBuilder<bool>(
-                    valueListenable: controller.isBuffering,
-                    builder: (context, isBuffering, __) {
-                      if (!isBuffering) {
-                        return const SizedBox.shrink();
-                      }
-                      return const Center(
-                        child: CupertinoActivityIndicator(radius: 14),
-                      );
-                    },
-                  ),
-                  ValueListenableBuilder<bool>(
-                    valueListenable: controller.isPlaying,
-                    builder: (context, isPlaying, __) {
-                      if (isPlaying) {
-                        return const SizedBox.shrink();
-                      }
-                      return Center(
-                        child: GestureDetector(
-                          behavior: HitTestBehavior.opaque,
-                          onTap: () async {
-                            await controller.play();
-                          },
-                          child: const Padding(
-                            padding: EdgeInsets.all(12),
-                            child: AppAssetIcon(
-                              assetName: 'play',
-                              color: Color(0x33FFFFFF),
-                              size: 76,
-                              fallbackIcon: CupertinoIcons.play_fill,
+              return LayoutBuilder(
+                builder: (context, constraints) {
+                  return Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      if (useCustomLandscapeLayout && videoSize != null)
+                        _buildLandscapeContainedVideo(
+                          controller: controller,
+                          fit: fit,
+                          videoSize: videoSize,
+                          constraints: constraints,
+                        )
+                      else
+                        controller.buildView(fit: fit),
+                      ValueListenableBuilder<bool>(
+                        valueListenable: controller.isBuffering,
+                        builder: (context, isBuffering, __) {
+                          if (!isBuffering) {
+                            return const SizedBox.shrink();
+                          }
+                          return const Center(
+                            child: CupertinoActivityIndicator(radius: 14),
+                          );
+                        },
+                      ),
+                      ValueListenableBuilder<bool>(
+                        valueListenable: controller.isPlaying,
+                        builder: (context, isPlaying, __) {
+                          if (isPlaying) {
+                            return const SizedBox.shrink();
+                          }
+                          return Center(
+                            child: GestureDetector(
+                              behavior: HitTestBehavior.opaque,
+                              onTap: () async {
+                                await controller.play();
+                              },
+                              child: const Padding(
+                                padding: EdgeInsets.all(12),
+                                child: AppAssetIcon(
+                                  assetName: 'play',
+                                  color: Color(0x33FFFFFF),
+                                  size: 76,
+                                  fallbackIcon: CupertinoIcons.play_fill,
+                                ),
+                              ),
                             ),
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                  ValueListenableBuilder<OolafVideoOutputStatus>(
-                    valueListenable: controller.videoOutputStatus,
-                    builder: (context, status, __) {
-                      if (status == OolafVideoOutputStatus.normal) {
-                        return const SizedBox.shrink();
-                      }
-                      return _ShortVideoPlaybackErrorOverlay(
-                        status: status,
-                        onRetry: widget.onRetry,
-                        onSkip: widget.onSkip,
-                        onCopyLink: widget.onCopyLink,
-                        onMarkUnavailable: widget.onMarkUnavailable,
-                      );
-                    },
-                  ),
-                ],
+                          );
+                        },
+                      ),
+                      ValueListenableBuilder<OolafVideoOutputStatus>(
+                        valueListenable: controller.videoOutputStatus,
+                        builder: (context, status, __) {
+                          if (status == OolafVideoOutputStatus.normal) {
+                            return const SizedBox.shrink();
+                          }
+                          return _ShortVideoPlaybackErrorOverlay(
+                            status: status,
+                            onRetry: widget.onRetry,
+                            onSkip: widget.onSkip,
+                            onCopyLink: widget.onCopyLink,
+                            onMarkUnavailable: widget.onMarkUnavailable,
+                          );
+                        },
+                      ),
+                    ],
+                  );
+                },
               );
             },
           );
@@ -282,6 +300,47 @@ class _ShortVideoPlayerWrapperState extends State<ShortVideoPlayerWrapper> {
           },
         ),
       ),
+    );
+  }
+
+  Widget _buildLandscapeContainedVideo({
+    required OolafVideoController controller,
+    required BoxFit fit,
+    required Size videoSize,
+    required BoxConstraints constraints,
+  }) {
+    final maxWidth = constraints.maxWidth;
+    final maxHeight = constraints.maxHeight;
+    if (maxWidth <= 0 || maxHeight <= 0 || videoSize.height <= 0) {
+      return controller.buildView(fit: fit);
+    }
+
+    final videoAspectRatio = videoSize.width / videoSize.height;
+    if (videoAspectRatio <= 0) {
+      return controller.buildView(fit: fit);
+    }
+
+    var renderedWidth = maxWidth;
+    var renderedHeight = renderedWidth / videoAspectRatio;
+    if (renderedHeight > maxHeight) {
+      renderedHeight = maxHeight;
+      renderedWidth = renderedHeight * videoAspectRatio;
+    }
+
+    final maxTop = (maxHeight - renderedHeight).clamp(0.0, maxHeight);
+    final preferredTopInset = widget.landscapeContainTopInset;
+    final targetTop = preferredTopInset != null
+        ? preferredTopInset.clamp(0.0, maxTop)
+        : (maxHeight * widget.landscapeContainCenterYFactor -
+                renderedHeight / 2)
+            .clamp(0.0, maxTop);
+
+    return Positioned(
+      top: targetTop,
+      left: (maxWidth - renderedWidth) / 2,
+      width: renderedWidth,
+      height: renderedHeight,
+      child: controller.buildView(fit: fit),
     );
   }
 }

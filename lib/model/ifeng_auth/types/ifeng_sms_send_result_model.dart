@@ -2,6 +2,7 @@ class IfengSmsSendResultModel {
   const IfengSmsSendResultModel({
     required this.code,
     required this.message,
+    required this.messageCode,
     required this.requiresCaptcha,
     required this.smsSent,
     required this.authCode,
@@ -11,6 +12,7 @@ class IfengSmsSendResultModel {
 
   final int code;
   final String message;
+  final String messageCode;
   final bool requiresCaptcha;
   final bool smsSent;
   final String authCode;
@@ -56,7 +58,8 @@ class IfengSmsSendResultModel {
     };
     final code = int.tryParse(json['code']?.toString() ?? '') ?? -1;
     final message = json['message']?.toString() ?? '';
-    final requiresCaptcha = authCodeValue == true || authCode == '1';
+    final messageCode = json['msgcode']?.toString() ?? '';
+    final requiresCaptcha = authCodeValue == true || authCode == '1' || messageCode == '9011';
     final smsSent = !requiresCaptcha &&
         (cooldownToken.isNotEmpty ||
             (dataMap.isNotEmpty && code == 1) ||
@@ -67,6 +70,7 @@ class IfengSmsSendResultModel {
     return IfengSmsSendResultModel(
       code: code,
       message: message,
+      messageCode: messageCode,
       requiresCaptcha: requiresCaptcha,
       smsSent: smsSent,
       authCode: authCode,

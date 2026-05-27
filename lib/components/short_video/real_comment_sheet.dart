@@ -2,35 +2,45 @@ import 'package:flutter/cupertino.dart';
 import 'package:oolaf_flutted/api/short_video/comment.dart';
 import 'package:oolaf_flutted/components/app_asset_icon/index.dart';
 import 'package:oolaf_flutted/components/app_sheet/index.dart';
-import 'package:oolaf_flutted/components/network_img/index.dart';
+import 'package:oolaf_flutted/components/comment/comment_list_view.dart';
+import 'package:oolaf_flutted/components/comment/comment_panel_scaffold.dart';
+import 'package:oolaf_flutted/components/comment/comment_sort_selector.dart';
+import 'package:oolaf_flutted/components/comment/comment_thread_controller.dart';
+import 'package:oolaf_flutted/components/article/article_comment_input_sheet.dart';
 import 'package:oolaf_flutted/store/short_video/state.dart';
 
 Future<void> showRealShortVideoCommentSheet(
   BuildContext context, {
   required ShortVideoItem item,
+  bool expanded = false,
 }) async {
   await showAppSheet<void>(
     context: context,
     barrierLabel: '视频评论',
-    maxHeightFactor: 0.88,
+    maxHeightFactor: expanded ? 0.92 : 0.72,
     backgroundColor: const Color(0xFFF7F7FA),
+    edgeToEdge: true,
     builder: (_) {
-      return _RealShortVideoCommentSheet(item: item);
+      return _RealShortVideoCommentSheet(
+        item: item,
+        expanded: expanded,
+      );
     },
   );
 }
 
 String formatShortVideoCommentCount(int count) {
-  if (count >= 10000) {
-    return '1w+';
-  }
-  return count.toString();
+  return formatCommentCount(count);
 }
 
 class _RealShortVideoCommentSheet extends StatefulWidget {
-  const _RealShortVideoCommentSheet({required this.item});
+  const _RealShortVideoCommentSheet({
+    required this.item,
+    required this.expanded,
+  });
 
   final ShortVideoItem item;
+  final bool expanded;
 
   @override
   State<_RealShortVideoCommentSheet> createState() =>
@@ -39,20 +49,10 @@ class _RealShortVideoCommentSheet extends StatefulWidget {
 
 class _RealShortVideoCommentSheetState
     extends State<_RealShortVideoCommentSheet> {
-  static const int _pageSize = 10;
-  static const int _childrenPageSize = 4;
-
   final ScrollController _scrollController = ScrollController();
-
-  ShortVideoCommentSortBy _sortBy = ShortVideoCommentSortBy.hot;
-  List<ShortVideoCommentItem> _comments = const <ShortVideoCommentItem>[];
-  bool _isLoading = true;
-  bool _isLoadingMore = false;
-  bool _loadMoreLocked = false;
-  bool _hasMore = true;
-  int _page = 1;
-  int _totalCount = 0;
-  String? _loadingChildrenCommentId;
+  late final CommentThreadController _controller;
+  bool _isCollected = false;
+  bool _isLiked = false;
 
   String get _docUrl {
     return widget.item.type == 'phvideo'
@@ -67,563 +67,370 @@ class _RealShortVideoCommentSheetState
   }
 
   String get _titleText {
-    if (_totalCount > 0) {
-      return '${formatShortVideoCommentCount(_totalCount)}条评论';
+    if (_controller.totalCount > 0) {
+      return '${formatCommentCount(_controller.totalCount)}条评论';
     }
     final fallback = int.tryParse(widget.item.commentsCount) ?? 0;
     if (fallback > 0) {
-      return '${formatShortVideoCommentCount(fallback)}条评论';
+      return '${formatCommentCount(fallback)}条评论';
     }
     return '评论';
+  }
+
+  Future<void> _openCommentInput() async {
+    await showArticleCommentInputSheet(context);
+  }
+
+  Future<void> _openFullscreenSheet() async {
+    Navigator.of(context).pop();
+    await Future<void>.delayed(Duration.zero);
+    if (!mounted) {
+      return;
+    }
+    await showRealShortVideoCommentSheet(
+      context,
+      item: widget.item,
+      expanded: true,
+    );
   }
 
   @override
   void initState() {
     super.initState();
+    _controller = CommentThreadController(
+      loadPage: (sortBy, page, pageSize) {
+        if (!_supportsComment) {
+          return Future<ShortVideoCommentPageResult>.value(
+            const ShortVideoCommentPageResult(
+              comments: <ShortVideoCommentItem>[],
+              totalCount: 0,
+              page: 1,
+              pageSize: 10,
+              hasMore: false,
+            ),
+          );
+        }
+        return getShortVideoComments(
+          query: ShortVideoCommentQuery(
+            docUrl: _docUrl,
+            page: page,
+            pageSize: pageSize,
+            sortBy: sortBy,
+          ),
+        );
+      },
+      loadChildren: (parent, nextPage, pageSize) {
+        return getShortVideoCommentChildren(
+          query: ShortVideoCommentChildrenQuery(
+            docUrl: parent.docUrl,
+            commentId: parent.commentId,
+            page: nextPage,
+            pageSize: pageSize,
+          ),
+        );
+      },
+    )..addListener(_handleControllerChanged);
     _scrollController.addListener(_handleScroll);
-    _loadInitial();
+    _controller.loadInitial();
   }
 
   @override
   void dispose() {
+    _controller
+      ..removeListener(_handleControllerChanged)
+      ..dispose();
     _scrollController
       ..removeListener(_handleScroll)
       ..dispose();
     super.dispose();
   }
 
-  Future<void> _loadInitial() async {
-    setState(() {
-      _isLoading = true;
-      _isLoadingMore = false;
-      _loadMoreLocked = true;
-      _page = 1;
-    });
-
-    final result = await _fetchPage(page: 1);
-    if (!mounted) {
-      return;
+  void _handleControllerChanged() {
+    if (mounted) {
+      setState(() {});
     }
-
-    setState(() {
-      _comments = result.comments;
-      _totalCount = result.totalCount;
-      _hasMore = result.hasMore;
-      _isLoading = false;
-      _loadMoreLocked = false;
-    });
-  }
-
-  Future<ShortVideoCommentPageResult> _fetchPage({required int page}) async {
-    if (!_supportsComment) {
-      return const ShortVideoCommentPageResult(
-        comments: <ShortVideoCommentItem>[],
-        totalCount: 0,
-        page: 1,
-        pageSize: _pageSize,
-        hasMore: false,
-      );
-    }
-
-    return getShortVideoComments(
-      query: ShortVideoCommentQuery(
-        docUrl: _docUrl,
-        page: page,
-        pageSize: _pageSize,
-        sortBy: _sortBy,
-      ),
-    );
   }
 
   void _handleScroll() {
     if (!_scrollController.hasClients ||
-        _isLoading ||
-        _isLoadingMore ||
-        _loadMoreLocked ||
-        !_hasMore) {
+        _controller.isLoading ||
+        _controller.isLoadingMore ||
+        !_controller.hasMore) {
       return;
     }
     if (_scrollController.position.extentAfter > 240) {
       return;
     }
-    _loadMore();
-  }
-
-  Future<void> _loadMore() async {
-    if (_isLoadingMore || _loadMoreLocked || !_hasMore) {
-      return;
-    }
-
-    setState(() {
-      _isLoadingMore = true;
-      _loadMoreLocked = true;
-    });
-
-    final nextPage = _page + 1;
-    final result = await _fetchPage(page: nextPage);
-    if (!mounted) {
-      return;
-    }
-
-    setState(() {
-      _page = nextPage;
-      _comments = <ShortVideoCommentItem>[
-        ..._comments,
-        ...result.comments,
-      ];
-      _totalCount = result.totalCount > 0 ? result.totalCount : _totalCount;
-      _hasMore = result.hasMore && result.comments.isNotEmpty;
-      _isLoadingMore = false;
-      _loadMoreLocked = false;
-    });
-  }
-
-  Future<void> _changeSort(ShortVideoCommentSortBy sortBy) async {
-    if (_sortBy == sortBy || _isLoading) {
-      return;
-    }
-    setState(() {
-      _sortBy = sortBy;
-    });
-    await _loadInitial();
-  }
-
-  Future<void> _loadChildren(ShortVideoCommentItem parent) async {
-    if (_loadingChildrenCommentId == parent.commentId) {
-      return;
-    }
-
-    setState(() {
-      _loadingChildrenCommentId = parent.commentId;
-    });
-
-    final nextPage = parent.childrenPage + 1;
-
-    final children = await getShortVideoCommentChildren(
-      query: ShortVideoCommentChildrenQuery(
-        docUrl: parent.docUrl,
-        commentId: parent.commentId,
-        page: nextPage,
-        pageSize: _childrenPageSize,
-      ),
-    );
-    if (!mounted) {
-      return;
-    }
-
-    setState(() {
-      _comments = _comments.map((item) {
-        if (item.commentId != parent.commentId) {
-          return item;
-        }
-        final mergedChildren = nextPage <= 1
-            ? children
-            : <ShortVideoCommentItem>[
-                ...item.children,
-                ...children.where((child) {
-                  return !item.children.any(
-                    (existing) => existing.commentId == child.commentId,
-                  );
-                }),
-              ];
-        return item.copyWith(
-          children: mergedChildren,
-          childrenPage: nextPage,
-          canLoadMoreChildren: mergedChildren.length < item.replyCount &&
-              children.isNotEmpty,
-        );
-      }).toList(growable: false);
-      _loadingChildrenCommentId = null;
-    });
+    _controller.loadMore();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(4, 0, 4, 8),
-          child: Row(
-            children: [
-              Text(
-                _titleText,
-                style: const TextStyle(
-                  fontSize: 17,
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFF111111),
-                ),
-              ),
-              const Spacer(),
-              _CommentSortChip(
-                label: _sortBy.label,
-                onTap: () async {
-                  await showCupertinoModalPopup<void>(
-                    context: context,
-                    builder: (sheetContext) {
-                      return CupertinoActionSheet(
-                        actions: [
-                          CupertinoActionSheetAction(
-                            onPressed: () async {
-                              Navigator.of(sheetContext).pop();
-                              await _changeSort(ShortVideoCommentSortBy.hot);
-                            },
-                            child: const Text('按热度'),
-                          ),
-                          CupertinoActionSheetAction(
-                            onPressed: () async {
-                              Navigator.of(sheetContext).pop();
-                              await _changeSort(ShortVideoCommentSortBy.latest);
-                            },
-                            child: const Text('按时间'),
-                          ),
-                        ],
-                        cancelButton: CupertinoActionSheetAction(
-                          onPressed: () => Navigator.of(sheetContext).pop(),
-                          child: const Text('取消'),
-                        ),
-                      );
-                    },
-                  );
-                },
-              ),
-            ],
-          ),
-        ),
-        Expanded(
-          child: _isLoading
-              ? const Center(child: CupertinoActivityIndicator(radius: 12))
-              : !_supportsComment || _comments.isEmpty
-                  ? const _CommentEmptyState()
-                  : CustomScrollView(
-                      controller: _scrollController,
-                      physics: const BouncingScrollPhysics(
-                        parent: AlwaysScrollableScrollPhysics(),
+    return CommentPanelScaffold(
+      header: _CommentSheetHeader(
+        title: widget.item.title,
+        commentsCountText: _titleText,
+        sortLabel: _controller.sortBy.label,
+        expanded: widget.expanded,
+        onTapSort: () {
+          showCommentSortActionSheet(
+            context,
+            onSelected: _controller.changeSort,
+          );
+        },
+        onTapExpand: widget.expanded ? null : _openFullscreenSheet,
+        onTapClose: () => Navigator.of(context).pop(),
+      ),
+      content: _controller.isLoading
+          ? const Center(child: CupertinoActivityIndicator(radius: 12))
+          : !_supportsComment || _controller.comments.isEmpty
+              ? const CommentListEmptyState()
+              : CustomScrollView(
+                  controller: _scrollController,
+                  physics: const BouncingScrollPhysics(
+                    parent: AlwaysScrollableScrollPhysics(),
+                  ),
+                  slivers: [
+                    CupertinoSliverRefreshControl(onRefresh: _controller.loadInitial),
+                    SliverToBoxAdapter(
+                      child: CommentListView(
+                        comments: _controller.comments,
+                        style: CommentListItemStyle.phvideo,
+                        loadingReplyCommentId: _controller.loadingChildrenCommentId,
+                        onTapReply: (_) => _openCommentInput(),
+                        onTapLoadMoreReplies: _controller.loadChildrenOf,
                       ),
-                      slivers: [
-                        CupertinoSliverRefreshControl(onRefresh: _loadInitial),
-                        SliverList.builder(
-                          itemCount: _comments.length,
-                          itemBuilder: (context, index) {
-                            final comment = _comments[index];
-                            return _CommentListTile(
-                              item: comment,
-                              isLoadingReplies:
-                                  _loadingChildrenCommentId == comment.commentId,
-                              onTapLoadMoreReplies: comment.canLoadMoreChildren
-                                  ? () => _loadChildren(comment)
-                                  : null,
-                            );
-                          },
-                        ),
-                        SliverToBoxAdapter(
-                          child: Padding(
-                            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-                            child: Center(
-                              child: _isLoadingMore
-                                  ? const CupertinoActivityIndicator(radius: 10)
-                                  : Text(
-                                      _hasMore ? '继续下拉加载更多' : '没有更多评论了',
-                                      style: const TextStyle(
-                                        color: Color(0xFF8E8E93),
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                            ),
-                          ),
-                        ),
-                      ],
                     ),
-        ),
-      ],
-    );
-  }
-}
-
-class _CommentSortChip extends StatelessWidget {
-  const _CommentSortChip({
-    required this.label,
-    required this.onTap,
-  });
-
-  final String label;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return CupertinoButton(
-      padding: EdgeInsets.zero,
-      onPressed: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        decoration: BoxDecoration(
-          color: const Color(0xFFF0F1F5),
-          borderRadius: BorderRadius.circular(999),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              label,
-              style: const TextStyle(
-                color: Color(0xFF5C6270),
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(width: 4),
-            const AppAssetIcon(
-              assetName: 'chevron-down',
-              size: 12,
-              color: Color(0xFF5C6270),
-              fallbackIcon: CupertinoIcons.chevron_down,
-            ),
-          ],
-        ),
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                        child: Center(
+                          child: _controller.isLoadingMore
+                              ? const CupertinoActivityIndicator(radius: 10)
+                              : Text(
+                                  _controller.hasMore ? '继续下拉加载更多' : '没有更多评论了',
+                                  style: const TextStyle(
+                                    color: Color(0xFF8E8E93),
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+      bottomBar: _CommentSheetBottomBar(
+        isCollected: _isCollected,
+        isLiked: _isLiked,
+        onTapPlaceholder: _openCommentInput,
+        onTapCollect: () {
+          setState(() {
+            _isCollected = !_isCollected;
+          });
+        },
+        onTapLike: () {
+          setState(() {
+            _isLiked = !_isLiked;
+          });
+        },
       ),
     );
   }
 }
 
-class _CommentEmptyState extends StatelessWidget {
-  const _CommentEmptyState();
-
-  @override
-  Widget build(BuildContext context) {
-    return const Center(
-      child: Padding(
-        padding:  EdgeInsets.symmetric(horizontal: 24),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children:  [
-            AppAssetIcon(
-              assetName: 'chatbubbles',
-              size: 42,
-              color: Color(0xFFCACDD4),
-              fallbackIcon: CupertinoIcons.chat_bubble_2_fill,
-            ),
-            SizedBox(height: 12),
-            Text(
-              '暂无评论，来抢沙发吧',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: Color(0xFF8E8E93),
-                fontSize: 15,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _CommentListTile extends StatelessWidget {
-  const _CommentListTile({
-    required this.item,
-    this.level = 0,
-    this.onTapLoadMoreReplies,
-    this.isLoadingReplies = false,
+class _CommentSheetHeader extends StatelessWidget {
+  const _CommentSheetHeader({
+    required this.title,
+    required this.commentsCountText,
+    required this.sortLabel,
+    required this.expanded,
+    required this.onTapSort,
+    required this.onTapClose,
+    this.onTapExpand,
   });
 
-  final ShortVideoCommentItem item;
-  final int level;
-  final VoidCallback? onTapLoadMoreReplies;
-  final bool isLoadingReplies;
+  final String title;
+  final String commentsCountText;
+  final String sortLabel;
+  final bool expanded;
+  final VoidCallback onTapSort;
+  final VoidCallback onTapClose;
+  final VoidCallback? onTapExpand;
 
   @override
   Widget build(BuildContext context) {
-    final avatarSize = level == 0 ? 38.0 : 28.0;
-    final leftInset = 16.0 + level * 34.0;
-    final replyPrefix = item.replyToUserName?.trim().isNotEmpty == true
-        ? '回复 @${item.replyToUserName}：'
-        : '';
     return Padding(
-      padding: EdgeInsets.fromLTRB(leftInset, 10, 16, 10),
+      padding: const EdgeInsets.fromLTRB(4, 0, 4, 8),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _CommentAvatar(
-                avatarUrl: item.user.avatarUrl,
-                size: avatarSize,
-              ),
-              const SizedBox(width: 10),
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            item.user.name,
-                            style: TextStyle(
-                              color: level == 0
-                                  ? const Color(0xFF717784)
-                                  : const Color(0xFF8E8E93),
-                              fontSize: level == 0 ? 13 : 12,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
+                child: RichText(
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  text: TextSpan(
+                    children: [
+                      const TextSpan(
+                        text: '大家都在搜: ',
+                        style: TextStyle(
+                          color: Color(0xFF8E8E93),
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
                         ),
-                        const AppAssetIcon(
-                          assetName: 'heart-outline',
-                          size: 16,
-                          color: Color(0xFFB9BDC7),
-                          fallbackIcon: CupertinoIcons.heart,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          formatShortVideoCommentCount(item.likeCount),
-                          style: const TextStyle(
-                            color: Color(0xFFB9BDC7),
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    RichText(
-                      text: TextSpan(
-                        children: [
-                          if (replyPrefix.isNotEmpty)
-                            TextSpan(
-                              text: replyPrefix,
-                              style: const TextStyle(
-                                color: Color(0xFF5C6270),
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                                height: 1.35,
-                              ),
-                            ),
-                          TextSpan(
-                            text: item.content,
-                            style: TextStyle(
-                              color: const Color(0xFF141619),
-                              fontSize: level == 0 ? 16 : 14,
-                              height: 1.35,
-                              fontWeight: level == 0
-                                  ? FontWeight.w500
-                                  : FontWeight.w400,
-                            ),
-                          ),
-                        ],
                       ),
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Text(
-                          item.publishTimeText.isEmpty ? '刚刚' : item.publishTimeText,
-                          style: const TextStyle(
-                            color: Color(0xFFB0B4BE),
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                          ),
+                      TextSpan(
+                        text: title,
+                        style: const TextStyle(
+                          color: Color(0xFF406599),
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
                         ),
-                        const SizedBox(width: 14),
-                        const Text(
-                          '回复',
-                          style: TextStyle(
-                            color: Color(0xFF5C6270),
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              CupertinoButton(
+                padding: EdgeInsets.zero,
+                minimumSize: const Size(32, 32),
+                onPressed: onTapExpand,
+                child: AppAssetIcon(
+                  assetName: 'expand-outline',
+                  size: 20,
+                  color: onTapExpand == null
+                      ? const Color(0xFFC7C7CC)
+                      : const Color(0xFF5C6270),
+                  fallbackIcon: expanded
+                      ? CupertinoIcons.arrow_up_left_arrow_down_right
+                      : CupertinoIcons.fullscreen,
+                ),
+              ),
+              const SizedBox(width: 6),
+              CupertinoButton(
+                padding: EdgeInsets.zero,
+                minimumSize: const Size(32, 32),
+                onPressed: onTapClose,
+                child: const AppAssetIcon(
+                  assetName: 'close',
+                  size: 20,
+                  color: Color(0xFF5C6270),
+                  fallbackIcon: CupertinoIcons.xmark,
                 ),
               ),
             ],
           ),
-          if (item.children.isNotEmpty) ...[
-            const SizedBox(height: 4),
-            for (final child in item.children)
-              _CommentListTile(
-                item: child,
-                level: level + 1,
+          const SizedBox(height: 6),
+          Row(
+            children: [
+              const Spacer(),
+              CommentSortSelector(
+                label: sortLabel,
+                onTap: onTapSort,
+                compact: true,
               ),
-          ],
-          if (item.canLoadMoreChildren && onTapLoadMoreReplies != null)
-            Padding(
-              padding: EdgeInsets.only(left: avatarSize + 10, top: 6),
-              child: CupertinoButton(
-                padding: EdgeInsets.zero,
-                onPressed: onTapLoadMoreReplies,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      width: 18,
-                      height: 1,
-                      color: const Color(0xFFD0D4DB),
-                    ),
-                    const SizedBox(width: 8),
-                    if (isLoadingReplies)
-                      const CupertinoActivityIndicator(radius: 7)
-                    else
-                      Text(
-                        '查看更多回复 (${formatShortVideoCommentCount(item.replyCount)})',
-                        style: const TextStyle(
-                          color: Color(0xFF8B92A0),
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-            ),
+            ],
+          ),
         ],
       ),
     );
   }
 }
 
-class _CommentAvatar extends StatelessWidget {
-  const _CommentAvatar({
-    required this.avatarUrl,
-    required this.size,
+class _CommentSheetBottomBar extends StatelessWidget {
+  const _CommentSheetBottomBar({
+    required this.isCollected,
+    required this.isLiked,
+    required this.onTapPlaceholder,
+    required this.onTapCollect,
+    required this.onTapLike,
   });
 
-  final String avatarUrl;
-  final double size;
+  final bool isCollected;
+  final bool isLiked;
+  final VoidCallback onTapPlaceholder;
+  final VoidCallback onTapCollect;
+  final VoidCallback onTapLike;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: size,
-      height: size,
+      padding: const EdgeInsets.fromLTRB(4, 10, 4, 0),
       decoration: const BoxDecoration(
-        color: Color(0xFFECEEF3),
-        shape: BoxShape.circle,
+        color: Color(0xFFF7F7FA),
+        border: Border(
+          top: BorderSide(color: Color(0xFFE8EAF0)),
+        ),
       ),
-      clipBehavior: Clip.antiAlias,
-      child: avatarUrl.isEmpty
-          ? AppAssetIcon(
-              assetName: 'person',
-              size: size * 0.55,
-              color: const Color(0xFFB7BCC6),
-              fallbackIcon: CupertinoIcons.person_fill,
-            )
-          : CustomNetworkImage(
-              avatarUrl,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) {
-                return AppAssetIcon(
-                  assetName: 'person',
-                  size: size * 0.55,
-                  color: const Color(0xFFB7BCC6),
-                  fallbackIcon: CupertinoIcons.person_fill,
-                );
-              },
+      child: Row(
+        children: [
+          Expanded(
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: onTapPlaceholder,
+              child: Container(
+                height: 38,
+                padding: const EdgeInsets.symmetric(horizontal: 14),
+                decoration: BoxDecoration(
+                  color: CupertinoColors.white,
+                  borderRadius: BorderRadius.circular(19),
+                ),
+                alignment: Alignment.centerLeft,
+                child: const Text(
+                  '期待你的评论',
+                  style: TextStyle(
+                    color: Color(0xFF8E8E93),
+                    fontSize: 15,
+                  ),
+                ),
+              ),
             ),
+          ),
+          const SizedBox(width: 12),
+          _BottomActionIcon(
+            assetName: isCollected ? 'star' : 'star-outline',
+            fallbackIcon: isCollected ? CupertinoIcons.star_fill : CupertinoIcons.star,
+            onTap: onTapCollect,
+          ),
+          _BottomActionIcon(
+            assetName: isLiked ? 'heart' : 'heart-outline',
+            fallbackIcon: isLiked ? CupertinoIcons.heart_fill : CupertinoIcons.heart,
+            onTap: onTapLike,
+          ),
+        ],
+      ),
     );
   }
 }
+
+class _BottomActionIcon extends StatelessWidget {
+  const _BottomActionIcon({
+    required this.assetName,
+    required this.fallbackIcon,
+    required this.onTap,
+  });
+
+  final String assetName;
+  final IconData fallbackIcon;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 12),
+      child: CupertinoButton(
+        padding: EdgeInsets.zero,
+        minimumSize: const Size(28, 28),
+        onPressed: onTap,
+        child: AppAssetIcon(
+          assetName: assetName,
+          size: 24,
+          color: const Color(0xFF1C1C1E),
+          fallbackIcon: fallbackIcon,
+        ),
+      ),
+    );
+  }
+}
+
