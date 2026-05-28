@@ -47,6 +47,51 @@ class CommentThreadController extends ChangeNotifier {
   int get totalCount => _totalCount;
   String? get loadingChildrenCommentId => _loadingChildrenCommentId;
 
+  void prependComment(ShortVideoCommentItem item) {
+    _comments = <ShortVideoCommentItem>[
+      item,
+      ..._comments.where((existing) => existing.commentId != item.commentId),
+    ];
+    _totalCount += 1;
+    notifyListeners();
+  }
+
+  void insertSubmittedComment(
+    ShortVideoCommentItem item, {
+    String? parentCommentId,
+  }) {
+    if (parentCommentId == null || parentCommentId.isEmpty) {
+      prependComment(item);
+      return;
+    }
+
+    var inserted = false;
+    _comments = _comments.map((comment) {
+      if (comment.commentId != parentCommentId) {
+        return comment;
+      }
+      inserted = true;
+      final nextChildren = <ShortVideoCommentItem>[
+        item,
+        ...comment.children.where(
+          (child) => child.commentId != item.commentId,
+        ),
+      ];
+      return comment.copyWith(
+        children: nextChildren,
+        childrenPage: nextChildren.isEmpty ? 0 : 1,
+        replyCount: comment.replyCount + 1,
+        canLoadMoreChildren: false,
+      );
+    }).toList(growable: false);
+
+    if (!inserted) {
+      prependComment(item);
+      return;
+    }
+    notifyListeners();
+  }
+
   Future<void> loadInitial() async {
     _isLoading = true;
     _isLoadingMore = false;

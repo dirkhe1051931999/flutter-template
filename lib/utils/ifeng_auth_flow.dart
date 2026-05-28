@@ -4,7 +4,7 @@ import 'package:oolaf_flutted/api/ifeng_auth/index.dart';
 import 'package:oolaf_flutted/components/short_video/login_captcha_dialog.dart';
 import 'package:oolaf_flutted/model/ifeng_auth/index.dart';
 import 'package:oolaf_flutted/utils/ifeng_auth_storage.dart';
-import 'package:oolaf_flutted/utils/ifeng_request.dart';
+import 'package:oolaf_flutted/utils/request.dart';
 
 class IfengAuthFlow {
   IfengAuthFlow._();

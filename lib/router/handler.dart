@@ -4,6 +4,7 @@ import 'package:oolaf_flutted/components/fluro_detail/index.dart';
 import 'package:oolaf_flutted/layouts/app_wrap/index.dart';
 import 'package:oolaf_flutted/pages/fluro/index.dart';
 import 'package:oolaf_flutted/pages/home/index.dart';
+import 'package:oolaf_flutted/pages/hupu/index.dart';
 import 'package:oolaf_flutted/pages/oolaf_dynamic_audio/index.dart';
 import 'package:oolaf_flutted/pages/profile/index.dart';
 import 'package:oolaf_flutted/pages/request/index.dart';
@@ -167,5 +168,13 @@ var weatherRouteHandler = Handler(
     Map<String, List<String>> params,
   ) {
     return const WeatherPage();
+  },
+);
+var hupuRouteHandler = Handler(
+  handlerFunc: (
+    BuildContext? context,
+    Map<String, List<String>> params,
+  ) {
+    return const HupuPage();
   },
 );

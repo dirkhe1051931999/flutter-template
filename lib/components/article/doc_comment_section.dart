@@ -11,6 +11,9 @@ class DocCommentSection extends StatefulWidget {
     required this.docId,
     required this.initialCommentsCount,
     required this.scrollController,
+    this.reloadToken = 0,
+    this.prependedComment,
+    this.prependedCommentParentId,
     this.sectionKey,
     this.onCommentsCountChanged,
     this.onTapReply,
@@ -19,6 +22,9 @@ class DocCommentSection extends StatefulWidget {
   final String docId;
   final String initialCommentsCount;
   final ScrollController scrollController;
+  final int reloadToken;
+  final ShortVideoCommentItem? prependedComment;
+  final String? prependedCommentParentId;
   final Key? sectionKey;
   final ValueChanged<int>? onCommentsCountChanged;
   final ValueChanged<ShortVideoCommentItem>? onTapReply;
@@ -73,11 +79,20 @@ class _DocCommentSectionState extends State<DocCommentSection> {
   @override
   void didUpdateWidget(covariant DocCommentSection oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.scrollController == widget.scrollController) {
-      return;
+    if (oldWidget.scrollController != widget.scrollController) {
+      oldWidget.scrollController.removeListener(_handleScroll);
+      widget.scrollController.addListener(_handleScroll);
     }
-    oldWidget.scrollController.removeListener(_handleScroll);
-    widget.scrollController.addListener(_handleScroll);
+    if (oldWidget.reloadToken != widget.reloadToken) {
+      _controller.loadInitial();
+    }
+    if (widget.prependedComment != null &&
+        oldWidget.prependedComment?.commentId != widget.prependedComment?.commentId) {
+      _controller.insertSubmittedComment(
+        widget.prependedComment!,
+        parentCommentId: widget.prependedCommentParentId,
+      );
+    }
   }
 
   @override

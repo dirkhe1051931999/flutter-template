@@ -115,6 +115,7 @@ class _ShortVideoArticleHistoryPageState
       context,
       detail: detail,
       coverUrl: entry.coverUrl,
+      detailUrl: entry.detailUrl,
     );
   }
 

@@ -431,6 +431,7 @@ class _HotTabFeedListState extends State<_HotTabFeedList>
       context,
       detail: detail,
       coverUrl: item.coverUrl,
+      detailUrl: item.detailUrl,
     );
   }
 

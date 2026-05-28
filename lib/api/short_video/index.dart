@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:oolaf_flutted/api/short_video/comment.dart';
 import 'package:oolaf_flutted/app.config.dart';
+import 'package:oolaf_flutted/utils/ifeng_auth_storage.dart';
 import 'package:oolaf_flutted/model/short_video/danmaku_item.dart';
 import 'package:oolaf_flutted/store/short_video/state.dart';
 import 'package:oolaf_flutted/utils/danmu_data.dart';
@@ -12,6 +13,8 @@ const String _phoenixTvChannelPath = '/phoenixTvChannel';
 const String _shortVideoSearchPath = '/searchTagList';
 const String _shortVideoHeadlinePath = '/headline';
 const String _shortVideoNewsDocPath = '/getNewsDocs';
+const String _shortVideoUserTimelinePath = '/api_user_exp/timeline';
+const String _shortVideoUserFeedsPath = '/Social_Api_Feeds/myList';
 
 const String _shortVideoFeedUrl =
     '${AppConfig.shortVideoApiBaseUrl}$_shortVideoFeedPath';
@@ -112,6 +115,9 @@ class HeadlineNewsDocDetail {
     required this.updateTime,
     required this.commentsCount,
     required this.htmlText,
+    required this.subscribeId,
+    required this.subscribeName,
+    required this.subscribeType,
   });
 
   final String id;
@@ -120,6 +126,131 @@ class HeadlineNewsDocDetail {
   final String updateTime;
   final String commentsCount;
   final String htmlText;
+  final String subscribeId;
+  final String subscribeName;
+  final String subscribeType;
+}
+
+class ShortVideoProfileBadge {
+  const ShortVideoProfileBadge({
+    required this.label,
+    required this.isPrimary,
+  });
+
+  final String label;
+  final bool isPrimary;
+}
+
+class ShortVideoProfileSummary {
+  const ShortVideoProfileSummary({
+    required this.guid,
+    required this.nickname,
+    required this.avatarUrl,
+    required this.introduction,
+    required this.location,
+    required this.followCount,
+    required this.fansCount,
+    required this.feedCount,
+    required this.level,
+    required this.levelTitle,
+    required this.assistantLabel,
+    required this.canOpenPersonalHome,
+  });
+
+  final String guid;
+  final String nickname;
+  final String avatarUrl;
+  final String introduction;
+  final String location;
+  final int followCount;
+  final int fansCount;
+  final int feedCount;
+  final int level;
+  final String levelTitle;
+  final String assistantLabel;
+  final bool canOpenPersonalHome;
+
+  List<ShortVideoProfileBadge> get badges {
+    final result = <ShortVideoProfileBadge>[];
+    if (levelTitle.trim().isNotEmpty) {
+      result.add(
+        ShortVideoProfileBadge(label: levelTitle.trim(), isPrimary: true),
+      );
+    }
+    if (assistantLabel.trim().isNotEmpty) {
+      result.add(
+        ShortVideoProfileBadge(label: assistantLabel.trim(), isPrimary: false),
+      );
+    }
+    return result;
+  }
+}
+
+class ShortVideoProfileFeedArticlePreview {
+  const ShortVideoProfileFeedArticlePreview({
+    required this.id,
+    required this.type,
+    required this.title,
+    required this.thumbnail,
+    required this.detailUrl,
+    required this.videoUrl,
+    required this.source,
+    required this.updateTime,
+    required this.commentsUrl,
+    required this.commentsCount,
+  });
+
+  final String id;
+  final String type;
+  final String title;
+  final String thumbnail;
+  final String detailUrl;
+  final String videoUrl;
+  final String source;
+  final String updateTime;
+  final String commentsUrl;
+  final String commentsCount;
+
+  bool get isVideo => type == 'phvideo';
+  bool get isDoc => type == 'doc';
+}
+
+class ShortVideoProfileFeedItem {
+  const ShortVideoProfileFeedItem({
+    required this.commentId,
+    required this.content,
+    required this.likeCount,
+    required this.publishTimeText,
+    required this.userName,
+    required this.userAvatarUrl,
+    required this.articlePreview,
+  });
+
+  final String commentId;
+  final String content;
+  final int likeCount;
+  final String publishTimeText;
+  final String userName;
+  final String userAvatarUrl;
+  final ShortVideoProfileFeedArticlePreview articlePreview;
+}
+
+class ShortVideoProfileFeedPageResult {
+  const ShortVideoProfileFeedPageResult({
+    required this.userSummary,
+    required this.items,
+    required this.currentPage,
+    required this.totalPage,
+    required this.limit,
+  });
+
+  final ShortVideoProfileSummary? userSummary;
+  final List<ShortVideoProfileFeedItem> items;
+  final int currentPage;
+  final int totalPage;
+  final int limit;
+
+  bool get hasMore => currentPage < totalPage;
 }
 
 int _shortVideoDailyOpenNumCounter = 0;
@@ -323,6 +454,95 @@ Future<HeadlineNewsDocDetail?> getShortVideoNewsDocDetail({
     customLogger.log('getShortVideoNewsDocDetail failed: $error');
     customLogger.log(stackTrace);
     return null;
+  }
+}
+
+Future<ShortVideoProfileSummary?> getShortVideoProfileSummary() async {
+  try {
+    final session = await IfengAuthStorage.loadSession();
+    final queryParameters = await buildIfengQueryParameters(
+      options: const IfengRequestOptions(),
+    );
+    final Response response = await IfengRequestClients.userClient.get(
+      _shortVideoUserTimelinePath,
+      queryParameters: queryParameters,
+    );
+    final json = _asMap(response.data);
+    final data = _asMap(json['data']);
+    final userInfo = _asMap(data['user_info']);
+    if (userInfo.isEmpty) {
+      return null;
+    }
+    final extra = _asMap(data['extra']);
+    return _mapShortVideoProfileSummary(
+      userInfo,
+      extra: extra,
+      rootData: data,
+      fallbackGuid: session.guid,
+      fallbackNickname: session.nickname.isNotEmpty ? session.nickname : session.username,
+      fallbackAvatarUrl: session.userImage,
+    );
+  } catch (error, stackTrace) {
+    customLogger.log('getShortVideoProfileSummary failed: $error');
+    customLogger.log(stackTrace);
+    return null;
+  }
+}
+
+Future<ShortVideoProfileFeedPageResult> getShortVideoProfileFeedPage({
+  required String guid,
+  int page = 1,
+  int limit = 20,
+}) async {
+  try {
+    final queryParameters = await buildIfengQueryParameters(
+      options: IfengRequestOptions(
+        extraQueryParameters: <String, dynamic>{
+          'guid_feeds': guid,
+          'page': page.toString(),
+          'limit': limit.toString(),
+          'type': '1',
+        },
+      ),
+    );
+    final Response response = await IfengRequestClients.userClient.get(
+      _shortVideoUserFeedsPath,
+      queryParameters: queryParameters,
+    );
+    final json = _asMap(response.data);
+    final data = _asMap(json['data']);
+    final userInfo = _asMap(data['userinfo']);
+    final feeds = _asMap(data['feeds']);
+    final rawList = _asList(feeds['list']);
+    return ShortVideoProfileFeedPageResult(
+      userSummary: userInfo.isEmpty
+          ? null
+          : _mapShortVideoProfileSummary(
+              userInfo,
+              extra: const <String, dynamic>{},
+              rootData: const <String, dynamic>{},
+              fallbackGuid: guid,
+              fallbackNickname: '',
+              fallbackAvatarUrl: '',
+            ),
+      items: rawList
+          .map(_mapShortVideoProfileFeedItem)
+          .whereType<ShortVideoProfileFeedItem>()
+          .toList(growable: false),
+      currentPage: _asInt(feeds['current_page']) ?? page,
+      totalPage: _asInt(feeds['total_page']) ?? page,
+      limit: _asInt(feeds['limit']) ?? limit,
+    );
+  } catch (error, stackTrace) {
+    customLogger.log('getShortVideoProfileFeedPage failed: $error');
+    customLogger.log(stackTrace);
+    return ShortVideoProfileFeedPageResult(
+      userSummary: null,
+      items: const <ShortVideoProfileFeedItem>[],
+      currentPage: page,
+      totalPage: page,
+      limit: limit,
+    );
   }
 }
 
@@ -546,6 +766,9 @@ HeadlineNewsDocDetail? _extractHeadlineNewsDocDetail(dynamic responseData) {
         _asString(body['comments']) ??
         '0',
     htmlText: htmlText,
+    subscribeId: _asString(body['subscribe']?['cateid']) ?? '',
+    subscribeName: _asString(body['subscribe']?['catename']) ?? '',
+    subscribeType: _asString(body['subscribe']?['type']) ?? '',
   );
 }
 
@@ -757,9 +980,104 @@ String? _pickAvatarUrl(Map<String, dynamic> raw) {
   return null;
 }
 
-String? _asString(dynamic value) {
-  if (value is String && value.isNotEmpty) {
+ShortVideoProfileSummary _mapShortVideoProfileSummary(
+  Map<String, dynamic> raw, {
+  required Map<String, dynamic> extra,
+  required Map<String, dynamic> rootData,
+  required String fallbackGuid,
+  required String fallbackNickname,
+  required String fallbackAvatarUrl,
+}) {
+  final credit = _asMap(raw['credit']);
+  final jumpUrlSign = _asString(raw['jump_url_sign']) ?? _asString(extra['credit_jpurl']) ?? '';
+  return ShortVideoProfileSummary(
+    guid: _asString(raw['guid']) ?? _asString(rootData['guid']) ?? fallbackGuid,
+    nickname: _asString(raw['nickname']) ?? fallbackNickname,
+    avatarUrl: _asString(raw['userimg']) ?? fallbackAvatarUrl,
+    introduction: _asString(raw['introduction']) ?? '',
+    location: _asString(raw['userLocation']) ?? _asString(raw['location']) ?? '',
+    followCount: _asInt(raw['follow_num']) ?? 0,
+    fansCount: _asInt(raw['fans_num']) ?? 0,
+    feedCount: _asInt(raw['feeds_num']) ?? 0,
+    level: _asInt(credit['lev']) ?? _asInt(raw['lev']) ?? 0,
+    levelTitle: _asString(credit['title_1']) ?? _asString(raw['title_1']) ?? '',
+    assistantLabel: jumpUrlSign.isNotEmpty ? '勋章墙' : '',
+    canOpenPersonalHome: true,
+  );
+}
+
+ShortVideoProfileFeedItem? _mapShortVideoProfileFeedItem(dynamic rawValue) {
+  final raw = _asMap(rawValue);
+  if (raw.isEmpty) {
+    return null;
+  }
+  final commentId = _asString(raw['comment_id']) ?? '';
+  final userName = _asString(raw['uname']) ?? _asString(raw['nickname']) ?? '凤凰网友';
+  final content = _asString(raw['comment_contents']) ?? '';
+  final articleSource = _asMap(raw['parent']).isNotEmpty ? _asMap(raw['parent']) : raw;
+  final rawLink = _asMap(raw['link']);
+  final parentLink = _asMap(articleSource['link']);
+  final articleId = _asString(articleSource['documentId']) ??
+      _asString(articleSource['staticId']) ??
+      _asString(articleSource['id']) ??
+      commentId;
+  final articleType = _asString(articleSource['type']) ?? 'doc';
+  final articleTitle = _asString(articleSource['title']) ?? '';
+  if (commentId.isEmpty || articleTitle.isEmpty || articleId.isEmpty) {
+    return null;
+  }
+  return ShortVideoProfileFeedItem(
+    commentId: commentId,
+    content: content,
+    likeCount: _asInt(raw['like']) ?? 0,
+    publishTimeText: _asString(raw['createTime']) ?? '',
+    userName: userName,
+    userAvatarUrl: '',
+    articlePreview: ShortVideoProfileFeedArticlePreview(
+      id: articleId,
+      type: articleType,
+      title: articleTitle,
+      thumbnail: _asString(articleSource['thumbnail']) ?? '',
+      detailUrl: _asString(rawLink['url']) ??
+          _asString(parentLink['url']) ??
+          '',
+      videoUrl: _pickVideoUrl(articleSource) ?? '',
+      source: _asString(articleSource['source']) ??
+          _asString(articleSource['subscribe']?['catename']) ??
+          '',
+      updateTime: _pickUpdateTime(articleSource),
+      commentsUrl: _pickCommentsUrl(articleSource) ?? '',
+      commentsCount: _asString(articleSource['commentsCount']) ??
+          _asString(articleSource['commentsall']) ??
+          _asString(articleSource['comments']) ??
+          '0',
+    ),
+  );
+}
+
+Map<String, dynamic> _asMap(dynamic value) {
+  if (value is Map<String, dynamic>) {
     return value;
+  }
+  if (value is Map) {
+    return value.map((key, mapValue) => MapEntry(key.toString(), mapValue));
+  }
+  return const <String, dynamic>{};
+}
+
+List<dynamic> _asList(dynamic value) {
+  if (value is List<dynamic>) {
+    return value;
+  }
+  if (value is List) {
+    return value.toList(growable: false);
+  }
+  return const <dynamic>[];
+}
+
+String? _asString(dynamic value) {
+  if (value is String && value.trim().isNotEmpty) {
+    return value.trim();
   }
   return null;
 }

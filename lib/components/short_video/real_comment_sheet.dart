@@ -77,8 +77,32 @@ class _RealShortVideoCommentSheetState
     return '评论';
   }
 
-  Future<void> _openCommentInput() async {
-    await showArticleCommentInputSheet(context);
+  Future<void> _openCommentInput({
+    ShortVideoCommentItem? replyToComment,
+  }) async {
+    if (!_supportsComment) {
+      return;
+    }
+    final submitted = await showArticleCommentInputSheet(
+      context,
+      request: ShortVideoCommentSubmitRequest(
+        docId: widget.item.id,
+        docUrl: _docUrl,
+        docName: widget.item.title,
+        content: '',
+        docType: ShortVideoCommentDocType.phvideo,
+        docThumbnail: widget.item.coverUrl,
+        subName: widget.item.source,
+        replyToComment: replyToComment,
+      ),
+    );
+    if (submitted == null || !mounted) {
+      return;
+    }
+    _controller.insertSubmittedComment(
+      submitted.comment,
+      parentCommentId: submitted.parentCommentId,
+    );
   }
 
   Future<void> _openFullscreenSheet() async {
@@ -197,7 +221,9 @@ class _RealShortVideoCommentSheetState
                         comments: _controller.comments,
                         style: CommentListItemStyle.phvideo,
                         loadingReplyCommentId: _controller.loadingChildrenCommentId,
-                        onTapReply: (_) => _openCommentInput(),
+                        onTapReply: (comment) => _openCommentInput(
+                          replyToComment: comment,
+                        ),
                         onTapLoadMoreReplies: _controller.loadChildrenOf,
                       ),
                     ),
@@ -433,4 +459,3 @@ class _BottomActionIcon extends StatelessWidget {
     );
   }
 }
-

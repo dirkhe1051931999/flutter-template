@@ -263,6 +263,7 @@ class _ShortVideoHeadlinePageState extends State<ShortVideoHeadlinePage>
       context,
       detail: detail,
       coverUrl: preview.coverUrl,
+      detailUrl: preview.detailUrl,
     );
   }
 

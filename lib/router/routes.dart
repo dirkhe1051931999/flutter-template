@@ -17,6 +17,7 @@ class Routes {
   static const scrollableTabs = "/scrollable-tabs";
   static const scrollableTabsDetail = "/scrollable-tabs-detail";
   static const weather = "/weather";
+  static const hupu = "/hupu";
 
   static void configureRoutes(FluroRouter router) {
     router.notFoundHandler = Handler(handlerFunc: (
@@ -53,6 +54,10 @@ class Routes {
     router.define(
       weather,
       handler: weatherRouteHandler,
+    );
+    router.define(
+      hupu,
+      handler: hupuRouteHandler,
     );
   }
 }

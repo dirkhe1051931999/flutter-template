@@ -367,6 +367,10 @@ class _CommentListTile extends StatelessWidget {
                         ],
                       ),
                     ),
+                    if (item.localImageBytes != null || item.imageUrls.isNotEmpty) ...[
+                      const SizedBox(height: 10),
+                      _CommentAttachmentPreview(item: item),
+                    ],
                     const SizedBox(height: 10),
                     Row(
                       children: [
@@ -442,6 +446,38 @@ class _CommentListTile extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+class _CommentAttachmentPreview extends StatelessWidget {
+  const _CommentAttachmentPreview({
+    required this.item,
+  });
+
+  final ShortVideoCommentItem item;
+
+  @override
+  Widget build(BuildContext context) {
+    final image = item.localImageBytes != null
+        ? ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: Image.memory(
+              item.localImageBytes!,
+              width: 108,
+              height: 108,
+              fit: BoxFit.cover,
+            ),
+          )
+        : ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: CustomNetworkImage(
+              item.imageUrls.first,
+              width: 108,
+              height: 108,
+              fit: BoxFit.cover,
+            ),
+          );
+    return image;
   }
 }
 

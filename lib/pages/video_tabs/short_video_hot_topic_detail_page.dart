@@ -124,6 +124,7 @@ class _ShortVideoHotTopicDetailPageState
       context,
       detail: detail,
       coverUrl: item.primaryCoverUrl,
+      detailUrl: item.detailUrl,
     );
   }
 

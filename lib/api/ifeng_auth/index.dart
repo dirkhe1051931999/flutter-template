@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:oolaf_flutted/model/ifeng_auth/index.dart';
-import 'package:oolaf_flutted/utils/ifeng_request.dart';
+import 'package:oolaf_flutted/utils/request.dart';
 
 const String _sendMsgByClickPath = '/api/sendMsgByClick';
 const String _getCaptchaPath = '/api/getCaptcha';

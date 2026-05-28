@@ -3,6 +3,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_redux/flutter_redux.dart';
 import 'package:oolaf_flutted/api/ifeng_auth/index.dart';
+import 'package:oolaf_flutted/api/short_video/index.dart';
 import 'package:oolaf_flutted/components/app_asset_icon/index.dart';
 import 'package:oolaf_flutted/components/short_video/short_video_bottom_tab_bar.dart';
 import 'package:oolaf_flutted/components/video_top_tabs/index.dart';
@@ -15,9 +16,9 @@ import 'package:oolaf_flutted/pages/video_tabs/short_video_collection_page.dart'
 import 'package:oolaf_flutted/pages/video_tabs/short_video_hot_page.dart';
 import 'package:oolaf_flutted/pages/video_tabs/short_video_login_page.dart';
 import 'package:oolaf_flutted/pages/video_tabs/short_video_search_page.dart';
+import 'package:oolaf_flutted/pages/video_tabs/short_video_profile_home_page.dart';
 import 'package:oolaf_flutted/pages/video_tabs/watch_history_page.dart';
 import 'package:oolaf_flutted/pages/video_tabs/short_video_offline_cache_page.dart';
-import 'package:oolaf_flutted/model/ifeng_auth/index.dart';
 import 'package:oolaf_flutted/store/index.dart';
 import 'package:oolaf_flutted/store/oolaf_music/action.dart';
 import 'package:oolaf_flutted/store/short_video/action.dart';
@@ -351,8 +352,6 @@ class _ShortVideoProfilePage extends StatefulWidget {
 }
 
 class _ShortVideoProfilePageState extends State<_ShortVideoProfilePage> {
-  static const double _profileHeaderBaseHeight = 144;
-  static const double _profileHeaderMaxStretchHeight = 112;
   static const Set<PointerDeviceKind> _dragDevices = <PointerDeviceKind>{
     PointerDeviceKind.touch,
     PointerDeviceKind.mouse,
@@ -361,12 +360,8 @@ class _ShortVideoProfilePageState extends State<_ShortVideoProfilePage> {
     PointerDeviceKind.unknown,
   };
 
-  static const _avatarUrl = 'https://picsum.photos/600/600';
-  static const _profileCoverUrl = 'https://picsum.photos/1200/500';
-
-  double _headerStretchHeight = 0;
   IfengAuthSession _authSession = IfengAuthSession.empty;
-  IfengUserProfileModel? _userProfile;
+  ShortVideoProfileSummary? _profileSummary;
   bool _isLoadingProfile = false;
 
   bool get _isLoggedIn => _authSession.isLoggedIn;
@@ -379,7 +374,7 @@ class _ShortVideoProfilePageState extends State<_ShortVideoProfilePage> {
     setState(() {
       _authSession = nextSession;
       if (!nextSession.isLoggedIn) {
-        _userProfile = null;
+        _profileSummary = null;
       }
     });
     if (nextSession.isLoggedIn) {
@@ -421,12 +416,12 @@ class _ShortVideoProfilePageState extends State<_ShortVideoProfilePage> {
       _isLoadingProfile = true;
     });
     try {
-      final profile = await getIfengUserProfile();
+      final profile = await getShortVideoProfileSummary();
       if (!mounted) {
         return;
       }
       setState(() {
-        _userProfile = profile;
+        _profileSummary = profile;
       });
     } catch (_) {
       if (mounted) {
@@ -442,7 +437,7 @@ class _ShortVideoProfilePageState extends State<_ShortVideoProfilePage> {
   }
 
   Future<void> _openLoginPage() async {
-    final result = await Navigator.of(context).push<bool>(
+    final result = await Navigator.of(context, rootNavigator: true).push<bool>(
       CupertinoPageRoute<bool>(
         builder: (_) => const ShortVideoLoginPage(),
       ),
@@ -457,7 +452,7 @@ class _ShortVideoProfilePageState extends State<_ShortVideoProfilePage> {
     if (_isLoggedIn) {
       return true;
     }
-    final result = await Navigator.of(context).push<bool>(
+    final result = await Navigator.of(context, rootNavigator: true).push<bool>(
       CupertinoPageRoute<bool>(
         builder: (_) => const ShortVideoLoginPage(),
       ),
@@ -482,7 +477,7 @@ class _ShortVideoProfilePageState extends State<_ShortVideoProfilePage> {
     }
     setState(() {
       _authSession = IfengAuthSession.empty;
-      _userProfile = null;
+      _profileSummary = null;
     });
     EasyLoading.showToast('已退出登录');
   }
@@ -530,9 +525,31 @@ class _ShortVideoProfilePageState extends State<_ShortVideoProfilePage> {
     EasyLoading.showToast('二维码功能开发中');
   }
 
+  Future<void> _openPersonalHomePage() async {
+    if (!await _ensureLoggedIn()) {
+      return;
+    }
+    final summary = _profileSummary;
+    if (summary == null) {
+      await _loadUserProfile();
+    }
+    final targetSummary = _profileSummary;
+    if (!mounted || targetSummary == null) {
+      EasyLoading.showToast('用户信息加载失败');
+      return;
+    }
+    await Navigator.of(context, rootNavigator: true).push(
+      CupertinoPageRoute<void>(
+        builder: (_) => ShortVideoProfileHomePage(
+          initialSummary: targetSummary,
+        ),
+      ),
+    );
+  }
+
   String get _displayName {
     if (_isLoggedIn) {
-      final nickname = _userProfile?.nickname.trim() ?? '';
+      final nickname = _profileSummary?.nickname.trim() ?? '';
       if (nickname.isNotEmpty) {
         return nickname;
       }
@@ -545,13 +562,13 @@ class _ShortVideoProfilePageState extends State<_ShortVideoProfilePage> {
     return '立即登录';
   }
 
-  String get _displaySubtitle {
+  String get _displayDescription {
     if (_isLoggedIn) {
-      final guid = _authSession.guid.trim();
-      if (guid.isNotEmpty) {
-        return 'ID: $guid';
+      final introduction = _profileSummary?.introduction.trim() ?? '';
+      if (introduction.isNotEmpty) {
+        return introduction;
       }
-      return '已登录';
+      return '完善资料后可展示更多个人信息';
     }
     return '登录后查看收藏、历史和更多内容';
   }
@@ -560,7 +577,7 @@ class _ShortVideoProfilePageState extends State<_ShortVideoProfilePage> {
     if (!_isLoggedIn) {
       return '';
     }
-    final avatar = _userProfile?.userImage.trim() ?? '';
+    final avatar = _profileSummary?.avatarUrl.trim() ?? '';
     if (avatar.isNotEmpty) {
       return avatar;
     }
@@ -568,24 +585,57 @@ class _ShortVideoProfilePageState extends State<_ShortVideoProfilePage> {
     if (savedAvatar.isNotEmpty) {
       return savedAvatar;
     }
-    return _avatarUrl;
+    return '';
   }
 
-  bool _handleScroll(ScrollNotification notification) {
-    if (notification.metrics.axis != Axis.vertical) {
-      return false;
+  List<ShortVideoProfileBadge> get _displayBadges {
+    return _profileSummary?.badges ?? const <ShortVideoProfileBadge>[];
+  }
+
+  Widget _buildProfileBadge(ShortVideoProfileBadge badge) {
+    if (badge.isPrimary) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF3C36A),
+          borderRadius: BorderRadius.circular(999),
+        ),
+        child: Text(
+          badge.label,
+          style: const TextStyle(
+            color: Color(0xFF8A5600),
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      );
     }
-    final pixels = notification.metrics.pixels;
-    final nextStretch = pixels < 0
-        ? (-pixels).clamp(0, _profileHeaderMaxStretchHeight).toDouble()
-        : 0.0;
-    if ((nextStretch - _headerStretchHeight).abs() < 0.5) {
-      return false;
-    }
-    setState(() {
-      _headerStretchHeight = nextStretch;
-    });
-    return false;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF2F2F2),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(
+            CupertinoIcons.star_fill,
+            size: 14,
+            color: Color(0xFFF0A51A),
+          ),
+          const SizedBox(width: 4),
+          Text(
+            badge.label,
+            style: const TextStyle(
+              color: Color(0xFF8E8E93),
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _clearShortVideoCache() async {
@@ -628,126 +678,124 @@ class _ShortVideoProfilePageState extends State<_ShortVideoProfilePage> {
       navigationBar: const CupertinoNavigationBar(
         middle: Text('我'),
       ),
-      child: NotificationListener<ScrollNotification>(
-        onNotification: _handleScroll,
-        child: SafeArea(
-          child: ScrollConfiguration(
-            behavior: const CupertinoScrollBehavior().copyWith(
-              dragDevices: _dragDevices,
+      child: SafeArea(
+        child: ScrollConfiguration(
+          behavior: const CupertinoScrollBehavior().copyWith(
+            dragDevices: _dragDevices,
+          ),
+          child: ListView(
+            physics: const BouncingScrollPhysics(
+              parent: AlwaysScrollableScrollPhysics(),
             ),
-            child: ListView(
-              physics: const BouncingScrollPhysics(
-                parent: AlwaysScrollableScrollPhysics(),
-              ),
-              padding: const EdgeInsets.fromLTRB(0, 0, 0, 24),
-              children: [
-                Container(
-                  height: _profileHeaderBaseHeight + _headerStretchHeight,
-                  decoration: BoxDecoration(
-                    color: _isLoggedIn
-                        ? null
-                        : const Color(0xFFF2F3F4),
-                    image: _isLoggedIn
-                        ? const DecorationImage(
-                            image: NetworkImage(_profileCoverUrl),
-                            fit: BoxFit.cover,
-                          )
-                        : null,
-                    border: _isLoggedIn
-                        ? null
-                        : Border.all(color: const Color(0xFFE3E5E8)),
-                  ),
-                  child: CupertinoButton(
-                    padding: EdgeInsets.zero,
-                    onPressed: _isLoggedIn ? null : _openLoginPage,
-                    child: Container(
-                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-                      decoration: BoxDecoration(
-                        gradient: _isLoggedIn
-                            ? const LinearGradient(
-                                begin: Alignment.topCenter,
-                                end: Alignment.bottomCenter,
-                                colors: [
-                                  Color(0x40000000),
-                                  Color(0x8A000000),
-                                ],
-                              )
-                            : null,
+            padding: const EdgeInsets.fromLTRB(0, 0, 0, 24),
+            children: [
+              Container(
+                color: CupertinoColors.white,
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 18),
+                child: CupertinoButton(
+                  padding: EdgeInsets.zero,
+                  onPressed: _isLoggedIn ? _openPersonalHomePage : _openLoginPage,
+                  child: Row(
+                    children: [
+                      ClipOval(
+                        child: SizedBox(
+                          width: 72,
+                          height: 72,
+                          child: _isLoggedIn
+                              ? CustomNetworkImage(
+                                  _displayAvatarUrl,
+                                  fit: BoxFit.cover,
+                                )
+                              : Container(
+                                  color: const Color(0xFFF2F3F5),
+                                  child: const Icon(
+                                    CupertinoIcons.person_crop_circle_fill,
+                                    size: 42,
+                                    color: Color(0xFFB8BDC7),
+                                  ),
+                                ),
+                        ),
                       ),
-                      child: Row(
-                        children: [
-                          ClipOval(
-                            child: Container(
-                              width: 68,
-                              height: 68,
-                              decoration: BoxDecoration(
-                                color: _isLoggedIn
-                                    ? const Color(0x33FFFFFF)
-                                    : CupertinoColors.white,
-                                border: Border.all(
-                                  color: _isLoggedIn
-                                      ? const Color(0x66FFFFFF)
-                                      : const Color(0xFFD9DCE1),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              _displayName,
+                              style: const TextStyle(
+                                color: Color(0xFF1C1C1E),
+                                fontSize: 22,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            if (_displayBadges.isNotEmpty) ...[
+                              const SizedBox(height: 10),
+                              Wrap(
+                                spacing: 8,
+                                runSpacing: 8,
+                                children: _displayBadges
+                                    .map(_buildProfileBadge)
+                                    .toList(growable: false),
+                              ),
+                            ] else if (_isLoadingProfile) ...[
+                              const SizedBox(height: 10),
+                              const CupertinoActivityIndicator(radius: 10),
+                            ],
+                            const SizedBox(height: 12),
+                            if (_isLoggedIn && _profileSummary != null)
+                              Text(
+                                '关注 ${_profileSummary!.followCount}   粉丝 ${_profileSummary!.fansCount}',
+                                style: const TextStyle(
+                                  color: Color(0xFF5A5A5F),
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              )
+                            else
+                              Text(
+                                _displayDescription,
+                                style: const TextStyle(
+                                  color: Color(0xFF8E8E93),
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w500,
                                 ),
                               ),
-                              child: _isLoggedIn
-                                  ? CustomNetworkImage(
-                                      _displayAvatarUrl,
-                                      fit: BoxFit.cover,
-                                    )
-                                  : const Icon(
-                                      CupertinoIcons.person_crop_circle_fill,
-                                      size: 38,
-                                      color: Color(0xFFB8BDC7),
-                                    ),
+                          ],
+                        ),
+                      ),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            _isLoggedIn ? '个人主页' : '去登录',
+                            style: const TextStyle(
+                              color: Color(0xFF5A5A5F),
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
                             ),
                           ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  _displayName,
-                                  style: TextStyle(
-                                    color: _isLoggedIn
-                                        ? CupertinoColors.white
-                                        : const Color(0xFF1C1C1E),
-                                    fontSize: 22,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                                const SizedBox(height: 6),
-                                Text(
-                                  _displaySubtitle,
-                                  style: TextStyle(
-                                    color: _isLoggedIn
-                                        ? const Color(0xB3FFFFFF)
-                                        : const Color(0xFF8E8E93),
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                                if (_isLoggedIn && _userProfile != null) ...[
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    '关注 ${_userProfile!.followCount}  ·  粉丝 ${_userProfile!.fansCount}  ·  ${_userProfile!.credit.title1}',
-                                    style: const TextStyle(
-                                      color: Color(0xCCFFFFFF),
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                ] else if (_isLoadingProfile) ...[
-                                  const SizedBox(height: 8),
-                                  const CupertinoActivityIndicator(),
-                                ],
-                              ],
-                            ),
+                          const SizedBox(width: 4),
+                          const Icon(
+                            CupertinoIcons.chevron_right,
+                            size: 18,
+                            color: Color(0xFF8E8E93),
                           ),
                         ],
                       ),
+                    ],
+                  ),
+                ),
+              ),
+              if (_isLoggedIn && _profileSummary != null)
+                Container(
+                  color: CupertinoColors.white,
+                  padding: const EdgeInsets.fromLTRB(102, 0, 16, 16),
+                  child: Text(
+                    _displayDescription,
+                    style: const TextStyle(
+                      color: Color(0xFF8E8E93),
+                      fontSize: 14,
                     ),
                   ),
                 ),
@@ -895,8 +943,7 @@ class _ShortVideoProfilePageState extends State<_ShortVideoProfilePage> {
                       ),
                   ],
                 ),
-              ],
-            ),
+            ],
           ),
         ),
       ),

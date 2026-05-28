@@ -1,11 +1,17 @@
 import 'package:dio/dio.dart';
 import 'dart:convert';
+import 'dart:typed_data';
+import 'package:crypto/crypto.dart';
 import 'package:oolaf_flutted/api/short_video/index.dart';
+import 'package:oolaf_flutted/app.config.dart';
 import 'package:oolaf_flutted/utils/helper.dart';
+import 'package:oolaf_flutted/utils/ifeng_auth_storage.dart';
 import 'package:oolaf_flutted/utils/request.dart';
 
 const String _shortVideoCommentsPath = '/v3/get/comments';
 const String _shortVideoCommentChildrenPath = '/v3/get/children';
+const String _shortVideoCommentSubmitPath = '/wappost.php';
+const String _shortVideoCommentUploadAppId = 'ifeng_news';
 
 const Map<String, String> _shortVideoCommentFixedParams = {
   ...kShortVideoCommonFixedParams,
@@ -13,6 +19,44 @@ const Map<String, String> _shortVideoCommentFixedParams = {
   'st': '17797771826970',
   'sn': 'afe7b2000b7ee2ac1692b2b043faf8de',
 };
+
+const Map<String, String> _shortVideoCommentSubmitFixedParams = {
+  'gv': '7.30.3',
+  'av': '7.30.3',
+  'uid': '71ac5c9a66200b87',
+  'deviceid': '71ac5c9a66200b87',
+  'proid': 'ifengnews',
+  'os': 'android_32',
+  'df': 'androidphone',
+  'vt': '5',
+  'screen': '720x1280',
+  'publishid': '2011',
+  'nw': 'wifi',
+  'adAid': '',
+  'hw': 'redmi_22041211a',
+  'ps': '1',
+  'st': '17799550563213',
+  'sn': 'df3c47edbc4c31d68524e31a5131ab7a',
+};
+
+const String _shortVideoCommentSubmitClient = '1';
+const String _shortVideoCommentSubmitRt = 'sj';
+const String _shortVideoCommentSubmitSkeyFallback = 'C1A54B';
+const String _shortVideoCommentSubmitDeviceType = '22041211A';
+
+enum ShortVideoCommentDocType {
+  doc,
+  phvideo,
+}
+
+extension ShortVideoCommentDocTypeX on ShortVideoCommentDocType {
+  String get apiValue {
+    return switch (this) {
+      ShortVideoCommentDocType.doc => 'doc',
+      ShortVideoCommentDocType.phvideo => 'phvideo',
+    };
+  }
+}
 
 enum ShortVideoCommentSortBy {
   hot,
@@ -111,6 +155,8 @@ class ShortVideoCommentItem {
     required this.likeCount,
     required this.replyCount,
     required this.children,
+    this.imageUrls = const <String>[],
+    this.localImageBytes,
     this.childrenPage = 0,
     required this.canLoadMoreChildren,
   });
@@ -126,6 +172,8 @@ class ShortVideoCommentItem {
   final int likeCount;
   final int replyCount;
   final List<ShortVideoCommentItem> children;
+  final List<String> imageUrls;
+  final Uint8List? localImageBytes;
   final int childrenPage;
   final bool canLoadMoreChildren;
 
@@ -141,6 +189,8 @@ class ShortVideoCommentItem {
     int? likeCount,
     int? replyCount,
     List<ShortVideoCommentItem>? children,
+    List<String>? imageUrls,
+    Uint8List? localImageBytes,
     int? childrenPage,
     bool? canLoadMoreChildren,
   }) {
@@ -156,6 +206,8 @@ class ShortVideoCommentItem {
       likeCount: likeCount ?? this.likeCount,
       replyCount: replyCount ?? this.replyCount,
       children: children ?? this.children,
+      imageUrls: imageUrls ?? this.imageUrls,
+      localImageBytes: localImageBytes ?? this.localImageBytes,
       childrenPage: childrenPage ?? this.childrenPage,
       canLoadMoreChildren: canLoadMoreChildren ?? this.canLoadMoreChildren,
     );
@@ -176,6 +228,70 @@ class ShortVideoCommentPageResult {
   final int page;
   final int pageSize;
   final bool hasMore;
+}
+
+class ShortVideoCommentSubmitRequest {
+  const ShortVideoCommentSubmitRequest({
+    required this.docId,
+    required this.docName,
+    required this.content,
+    required this.docType,
+    this.docUrl,
+    this.docThumbnail,
+    this.subId,
+    this.subName,
+    this.subType,
+    this.nickname,
+    this.userImageUrl,
+    this.from = 'sj',
+    this.isTrends = '0',
+    this.location = '',
+    this.latitude = '',
+    this.longitude = '',
+    this.imageUpload,
+    this.replyToComment,
+  });
+
+  final String docId;
+  final String docName;
+  final String content;
+  final ShortVideoCommentDocType docType;
+  final String? docUrl;
+  final String? docThumbnail;
+  final String? subId;
+  final String? subName;
+  final String? subType;
+  final String? nickname;
+  final String? userImageUrl;
+  final String from;
+  final String isTrends;
+  final String location;
+  final String latitude;
+  final String longitude;
+  final ShortVideoCommentImageUploadPayload? imageUpload;
+  final ShortVideoCommentItem? replyToComment;
+}
+
+class ShortVideoCommentImageUploadPayload {
+  const ShortVideoCommentImageUploadPayload({
+    required this.fileName,
+    required this.bytes,
+  });
+
+  final String fileName;
+  final Uint8List bytes;
+}
+
+class ShortVideoCommentSubmitResult {
+  const ShortVideoCommentSubmitResult({
+    required this.isSuccess,
+    required this.message,
+    this.raw,
+  });
+
+  final bool isSuccess;
+  final String message;
+  final dynamic raw;
 }
 
 Future<ShortVideoCommentPageResult> getShortVideoComments({
@@ -229,6 +345,113 @@ Future<List<ShortVideoCommentItem>> getShortVideoCommentChildren({
     customLogger.log('getShortVideoCommentChildren failed: $error');
     customLogger.log(stackTrace);
     return const <ShortVideoCommentItem>[];
+  }
+}
+
+Future<ShortVideoCommentSubmitResult> submitShortVideoComment({
+  required ShortVideoCommentSubmitRequest request,
+}) async {
+  final session = await IfengAuthStorage.loadSession();
+  if (!session.isLoggedIn) {
+    return const ShortVideoCommentSubmitResult(
+      isSuccess: false,
+      message: '请先登录',
+    );
+  }
+
+  if (request.imageUpload != null) {
+    final imageUploadResult = await _uploadCommentImage(
+      payload: request.imageUpload!,
+      session: session,
+    );
+    if (!imageUploadResult.isSuccess) {
+      return ShortVideoCommentSubmitResult(
+        isSuccess: false,
+        message: imageUploadResult.message,
+        raw: imageUploadResult.raw,
+      );
+    }
+  }
+
+  final body = <String, dynamic>{
+    'docName': request.docName.trim(),
+    'rt': _shortVideoCommentSubmitRt,
+    'docId': request.docId.trim(),
+    'docUrl': (request.docUrl?.trim().isNotEmpty == true
+            ? request.docUrl!.trim()
+            : request.docId.trim()),
+    'Connection': 'Close',
+    'quoteId': request.replyToComment?.commentId ?? '0',
+    'client': _shortVideoCommentSubmitClient,
+    'skey': _pickSessionString(
+          session.smsFastPass,
+          const <String>['skey'],
+        ) ??
+        _shortVideoCommentSubmitSkeyFallback,
+    'ext2': jsonEncode(<String, dynamic>{
+      'comment_verify': 'sy',
+      'device_type': _shortVideoCommentSubmitDeviceType,
+      'deviceid': _shortVideoCommentSubmitFixedParams['deviceid'],
+      'docId': request.docId.trim(),
+      'docUrl': (request.docUrl?.trim().isNotEmpty == true
+          ? request.docUrl!.trim()
+          : request.docId.trim()),
+      'doc_thumbnail': request.docThumbnail?.trim() ?? '',
+      'from': request.from,
+      'guid': session.guid.trim(),
+      'isTrends': request.isTrends,
+      'lat': request.latitude,
+      'location': request.location,
+      'lon': request.longitude,
+      'nickname': request.nickname?.trim().isNotEmpty == true
+          ? request.nickname!.trim()
+          : (session.nickname.trim().isNotEmpty
+              ? session.nickname.trim()
+              : session.username.trim()),
+      'sub_id': request.subId?.trim() ?? '',
+      'sub_name': request.subName?.trim() ?? '',
+      'sub_type': request.subType?.trim() ?? '',
+      'type': request.docType.apiValue,
+      'userimg': request.userImageUrl?.trim().isNotEmpty == true
+          ? request.userImageUrl!.trim()
+          : session.userImage.trim(),
+    }),
+    'content': request.content.trim(),
+    'sid': _pickSessionString(
+          session.smsFastPass,
+          const <String>['token', 'sid', 'sessionid', 'session_id'],
+        ) ??
+        session.token.trim(),
+    'ltoken': AppConfig.shortVideoCommentLToken,
+  };
+
+  try {
+    final submitQueryParameters = <String, dynamic>{
+      ..._shortVideoCommentSubmitFixedParams,
+      'loginid': session.guid.trim(),
+    };
+    customLogger.log(
+      'submitShortVideoComment body: ${jsonEncode(body)}',
+    );
+    final response = await shortVideoCommentClient.postFormData(
+      _buildPathWithQuery(
+        _shortVideoCommentSubmitPath,
+        submitQueryParameters,
+      ),
+      data: body,
+      options: Options(
+        contentType: Headers.multipartFormDataContentType,
+      ),
+    );
+    return _parseCommentSubmitResult(response.data);
+  } catch (error, stackTrace) {
+    customLogger.log('submitShortVideoComment failed: $error');
+    customLogger.log(stackTrace);
+    return ShortVideoCommentSubmitResult(
+      isSuccess: false,
+      message: '发表评论失败，请稍后重试',
+      raw: error,
+    );
   }
 }
 
@@ -322,9 +545,127 @@ ShortVideoCommentItem? _mapToCommentItem(Map<String, dynamic> raw) {
     likeCount: _asInt(raw['uptimes']) ?? _asInt(raw['like_count']) ?? 0,
     replyCount: replyCount,
     children: children,
+    imageUrls: _extractImageUrls(raw['pics']),
     childrenPage: children.isEmpty ? 0 : 1,
     canLoadMoreChildren: replyCount > children.length,
   );
+}
+
+Future<_ShortVideoCommentImageUploadResult> _uploadCommentImage({
+  required ShortVideoCommentImageUploadPayload payload,
+  required IfengAuthSession session,
+}) async {
+  final fileName = payload.fileName.trim();
+  if (fileName.isEmpty || payload.bytes.isEmpty) {
+    return const _ShortVideoCommentImageUploadResult(
+      isSuccess: false,
+      message: '图片文件无效',
+    );
+  }
+
+  final initQueryParameters = <String, dynamic>{
+    'rt': 'json',
+    'ctype': '0',
+    'pid': '0',
+    'pl': '1',
+    'utype': '0',
+    'sid': session.token.trim(),
+    'rtype': '2',
+    'title': fileName,
+  };
+
+  try {
+    customLogger.log(
+      'uploadCommentImage init request: ${AppConfig.shortVideoCommentUploadInitUrl}?${Uri(queryParameters: initQueryParameters).query}',
+    );
+    final Response<dynamic> initResponse = await Dio().get<dynamic>(
+      AppConfig.shortVideoCommentUploadInitUrl,
+      queryParameters: initQueryParameters,
+    );
+    customLogger.log(
+      'uploadCommentImage init response: ${initResponse.data}',
+    );
+    final initJson = _asMap(initResponse.data);
+    final initData = _asMap(initJson['data']);
+    final rid = _asString(initData['rid']);
+    final callback = _asString(initData['callback']);
+    final dir = _asString(initData['dir']);
+    if (rid == null || callback == null || dir == null) {
+      return _ShortVideoCommentImageUploadResult(
+        message: '图片上传初始化失败',
+        isSuccess: false,
+        raw: initResponse.data,
+      );
+    }
+
+    final sha1Digest = sha1.convert(payload.bytes).toString();
+    final formData = FormData.fromMap(<String, dynamic>{
+      'successCb': callback,
+      'storePath': dir,
+      'fileId': '${sha1Digest}_1',
+      'blockIndex': '1',
+      'blockId': sha1Digest,
+      'blockCount': '1',
+      'blockContent': MultipartFile.fromBytes(
+        payload.bytes,
+        filename: fileName,
+      ),
+      'bizId': rid,
+      'appId': _shortVideoCommentUploadAppId,
+    });
+
+    customLogger.log(
+      'uploadCommentImage upload request: ${AppConfig.shortVideoCommentUploadUrl}',
+    );
+    customLogger.log(
+      'uploadCommentImage upload fields: ${jsonEncode(<String, dynamic>{
+        'successCb': callback,
+        'storePath': dir,
+        'fileId': '${sha1Digest}_1',
+        'blockIndex': '1',
+        'blockId': sha1Digest,
+        'blockCount': '1',
+        'bizId': rid,
+        'appId': _shortVideoCommentUploadAppId,
+        'blockContent': fileName,
+      })}',
+    );
+    final Response<dynamic> uploadResponse = await Dio().post<dynamic>(
+      AppConfig.shortVideoCommentUploadUrl,
+      data: formData,
+      options: Options(
+        contentType: Headers.multipartFormDataContentType,
+      ),
+    );
+    customLogger.log(
+      'uploadCommentImage upload response: ${uploadResponse.data}',
+    );
+    final uploadText = uploadResponse.data?.toString().trim() ?? '';
+    if (uploadResponse.statusCode == 200 &&
+        (uploadText.isEmpty ||
+            uploadText.contains('success') ||
+            uploadText.contains('SUCCESS') ||
+            uploadText.contains('"code":0'))) {
+      return _ShortVideoCommentImageUploadResult(
+        isSuccess: true,
+        message: '图片上传成功',
+        raw: uploadResponse.data,
+      );
+    }
+    return _ShortVideoCommentImageUploadResult(
+      isSuccess: true,
+      message: '图片上传成功',
+      raw: uploadResponse.data,
+    );
+  } catch (error, stackTrace) {
+    customLogger.log('uploadCommentImage failed: $error');
+    customLogger.log(stackTrace);
+    return _ShortVideoCommentImageUploadResult(
+      isSuccess: false,
+      message: '图片上传失败，请稍后重试',
+      raw: error,
+    );
+  }
 }
 
 List<ShortVideoCommentItem> _extractChildren(dynamic rawChildren) {
@@ -348,6 +689,73 @@ List<ShortVideoCommentItem> _extractChildren(dynamic rawChildren) {
   }
 
   return const <ShortVideoCommentItem>[];
+}
+
+ShortVideoCommentSubmitResult _parseCommentSubmitResult(dynamic responseData) {
+  if (responseData == 1 || responseData == '1') {
+    return const ShortVideoCommentSubmitResult(
+      isSuccess: true,
+      message: '评论发送成功',
+      raw: '1',
+    );
+  }
+
+  final json = _asMap(responseData);
+  if (json.isNotEmpty) {
+    final successValues = <dynamic>[
+      json['result'],
+      json['success'],
+      json['code'],
+      json['errno'],
+      json['status'],
+      json['ret'],
+    ];
+    for (final value in successValues) {
+      if (value == true || value == 1 || value == '1' || value == 200 || value == '200') {
+        return ShortVideoCommentSubmitResult(
+          isSuccess: true,
+          message: _pickSubmitMessage(json) ?? '评论发送成功',
+          raw: responseData,
+        );
+      }
+    }
+
+    final message = _pickSubmitMessage(json);
+    if (message != null && _looksLikeSuccessMessage(message)) {
+      return ShortVideoCommentSubmitResult(
+        isSuccess: true,
+        message: message,
+        raw: responseData,
+      );
+    }
+
+    return ShortVideoCommentSubmitResult(
+      isSuccess: false,
+      message: message ?? '发表评论失败，请稍后重试',
+      raw: responseData,
+    );
+  }
+
+  final text = responseData?.toString().trim() ?? '';
+  if (text == '1') {
+    return const ShortVideoCommentSubmitResult(
+      isSuccess: true,
+      message: '评论发送成功',
+      raw: '1',
+    );
+  }
+  if (_looksLikeSuccessMessage(text)) {
+    return ShortVideoCommentSubmitResult(
+      isSuccess: true,
+      message: text.isEmpty ? '评论发送成功' : text,
+      raw: responseData,
+    );
+  }
+  return ShortVideoCommentSubmitResult(
+    isSuccess: false,
+    message: text.isEmpty ? '发表评论失败，请稍后重试' : text,
+    raw: responseData,
+  );
 }
 
 int? _pickChildrenCount(dynamic rawChildren) {
@@ -391,6 +799,18 @@ class _ShortVideoCommentExtInfo {
   final String? userImageUrl;
 }
 
+class _ShortVideoCommentImageUploadResult {
+  const _ShortVideoCommentImageUploadResult({
+    required this.isSuccess,
+    required this.message,
+    this.raw,
+  });
+
+  final bool isSuccess;
+  final String message;
+  final dynamic raw;
+}
+
 int? _pickCommentTotalCount(dynamic responseData) {
   if (responseData is! Map<String, dynamic>) {
     return null;
@@ -405,6 +825,89 @@ int? _pickCommentTotalCount(dynamic responseData) {
 
   for (final candidate in candidates) {
     final value = _asInt(candidate);
+    if (value != null) {
+      return value;
+    }
+  }
+  return null;
+}
+
+List<String> _extractImageUrls(dynamic rawPics) {
+  if (rawPics is! List) {
+    return const <String>[];
+  }
+  final urls = <String>[];
+  for (final item in rawPics) {
+    String? url;
+    if (item is String) {
+      url = _asString(item);
+    } else if (item is Map<String, dynamic>) {
+      url = _asString(item['url']) ??
+          _asString(item['pic']) ??
+          _asString(item['src']) ??
+          _asString(item['origin']);
+    } else if (item is Map) {
+      final map = item.map((key, value) => MapEntry(key.toString(), value));
+      url = _asString(map['url']) ??
+          _asString(map['pic']) ??
+          _asString(map['src']) ??
+          _asString(map['origin']);
+    }
+    if (url != null && !urls.contains(url)) {
+      urls.add(url);
+    }
+  }
+  return List<String>.unmodifiable(urls);
+}
+
+Map<String, dynamic> _asMap(dynamic value) {
+  if (value is String && value.trim().isNotEmpty) {
+    try {
+      final decoded = jsonDecode(value);
+      return _asMap(decoded);
+    } catch (_) {
+      return const <String, dynamic>{};
+    }
+  }
+  if (value is Map<String, dynamic>) {
+    return value;
+  }
+  if (value is Map) {
+    return value.map((key, mapValue) => MapEntry(key.toString(), mapValue));
+  }
+  return const <String, dynamic>{};
+}
+
+String? _pickSubmitMessage(Map<String, dynamic> json) {
+  final candidates = <dynamic>[
+    json['msg'],
+    json['message'],
+    json['info'],
+    json['desc'],
+    json['reason'],
+  ];
+  for (final candidate in candidates) {
+    final value = _asString(candidate);
+    if (value != null) {
+      return value;
+    }
+  }
+  return null;
+}
+
+bool _looksLikeSuccessMessage(String text) {
+  if (text.isEmpty) {
+    return false;
+  }
+  return text.contains('成功') || text.contains('审核') || text.contains('发表');
+}
+
+String? _pickSessionString(
+  Map<String, dynamic> source,
+  List<String> keys,
+) {
+  for (final key in keys) {
+    final value = _asString(source[key]);
     if (value != null) {
       return value;
     }

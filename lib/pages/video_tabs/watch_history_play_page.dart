@@ -36,6 +36,22 @@ class ShortVideoWatchHistoryPlayPage extends StatefulWidget {
       _ShortVideoWatchHistoryPlayPageState();
 }
 
+Future<void> openShortVideoSinglePlayPage(
+  BuildContext context, {
+  required ShortVideoWatchHistoryEntry entry,
+}) {
+  return Navigator.of(context).push(
+    CupertinoPageRoute<void>(
+      builder: (context) {
+        return ShortVideoWatchHistoryPlayPage(
+          entries: <ShortVideoWatchHistoryEntry>[entry],
+          initialIndex: 0,
+        );
+      },
+    ),
+  );
+}
+
 class _ShortVideoWatchHistoryPlayPageState
     extends State<ShortVideoWatchHistoryPlayPage>
     with WidgetsBindingObserver, RouteAware {

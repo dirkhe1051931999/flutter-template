@@ -20,6 +20,23 @@ class AppConfig {
     'SHORT_VIDEO_COMMENT_API_BASE_URL',
     defaultValue: 'https://comment.ifeng.com',
   );
+  static const shortVideoCommentUploadInitUrl = String.fromEnvironment(
+    'SHORT_VIDEO_COMMENT_UPLOAD_INIT_URL',
+    defaultValue: 'https://ugc.ifeng.com/user/getid',
+  );
+  static const shortVideoCommentUploadUrl = String.fromEnvironment(
+    'SHORT_VIDEO_COMMENT_UPLOAD_URL',
+    defaultValue: 'https://transmission.ifeng.com/upload',
+  );
+  static const hupuBaseUrl = String.fromEnvironment(
+    'HUPU_BASE_URL',
+    defaultValue: 'https://games.mobileapi.hupu.com',
+  );
+  static const shortVideoCommentLToken = String.fromEnvironment(
+    'SHORT_VIDEO_COMMENT_LTOKEN',
+    defaultValue:
+        r'$2kJyeiQHbwIiOiwiIuxGZiojIsICMjRmI6ISesIiIwRmI6IicsIiIyBnIpZ3blNmbiojIiwiI0l2Y6ISesIiIpRmIyR3c0NWaiojI00nIfr34g',
+  );
   static const qWeatherBaseUrl = String.fromEnvironment(
     'QWEATHER_BASE_URL',
     defaultValue: 'https://nm359gputx.re.qweatherapi.com',

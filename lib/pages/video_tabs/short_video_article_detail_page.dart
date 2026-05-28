@@ -9,18 +9,21 @@ import 'package:oolaf_flutted/pages/video_tabs/short_video_article_body_helper.d
 import 'package:oolaf_flutted/pages/video_tabs/short_video_gallery_preview.dart'
     show ShortVideoGalleryPreviewImage, galleryWrapWithDesktopFriendlyScrollBehavior;
 import 'package:flutter/services.dart';
+import 'package:oolaf_flutted/api/short_video/comment.dart';
 import 'package:oolaf_flutted/api/short_video/index.dart';
 
 Future<void> openShortVideoArticleDetailPage(
   BuildContext context, {
   required HeadlineNewsDocDetail detail,
   required String coverUrl,
+  required String detailUrl,
 }) {
   return Navigator.of(context, rootNavigator: true).push<void>(
     CupertinoPageRoute<void>(
       builder: (_) => ShortVideoArticleDetailPage(
         detail: detail,
         coverUrl: coverUrl,
+        detailUrl: detailUrl,
       ),
     ),
   );
@@ -35,10 +38,12 @@ class ShortVideoArticleDetailPage extends StatefulWidget {
     super.key,
     required this.detail,
     required this.coverUrl,
+    required this.detailUrl,
   });
 
   final HeadlineNewsDocDetail detail;
   final String coverUrl;
+  final String detailUrl;
 
   @override
   State<ShortVideoArticleDetailPage> createState() =>
@@ -53,6 +58,9 @@ class _ShortVideoArticleDetailPageState extends State<ShortVideoArticleDetailPag
   bool _isCollected = false;
   bool _isLiked = false;
   int _commentsCount = 0;
+  final int _commentReloadToken = 0;
+  ShortVideoCommentItem? _prependedComment;
+  String? _prependedCommentParentId;
 
   String get _commentBadgeText {
     if (_commentsCount <= 0) {
@@ -119,6 +127,38 @@ class _ShortVideoArticleDetailPageState extends State<ShortVideoArticleDetailPag
       duration: const Duration(milliseconds: 240),
       curve: Curves.easeOutCubic,
     );
+  }
+
+  Future<void> _openCommentInput({
+    ShortVideoCommentItem? replyToComment,
+  }) async {
+    final submitted = await showArticleCommentInputSheet(
+      context,
+      request: ShortVideoCommentSubmitRequest(
+        docId: widget.detail.id,
+        docUrl: widget.detailUrl,
+        docName: widget.detail.title,
+        content: '',
+        docType: ShortVideoCommentDocType.doc,
+        docThumbnail: widget.coverUrl,
+        subId: widget.detail.subscribeId,
+        subName: widget.detail.subscribeName.isNotEmpty
+            ? widget.detail.subscribeName
+            : widget.detail.source,
+        subType: widget.detail.subscribeType,
+        replyToComment: replyToComment,
+      ),
+    );
+    if (submitted == null || !mounted) {
+      return;
+    }
+    setState(() {
+      if (submitted.parentCommentId == null || submitted.parentCommentId!.isEmpty) {
+        _commentsCount += 1;
+      }
+      _prependedComment = submitted.comment;
+      _prependedCommentParentId = submitted.parentCommentId;
+    });
   }
 
   Future<void> _copyAll(
@@ -233,6 +273,9 @@ class _ShortVideoArticleDetailPageState extends State<ShortVideoArticleDetailPag
                                 docId: widget.detail.id,
                                 initialCommentsCount: widget.detail.commentsCount,
                                 scrollController: _scrollController,
+                                reloadToken: _commentReloadToken,
+                                prependedComment: _prependedComment,
+                                prependedCommentParentId: _prependedCommentParentId,
                                 sectionKey: _commentSectionKey,
                                 onCommentsCountChanged: (count) {
                                   if (_commentsCount == count || !mounted) {
@@ -242,8 +285,10 @@ class _ShortVideoArticleDetailPageState extends State<ShortVideoArticleDetailPag
                                     _commentsCount = count;
                                   });
                                 },
-                                onTapReply: (_) {
-                                  showArticleCommentInputSheet(context);
+                                onTapReply: (comment) {
+                                  _openCommentInput(
+                                    replyToComment: comment,
+                                  );
                                 },
                               ),
                             ],
@@ -263,7 +308,7 @@ class _ShortVideoArticleDetailPageState extends State<ShortVideoArticleDetailPag
                 isCollected: _isCollected,
                 isLiked: _isLiked,
                 onTapPlaceholder: () {
-                  showArticleCommentInputSheet(context);
+                  _openCommentInput();
                 },
                 onTapModeToggle: () {
                   if (_showArticleIcon) {

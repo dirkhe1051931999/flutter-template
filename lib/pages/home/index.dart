@@ -28,6 +28,7 @@ class HomePage extends StatelessWidget {
         'profile' => CupertinoIcons.person_crop_circle,
         'scrollable-tabs' => CupertinoIcons.rectangle_3_offgrid,
         'weather' => CupertinoIcons.cloud_sun,
+        'hupu' => CupertinoIcons.flame,
         _ => CupertinoIcons.square_grid_2x2,
       };
     }
@@ -102,6 +103,7 @@ class HomePage extends StatelessWidget {
       menuCard(title: 'profile', key: 'profile'),
       menuCard(title: '可滑动选项卡', key: 'scrollable-tabs'),
       menuCard(title: '天气', key: 'weather'),
+      menuCard(title: '虎扑', key: 'hupu'),
     ];
 
     return CupertinoPageScaffold(
