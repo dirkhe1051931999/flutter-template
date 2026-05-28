@@ -176,19 +176,46 @@ class HupuLightReply {
 class HupuVideoItem {
   const HupuVideoItem({
     required this.cover,
+    required this.backgroundImage,
     required this.duration,
     required this.playCount,
+    required this.videoUrl,
+    required this.size,
+    required this.width,
+    required this.height,
+    required this.bulletCommentCount,
   });
 
   final String cover;
+  final String backgroundImage;
   final String duration;
   final String playCount;
+  final String videoUrl;
+  final String size;
+  final double width;
+  final double height;
+  final String bulletCommentCount;
+
+  bool get isPlayable => videoUrl.isNotEmpty;
+
+  double? get aspectRatio {
+    if (width <= 0 || height <= 0) {
+      return null;
+    }
+    return width / height;
+  }
 
   factory HupuVideoItem.fromJson(Map<String, dynamic> json) {
     return HupuVideoItem(
       cover: json['img']?.toString() ?? '',
+      backgroundImage: json['bg_img']?.toString() ?? '',
       duration: json['duration']?.toString() ?? '',
       playCount: json['play_num']?.toString() ?? '',
+      videoUrl: json['url']?.toString() ?? '',
+      size: json['size']?.toString() ?? '',
+      width: _parseDouble(json['width']),
+      height: _parseDouble(json['height']),
+      bulletCommentCount: json['bullet_comment_num']?.toString() ?? '',
     );
   }
 }

@@ -82,6 +82,8 @@ class _ShortVideoSearchPageState extends State<ShortVideoSearchPage> {
     if (text.isEmpty) {
       return;
     }
+    _focusNode.unfocus();
+    FocusScope.of(context).unfocus();
     _searchController.text = text;
     _searchController.selection = TextSelection.collapsed(offset: text.length);
     final openedDeveloperTools = await DeveloperToolsEntry.maybeOpenFromInput(

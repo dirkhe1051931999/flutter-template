@@ -1,4 +1,5 @@
 import 'package:file_picker/file_picker.dart';
+import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
@@ -25,6 +26,7 @@ Future<CommentSubmissionResult?> showArticleCommentInputSheet(
 }) async {
   final result = await showCupertinoModalPopup<CommentSubmissionResult>(
     context: context,
+    requestFocus: false,
     builder: (sheetContext) {
       return _ArticleCommentInputSheet(
         request: request,
@@ -47,12 +49,14 @@ class _ArticleCommentInputSheet extends StatefulWidget {
 }
 
 class _ArticleCommentInputSheetState extends State<_ArticleCommentInputSheet> {
+  static const double _emojiPanelHeight = 280;
   static const double _selectedImageSize = 70;
 
   final TextEditingController _controller = TextEditingController();
   final FocusNode _focusNode = FocusNode();
   final ImagePicker _imagePicker = ImagePicker();
   bool _isHandlingSubmit = false;
+  bool _isEmojiPanelVisible = false;
   _SelectedCommentImage? _selectedImage;
 
   bool get _canSubmit => _controller.text.trim().isNotEmpty;
@@ -61,6 +65,7 @@ class _ArticleCommentInputSheetState extends State<_ArticleCommentInputSheet> {
   void initState() {
     super.initState();
     _controller.addListener(_handleTextChanged);
+    _focusNode.addListener(_handleFocusChanged);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         _focusNode.requestFocus();
@@ -71,6 +76,7 @@ class _ArticleCommentInputSheetState extends State<_ArticleCommentInputSheet> {
   @override
   void dispose() {
     _controller.removeListener(_handleTextChanged);
+    _focusNode.removeListener(_handleFocusChanged);
     _controller.dispose();
     _focusNode.dispose();
     super.dispose();
@@ -82,9 +88,98 @@ class _ArticleCommentInputSheetState extends State<_ArticleCommentInputSheet> {
     }
   }
 
+  void _handleFocusChanged() {
+    if (_focusNode.hasFocus && _isEmojiPanelVisible && mounted) {
+      setState(() {
+        _isEmojiPanelVisible = false;
+      });
+    }
+  }
+
+  void _showKeyboard() {
+    if (!_focusNode.hasFocus) {
+      _focusNode.requestFocus();
+    }
+  }
+
+  void _hideKeyboard() {
+    _focusNode.unfocus();
+    FocusScope.of(context).unfocus();
+  }
+
+  void _toggleEmojiPanel() {
+    if (_isEmojiPanelVisible) {
+      setState(() {
+        _isEmojiPanelVisible = false;
+      });
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _showKeyboard();
+        }
+      });
+      return;
+    }
+    _hideKeyboard();
+    setState(() {
+      _isEmojiPanelVisible = true;
+    });
+  }
+
+  void _insertEmoji(String emojiText) {
+    final value = _controller.value;
+    final selection = value.selection;
+    final start = selection.isValid ? selection.start : value.text.length;
+    final end = selection.isValid ? selection.end : value.text.length;
+    final safeStart = start < 0 ? value.text.length : start;
+    final safeEnd = end < 0 ? value.text.length : end;
+    final newText = value.text.replaceRange(safeStart, safeEnd, emojiText);
+    final caretOffset = safeStart + emojiText.length;
+    _controller.value = TextEditingValue(
+      text: newText,
+      selection: TextSelection.collapsed(offset: caretOffset),
+      composing: TextRange.empty,
+    );
+  }
+
+  void _handleBackspacePressed() {
+    final value = _controller.value;
+    final selection = value.selection;
+    if (!selection.isValid) {
+      return;
+    }
+    if (!selection.isCollapsed) {
+      final start = selection.start;
+      final end = selection.end;
+      _controller.value = TextEditingValue(
+        text: value.text.replaceRange(start, end, ''),
+        selection: TextSelection.collapsed(offset: start),
+        composing: TextRange.empty,
+      );
+      return;
+    }
+    if (selection.start <= 0) {
+      return;
+    }
+    final characters = value.text.characters;
+    final previous = characters.take(selection.start).toString();
+    final removed = previous.characters.skipLast(1).toString();
+    final trailing = characters.skip(selection.start).toString();
+    final newText = '$removed$trailing';
+    _controller.value = TextEditingValue(
+      text: newText,
+      selection: TextSelection.collapsed(offset: removed.length),
+      composing: TextRange.empty,
+    );
+  }
+
   Future<void> _pickImage() async {
     if (_isHandlingSubmit) {
       return;
+    }
+    if (_isEmojiPanelVisible) {
+      setState(() {
+        _isEmojiPanelVisible = false;
+      });
     }
     try {
       final selectedImage = await _selectCommentImage();
@@ -168,6 +263,8 @@ class _ArticleCommentInputSheetState extends State<_ArticleCommentInputSheet> {
         return;
       }
       if (!session.isLoggedIn) {
+        _focusNode.unfocus();
+        Navigator.of(context).pop();
         final didLogin = await showArticleQuickLoginSheet(context);
         if (!mounted) {
           return;
@@ -242,15 +339,13 @@ class _ArticleCommentInputSheetState extends State<_ArticleCommentInputSheet> {
   Widget build(BuildContext context) {
     final viewInsetsBottom = MediaQuery.of(context).viewInsets.bottom;
     final safeBottom = MediaQuery.of(context).padding.bottom;
+    final bottomInset = _isEmojiPanelVisible ? 0.0 : viewInsetsBottom;
     return Align(
       alignment: Alignment.bottomCenter,
-      child: AnimatedPadding(
-        duration: const Duration(milliseconds: 180),
-        curve: Curves.easeOut,
-        padding: EdgeInsets.only(bottom: viewInsetsBottom),
+      child: Padding(
+        padding: EdgeInsets.only(bottom: bottomInset),
         child: Container(
           width: double.infinity,
-          padding: EdgeInsets.fromLTRB(16, 14, 16, safeBottom > 0 ? safeBottom : 12),
           decoration: const BoxDecoration(
             color: CupertinoColors.white,
             borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
@@ -258,82 +353,147 @@ class _ArticleCommentInputSheetState extends State<_ArticleCommentInputSheet> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: Container(
-                      constraints: const BoxConstraints(minHeight: 104),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 12,
-                      ),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF4F5F7),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: CupertinoTextField.borderless(
-                        controller: _controller,
-                        focusNode: _focusNode,
-                        maxLines: _selectedImage == null ? 5 : 3,
-                        minLines: _selectedImage == null ? 4 : 2,
-                        placeholder: '友善评论，说点好听的～',
-                        style: const TextStyle(
-                          color: Color(0xFF1C1C1E),
-                          fontSize: 16,
-                          height: 1.4,
+              Padding(
+                padding: EdgeInsets.fromLTRB(16, 14, 16, safeBottom > 0 ? safeBottom : 12),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: GestureDetector(
+                            behavior: HitTestBehavior.translucent,
+                            onTap: _showKeyboard,
+                            child: Container(
+                              constraints: const BoxConstraints(minHeight: 104),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 14,
+                                vertical: 12,
+                              ),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF4F5F7),
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              child: CupertinoTextField.borderless(
+                                controller: _controller,
+                                focusNode: _focusNode,
+                                maxLines: _selectedImage == null ? 5 : 3,
+                                minLines: _selectedImage == null ? 4 : 2,
+                                placeholder: '友善评论，说点好听的～',
+                                style: const TextStyle(
+                                  color: Color(0xFF1C1C1E),
+                                  fontSize: 16,
+                                  height: 1.4,
+                                ),
+                                placeholderStyle: const TextStyle(
+                                  color: Color(0xFFAEAEB2),
+                                  fontSize: 16,
+                                ),
+                                padding: EdgeInsets.zero,
+                                decoration: null,
+                                onTap: () {
+                                  if (_isEmojiPanelVisible) {
+                                    setState(() {
+                                      _isEmojiPanelVisible = false;
+                                    });
+                                  }
+                                },
+                              ),
+                            ),
+                          ),
                         ),
-                        placeholderStyle: const TextStyle(
-                          color: Color(0xFFAEAEB2),
-                          fontSize: 16,
+                        if (_selectedImage != null) ...[
+                          const SizedBox(width: 12),
+                          _SelectedCommentImagePreview(
+                            image: _selectedImage!,
+                            onRemove: _removeSelectedImage,
+                          ),
+                        ],
+                        const SizedBox(width: 12),
+                        CupertinoButton(
+                          padding: EdgeInsets.zero,
+                          minimumSize: const Size(52, 40),
+                          onPressed: _canSubmit ? _handleSubmit : null,
+                          child: Text(
+                            '确定',
+                            style: TextStyle(
+                              color: _canSubmit
+                                  ? CupertinoColors.activeBlue
+                                  : const Color(0xFFC7C7CC),
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
                         ),
-                        padding: EdgeInsets.zero,
-                        decoration: null,
-                      ),
+                      ],
                     ),
-                  ),
-                  if (_selectedImage != null) ...[
-                    const SizedBox(width: 12),
-                    _SelectedCommentImagePreview(
-                      image: _selectedImage!,
-                      onRemove: _removeSelectedImage,
+                    const SizedBox(height: 14),
+                    Row(
+                      children: [
+                        const _ToolbarIcon(assetName: 'camera-outline', fallbackIcon: CupertinoIcons.camera),
+                        const SizedBox(width: 22),
+                        GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTap: _pickImage,
+                          child: const _ToolbarIcon(
+                            assetName: 'image-outline',
+                            fallbackIcon: CupertinoIcons.photo,
+                          ),
+                        ),
+                        const SizedBox(width: 22),
+                        GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTap: _toggleEmojiPanel,
+                          child: _ToolbarIcon(
+                            assetName: 'happy-outline',
+                            fallbackIcon: CupertinoIcons.smiley,
+                            color: _isEmojiPanelVisible
+                                ? CupertinoColors.activeBlue
+                                : const Color(0xFF6B7280),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
-                  const SizedBox(width: 12),
-                  CupertinoButton(
-                    padding: EdgeInsets.zero,
-                    minimumSize: const Size(52, 40),
-                    onPressed: _canSubmit ? _handleSubmit : null,
-                    child: Text(
-                      '确定',
-                      style: TextStyle(
-                        color: _canSubmit
-                            ? CupertinoColors.activeBlue
-                            : const Color(0xFFC7C7CC),
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
+                ),
+              ),
+              if (_isEmojiPanelVisible)
+                Container(
+                  height: _emojiPanelHeight,
+                  width: double.infinity,
+                  decoration: const BoxDecoration(
+                    color: CupertinoColors.white,
+                    border: Border(
+                      top: BorderSide(color: Color(0xFFE5E5EA)),
+                    ),
+                  ),
+                  child: EmojiPicker(
+                    onEmojiSelected: (category, emoji) {
+                      _insertEmoji(emoji.emoji);
+                    },
+                    onBackspacePressed: _handleBackspacePressed,
+                    config: Config(
+                      height: _emojiPanelHeight,
+                      checkPlatformCompatibility: true,
+                      emojiViewConfig: EmojiViewConfig(
+                        columns: 8,
+                        emojiSizeMax: defaultTargetPlatform == TargetPlatform.iOS ? 28 : 26,
+                        verticalSpacing: 0,
+                        horizontalSpacing: 0,
                       ),
+                      skinToneConfig: const SkinToneConfig(),
+                      categoryViewConfig: const CategoryViewConfig(
+                        iconColorSelected: CupertinoColors.activeBlue,
+                        backspaceColor: CupertinoColors.activeBlue,
+                      ),
+                      bottomActionBarConfig: const BottomActionBarConfig(
+                        enabled: false,
+                      ),
+                      searchViewConfig: const SearchViewConfig(),
                     ),
                   ),
-                ],
-              ),
-              const SizedBox(height: 14),
-              Row(
-                children: [
-                  const _ToolbarIcon(assetName: 'camera-outline', fallbackIcon: CupertinoIcons.camera),
-                  const SizedBox(width: 22),
-                  GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onTap: _pickImage,
-                    child: const _ToolbarIcon(
-                      assetName: 'image-outline',
-                      fallbackIcon: CupertinoIcons.photo,
-                    ),
-                  ),
-                  const SizedBox(width: 22),
-                  const _ToolbarIcon(assetName: 'happy-outline', fallbackIcon: CupertinoIcons.smiley),
-                ],
-              ),
+                ),
             ],
           ),
         ),
@@ -437,17 +597,19 @@ class _ToolbarIcon extends StatelessWidget {
   const _ToolbarIcon({
     required this.assetName,
     required this.fallbackIcon,
+    this.color = const Color(0xFF6B7280),
   });
 
   final String assetName;
   final IconData fallbackIcon;
+  final Color color;
 
   @override
   Widget build(BuildContext context) {
     return AppAssetIcon(
       assetName: assetName,
       size: 24,
-      color: const Color(0xFF6B7280),
+      color: color,
       fallbackIcon: fallbackIcon,
     );
   }

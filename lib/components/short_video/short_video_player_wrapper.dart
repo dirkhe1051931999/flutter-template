@@ -24,6 +24,7 @@ class ShortVideoPlayerWrapper extends StatefulWidget {
     this.fit,
     this.landscapeContainCenterYFactor = 0.4,
     this.landscapeContainTopInset,
+    this.enableVerticalSwipeGestures = true,
   });
 
   final OolafVideoController? controller;
@@ -42,6 +43,7 @@ class ShortVideoPlayerWrapper extends StatefulWidget {
   final BoxFit? fit;
   final double landscapeContainCenterYFactor;
   final double? landscapeContainTopInset;
+  final bool enableVerticalSwipeGestures;
 
   @override
   State<ShortVideoPlayerWrapper> createState() =>
@@ -238,40 +240,48 @@ class _ShortVideoPlayerWrapperState extends State<ShortVideoPlayerWrapper> {
                   onTap: widget.onSingleTap,
                   onLongPress: widget.onLongPress,
                   onSecondaryTap: widget.onLongPress,
-                  onVerticalDragStart: (_) {
-                    _verticalDragOffset = 0;
-                    widget.onVerticalDragOffsetChanged?.call(0);
-                  },
-                  onVerticalDragUpdate: (details) {
-                    final delta = details.primaryDelta;
-                    if (delta == null) {
-                      return;
-                    }
-                    _verticalDragOffset += delta;
-                    widget.onVerticalDragOffsetChanged?.call(
-                      _verticalDragOffset,
-                    );
-                  },
-                  onVerticalDragEnd: (details) {
-                    final velocity = details.primaryVelocity;
-                    _verticalDragOffset = 0;
-                    widget.onVerticalDragOffsetChanged?.call(0);
-                    if (velocity == null) {
-                      return;
-                    }
+                  onVerticalDragStart: widget.enableVerticalSwipeGestures
+                      ? (_) {
+                          _verticalDragOffset = 0;
+                          widget.onVerticalDragOffsetChanged?.call(0);
+                        }
+                      : null,
+                  onVerticalDragUpdate: widget.enableVerticalSwipeGestures
+                      ? (details) {
+                          final delta = details.primaryDelta;
+                          if (delta == null) {
+                            return;
+                          }
+                          _verticalDragOffset += delta;
+                          widget.onVerticalDragOffsetChanged?.call(
+                            _verticalDragOffset,
+                          );
+                        }
+                      : null,
+                  onVerticalDragEnd: widget.enableVerticalSwipeGestures
+                      ? (details) {
+                          final velocity = details.primaryVelocity;
+                          _verticalDragOffset = 0;
+                          widget.onVerticalDragOffsetChanged?.call(0);
+                          if (velocity == null) {
+                            return;
+                          }
 
-                    if (velocity <= -_swipeVelocityThreshold) {
-                      widget.onSwipeUp();
-                      return;
-                    }
-                    if (velocity >= _swipeVelocityThreshold) {
-                      widget.onSwipeDown();
-                    }
-                  },
-                  onVerticalDragCancel: () {
-                    _verticalDragOffset = 0;
-                    widget.onVerticalDragOffsetChanged?.call(0);
-                  },
+                          if (velocity <= -_swipeVelocityThreshold) {
+                            widget.onSwipeUp();
+                            return;
+                          }
+                          if (velocity >= _swipeVelocityThreshold) {
+                            widget.onSwipeDown();
+                          }
+                        }
+                      : null,
+                  onVerticalDragCancel: widget.enableVerticalSwipeGestures
+                      ? () {
+                          _verticalDragOffset = 0;
+                          widget.onVerticalDragOffsetChanged?.call(0);
+                        }
+                      : null,
                   onDoubleTapDown: (details) {
                     _lastDoubleTapPosition = details.localPosition;
                   },

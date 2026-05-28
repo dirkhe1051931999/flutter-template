@@ -486,7 +486,7 @@ class _ShortVideoWatchHistoryPlayPageState
                 actionTile(
                   icon: AppAssetIcon(
                     assetName: 'heart',
-                    size: 12,
+                    size: 18,
                     color: CupertinoColors.white,
                     fallbackIcon: isFavorite
                         ? CupertinoIcons.heart_slash_fill
@@ -498,7 +498,7 @@ class _ShortVideoWatchHistoryPlayPageState
                 actionTile(
                   icon: const AppAssetIcon(
                     assetName: 'time',
-                    size: 12,
+                    size: 18,
                     color: CupertinoColors.white,
                     fallbackIcon: CupertinoIcons.time,
                   ),
@@ -508,7 +508,7 @@ class _ShortVideoWatchHistoryPlayPageState
                 actionTile(
                   icon: const AppAssetIcon(
                     assetName: 'link',
-                    size: 12,
+                    size: 18,
                     color: CupertinoColors.white,
                     fallbackIcon: CupertinoIcons.link,
                   ),
@@ -518,7 +518,7 @@ class _ShortVideoWatchHistoryPlayPageState
                 actionTile(
                   icon: const AppAssetIcon(
                     assetName: 'cloud-download',
-                    size: 12,
+                    size: 18,
                     color: CupertinoColors.white,
                     fallbackIcon: CupertinoIcons.cloud_download,
                   ),

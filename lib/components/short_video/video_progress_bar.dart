@@ -26,11 +26,13 @@ class ShortVideoProgressBar extends StatefulWidget {
 class _ShortVideoProgressBarState extends State<ShortVideoProgressBar> {
   static const double _hitAreaHeight = 24;
   static const double _barHeight = 3;
+  static const double _hoverBarHeight = 6;
   static const double _bubbleBottomGap = 10;
   static const Duration _tapBubbleVisibilityDuration = Duration(milliseconds: 900);
 
   double? _dragProgress;
   Timer? _bubbleDismissTimer;
+  bool _isHovered = false;
 
   @override
   void dispose() {
@@ -118,11 +120,12 @@ class _ShortVideoProgressBarState extends State<ShortVideoProgressBar> {
             final dragDuration = dragProgress == null
                 ? null
                 : _durationFromProgress(dragProgress, dur);
+            final effectiveBarHeight = _isHovered ? _hoverBarHeight : _barHeight;
 
             return Positioned(
               left: 0,
               right: 0,
-              bottom: widget.bottomOffset - ((_hitAreaHeight - _barHeight) / 2),
+              bottom: widget.bottomOffset - ((_hitAreaHeight - effectiveBarHeight) / 2),
               child: LayoutBuilder(
                 builder: (context, constraints) {
                   final bubbleHalfWidth = constraints.maxWidth < 140 ? constraints.maxWidth / 2 : 70.0;
@@ -132,6 +135,22 @@ class _ShortVideoProgressBarState extends State<ShortVideoProgressBar> {
 
                   return MouseRegion(
                     cursor: SystemMouseCursors.click,
+                    onEnter: (_) {
+                      if (_isHovered) {
+                        return;
+                      }
+                      setState(() {
+                        _isHovered = true;
+                      });
+                    },
+                    onExit: (_) {
+                      if (!_isHovered) {
+                        return;
+                      }
+                      setState(() {
+                        _isHovered = false;
+                      });
+                    },
                     child: SizedBox(
                       height: _hitAreaHeight + 40,
                       child: Stack(
@@ -201,8 +220,10 @@ class _ShortVideoProgressBarState extends State<ShortVideoProgressBar> {
                                   alignment: Alignment.center,
                                   child: ClipRRect(
                                     borderRadius: BorderRadius.circular(999),
-                                    child: SizedBox(
-                                      height: _barHeight,
+                                    child: AnimatedContainer(
+                                      duration: const Duration(milliseconds: 120),
+                                      curve: Curves.easeOut,
+                                      height: effectiveBarHeight,
                                       child: LinearProgressIndicator(
                                         value: value,
                                         backgroundColor: const Color(0x33FFFFFF),

@@ -9,10 +9,14 @@ import 'package:oolaf_flutted/pages/hupu/widgets/hupu_stat.dart';
 class HupuFeedCard extends StatelessWidget {
   const HupuFeedCard({
     required this.item,
+    this.onTapVideo,
+    this.onTapMedia,
     super.key,
   });
 
   final HupuFeedItem item;
+  final VoidCallback? onTapVideo;
+  final VoidCallback? onTapMedia;
 
   @override
   Widget build(BuildContext context) {
@@ -127,9 +131,9 @@ class HupuFeedCard extends StatelessWidget {
           if (mediaImage.isNotEmpty) ...[
             const SizedBox(height: 12),
             HupuMediaBlock(
-              imageUrl: mediaImage,
-              imageCount: item.pics.length,
+              images: item.pics,
               video: video,
+              onTap: video?.isPlayable == true ? onTapVideo : onTapMedia,
             ),
           ],
           if (lightReply != null) ...[

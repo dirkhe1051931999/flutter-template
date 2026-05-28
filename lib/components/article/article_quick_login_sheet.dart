@@ -7,6 +7,7 @@ import 'package:oolaf_flutted/utils/ifeng_auth_flow.dart';
 Future<bool> showArticleQuickLoginSheet(BuildContext context) async {
   final result = await showCupertinoModalPopup<bool>(
     context: context,
+    requestFocus: false,
     builder: (sheetContext) {
       return const _ArticleQuickLoginSheet();
     },
@@ -166,158 +167,162 @@ class _ArticleQuickLoginSheetState extends State<_ArticleQuickLoginSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final viewInsetsBottom = MediaQuery.of(context).viewInsets.bottom;
     final safeBottom = MediaQuery.of(context).padding.bottom;
     return Align(
       alignment: Alignment.bottomCenter,
-      child: Container(
-        width: double.infinity,
-        padding: EdgeInsets.fromLTRB(24, 18, 24, safeBottom > 0 ? safeBottom : 20),
-        decoration: const BoxDecoration(
-          color: CupertinoColors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 36,
-              height: 4,
-              decoration: BoxDecoration(
-                color: const Color(0xFFD1D1D6),
-                borderRadius: BorderRadius.circular(999),
-              ),
-            ),
-            const SizedBox(height: 24),
-            const Text(
-              '当前操作需要登录帐号',
-              style: TextStyle(
-                color: Color(0xFF1C1C1E),
-                fontSize: 24,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 28),
-            Container(
-              decoration: const BoxDecoration(
-                border: Border(
-                  bottom: BorderSide(color: Color(0xFFE5E5EA)),
+      child: Padding(
+        padding: EdgeInsets.only(bottom: viewInsetsBottom),
+        child: Container(
+          width: double.infinity,
+          padding: EdgeInsets.fromLTRB(24, 18, 24, safeBottom > 0 ? safeBottom : 20),
+          decoration: const BoxDecoration(
+            color: CupertinoColors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 36,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFD1D1D6),
+                  borderRadius: BorderRadius.circular(999),
                 ),
               ),
-              child: CupertinoTextField.borderless(
-                controller: _mobileController,
-                focusNode: _mobileFocusNode,
-                keyboardType: TextInputType.phone,
-                placeholder: '请输入手机号',
-                style: const TextStyle(
+              const SizedBox(height: 24),
+              const Text(
+                '当前操作需要登录帐号',
+                style: TextStyle(
                   color: Color(0xFF1C1C1E),
-                  fontSize: 17,
+                  fontSize: 24,
+                  fontWeight: FontWeight.w600,
                 ),
-                placeholderStyle: const TextStyle(
-                  color: Color(0xFFC7C7CC),
-                  fontSize: 17,
-                ),
-                padding: const EdgeInsets.symmetric(vertical: 12),
               ),
-            ),
-            if (_showSmsInput) ...[
-              const SizedBox(height: 18),
-              Row(
-                children: [
-                  Expanded(
-                    child: Container(
-                      decoration: const BoxDecoration(
-                        border: Border(
-                          bottom: BorderSide(color: Color(0xFFE5E5EA)),
+              const SizedBox(height: 28),
+              Container(
+                decoration: const BoxDecoration(
+                  border: Border(
+                    bottom: BorderSide(color: Color(0xFFE5E5EA)),
+                  ),
+                ),
+                child: CupertinoTextField.borderless(
+                  controller: _mobileController,
+                  focusNode: _mobileFocusNode,
+                  keyboardType: TextInputType.phone,
+                  placeholder: '请输入手机号',
+                  style: const TextStyle(
+                    color: Color(0xFF1C1C1E),
+                    fontSize: 17,
+                  ),
+                  placeholderStyle: const TextStyle(
+                    color: Color(0xFFC7C7CC),
+                    fontSize: 17,
+                  ),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                ),
+              ),
+              if (_showSmsInput) ...[
+                const SizedBox(height: 18),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Container(
+                        decoration: const BoxDecoration(
+                          border: Border(
+                            bottom: BorderSide(color: Color(0xFFE5E5EA)),
+                          ),
                         ),
-                      ),
-                      child: CupertinoTextField.borderless(
-                        controller: _smsCodeController,
-                        focusNode: _smsCodeFocusNode,
-                        keyboardType: TextInputType.number,
-                        placeholder: '请输入验证码',
-                        style: const TextStyle(
-                          color: Color(0xFF1C1C1E),
-                          fontSize: 17,
+                        child: CupertinoTextField.borderless(
+                          controller: _smsCodeController,
+                          focusNode: _smsCodeFocusNode,
+                          keyboardType: TextInputType.number,
+                          placeholder: '请输入验证码',
+                          style: const TextStyle(
+                            color: Color(0xFF1C1C1E),
+                            fontSize: 17,
+                          ),
+                          placeholderStyle: const TextStyle(
+                            color: Color(0xFFC7C7CC),
+                            fontSize: 17,
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
                         ),
-                        placeholderStyle: const TextStyle(
-                          color: Color(0xFFC7C7CC),
-                          fontSize: 17,
-                        ),
-                        padding: const EdgeInsets.symmetric(vertical: 12),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  CupertinoButton(
-                    padding: EdgeInsets.zero,
-                    onPressed: (_countdownSeconds > 0 || _isSendingSms) ? null : _handleStartLogin,
-                    child: Text(
-                      _countdownSeconds > 0 ? '${_countdownSeconds}s' : '重新发送',
-                      style: TextStyle(
-                        color: (_countdownSeconds > 0 || _isSendingSms)
-                            ? const Color(0xFFC7C7CC)
-                            : CupertinoColors.activeBlue,
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
+                    const SizedBox(width: 12),
+                    CupertinoButton(
+                      padding: EdgeInsets.zero,
+                      onPressed: (_countdownSeconds > 0 || _isSendingSms) ? null : _handleStartLogin,
+                      child: Text(
+                        _countdownSeconds > 0 ? '${_countdownSeconds}s' : '重新发送',
+                        style: TextStyle(
+                          color: (_countdownSeconds > 0 || _isSendingSms)
+                              ? const Color(0xFFC7C7CC)
+                              : CupertinoColors.activeBlue,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
+                    ),
+                  ],
+                ),
+              ],
+              const SizedBox(height: 24),
+              CupertinoButton(
+                padding: EdgeInsets.zero,
+                onPressed: _showSmsInput
+                    ? (_canSubmitSms ? _handleSubmitSms : null)
+                    : (_canStartLogin ? _handleStartLogin : null),
+                child: Container(
+                  width: double.infinity,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: (_showSmsInput ? _canSubmitSms : _canStartLogin)
+                        ? const Color(0xFFF59CA0)
+                        : const Color(0xFFF8C7CA),
+                    borderRadius: BorderRadius.circular(24),
+                  ),
+                  alignment: Alignment.center,
+                  child: Text(
+                    _showSmsInput ? '确定' : '登录',
+                    style: const TextStyle(
+                      color: CupertinoColors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+              const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(CupertinoIcons.square, size: 18, color: Color(0xFF8E8E93)),
+                  SizedBox(width: 6),
+                  Text(
+                    '同意用户协议和隐私政策',
+                    style: TextStyle(
+                      color: Color(0xFF8E8E93),
+                      fontSize: 14,
                     ),
                   ),
                 ],
               ),
-            ],
-            const SizedBox(height: 24),
-            CupertinoButton(
-              padding: EdgeInsets.zero,
-              onPressed: _showSmsInput
-                  ? (_canSubmitSms ? _handleSubmitSms : null)
-                  : (_canStartLogin ? _handleStartLogin : null),
-              child: Container(
-                width: double.infinity,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: (_showSmsInput ? _canSubmitSms : _canStartLogin)
-                      ? const Color(0xFFF59CA0)
-                      : const Color(0xFFF8C7CA),
-                  borderRadius: BorderRadius.circular(24),
-                ),
-                alignment: Alignment.center,
-                child: Text(
-                  _showSmsInput ? '确定' : '登录',
-                  style: const TextStyle(
-                    color: CupertinoColors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
+              const SizedBox(height: 18),
+              const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(CupertinoIcons.chat_bubble_2_fill, color: Color(0xFF4CD964), size: 28),
+                  SizedBox(width: 28),
+                  Icon(CupertinoIcons.burn, color: Color(0xFFFF3B30), size: 28),
+                  SizedBox(width: 28),
+                  Icon(CupertinoIcons.person_2_fill, color: Color(0xFF0A84FF), size: 28),
+                ],
               ),
-            ),
-            const SizedBox(height: 24),
-            const Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(CupertinoIcons.square, size: 18, color: Color(0xFF8E8E93)),
-                SizedBox(width: 6),
-                Text(
-                  '同意用户协议和隐私政策',
-                  style: TextStyle(
-                    color: Color(0xFF8E8E93),
-                    fontSize: 14,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 18),
-            const Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(CupertinoIcons.chat_bubble_2_fill, color: Color(0xFF4CD964), size: 28),
-                SizedBox(width: 28),
-                Icon(CupertinoIcons.burn, color: Color(0xFFFF3B30), size: 28),
-                SizedBox(width: 28),
-                Icon(CupertinoIcons.person_2_fill, color: Color(0xFF0A84FF), size: 28),
-              ],
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

@@ -66,6 +66,7 @@ dependencies:
   flutter_svg: ^2.0.10+1
   image_picker: ^1.1.2
   file_picker: ^11.0.2
+  emoji_picker_flutter: ^4.4.0
 
 dev_dependencies:
   flutter_test:

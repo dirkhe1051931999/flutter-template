@@ -578,7 +578,7 @@ Future<_ShortVideoCommentImageUploadResult> _uploadCommentImage({
     customLogger.log(
       'uploadCommentImage init request: ${AppConfig.shortVideoCommentUploadInitUrl}?${Uri(queryParameters: initQueryParameters).query}',
     );
-    final Response<dynamic> initResponse = await Dio().get<dynamic>(
+    final Response<dynamic> initResponse = await shortVideoCommentClient.get(
       AppConfig.shortVideoCommentUploadInitUrl,
       queryParameters: initQueryParameters,
     );
@@ -599,21 +599,6 @@ Future<_ShortVideoCommentImageUploadResult> _uploadCommentImage({
     }
 
     final sha1Digest = sha1.convert(payload.bytes).toString();
-    final formData = FormData.fromMap(<String, dynamic>{
-      'successCb': callback,
-      'storePath': dir,
-      'fileId': '${sha1Digest}_1',
-      'blockIndex': '1',
-      'blockId': sha1Digest,
-      'blockCount': '1',
-      'blockContent': MultipartFile.fromBytes(
-        payload.bytes,
-        filename: fileName,
-      ),
-      'bizId': rid,
-      'appId': _shortVideoCommentUploadAppId,
-    });
-
     customLogger.log(
       'uploadCommentImage upload request: ${AppConfig.shortVideoCommentUploadUrl}',
     );
@@ -630,9 +615,22 @@ Future<_ShortVideoCommentImageUploadResult> _uploadCommentImage({
         'blockContent': fileName,
       })}',
     );
-    final Response<dynamic> uploadResponse = await Dio().post<dynamic>(
+    final Response<dynamic> uploadResponse = await shortVideoCommentClient.postFormData(
       AppConfig.shortVideoCommentUploadUrl,
-      data: formData,
+      data: <String, dynamic>{
+        'successCb': callback,
+        'storePath': dir,
+        'fileId': '${sha1Digest}_1',
+        'blockIndex': '1',
+        'blockId': sha1Digest,
+        'blockCount': '1',
+        'blockContent': MultipartFile.fromBytes(
+          payload.bytes,
+          filename: fileName,
+        ),
+        'bizId': rid,
+        'appId': _shortVideoCommentUploadAppId,
+      },
       options: Options(
         contentType: Headers.multipartFormDataContentType,
       ),

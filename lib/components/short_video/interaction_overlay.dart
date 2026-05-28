@@ -164,15 +164,15 @@ class ShortVideoInteractionOverlay extends StatelessWidget {
                     ),
                     const SizedBox(height: 18),
                     Container(
-                      width: 48,
-                      height: 48,
+                      width: 24,
+                      height: 24,
                       decoration: BoxDecoration(
                         color: const Color(0x33FFFFFF),
-                        borderRadius: BorderRadius.circular(14),
+                        borderRadius: BorderRadius.circular(8),
                       ),
                       child: const AppAssetIcon(
                         assetName: 'musical-note',
-                        size: 22,
+                        size: 8,
                         color: CupertinoColors.white,
                         fallbackIcon: CupertinoIcons.music_note,
                       ),
@@ -273,8 +273,8 @@ class _AvatarActionButtonState extends State<_AvatarActionButton> {
             clipBehavior: Clip.none,
             children: [
               Container(
-                width: 52,
-                height: 52,
+                width: 39,
+                height: 39,
                 decoration: BoxDecoration(
                   color: const Color(0x33000000),
                   shape: BoxShape.circle,
@@ -343,7 +343,7 @@ class _AvatarFallback extends StatelessWidget {
         child: AppAssetIcon(
           assetName: 'person',
           color: CupertinoColors.white,
-          size: 22,
+          size: 16,
           fallbackIcon: CupertinoIcons.person_fill,
         ),
       ),
