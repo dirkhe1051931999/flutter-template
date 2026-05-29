@@ -622,6 +622,7 @@ class _GalleryZoomableImageState extends State<_GalleryZoomableImage>
       builder: (context, constraints) {
         final viewportSize = Size(constraints.maxWidth, constraints.maxHeight);
         final contentSize = _contentSize(viewportSize);
+        final isLongImage = _isLongImage(viewportSize);
         _notifyVerticalGestureHandling(viewportSize);
 
         return GestureDetector(
@@ -636,11 +637,9 @@ class _GalleryZoomableImageState extends State<_GalleryZoomableImage>
             panEnabled: true,
             scaleEnabled: true,
             constrained: false,
-            clipBehavior: Clip.none,
-            boundaryMargin: const EdgeInsets.symmetric(
-              horizontal: 120,
-              vertical: 160,
-            ),
+            alignment: isLongImage ? Alignment.topCenter : Alignment.center,
+            clipBehavior: Clip.hardEdge,
+            boundaryMargin: EdgeInsets.zero,
             interactionEndFrictionCoefficient: 0.00008,
             trackpadScrollCausesScale: true,
             onInteractionStart: (_) {
@@ -650,42 +649,26 @@ class _GalleryZoomableImageState extends State<_GalleryZoomableImage>
             onInteractionEnd: (_) {
               _handleInteractionEnd(viewportSize);
             },
-            child: SizedBox(
-              width: constraints.maxWidth,
-              height: constraints.maxHeight,
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: AnimatedOpacity(
-                  duration: const Duration(milliseconds: 220),
-                  opacity: _hasImageFrame ? 1 : 0,
-                  curve: Curves.easeOut,
-                  child: SizedBox(
-                    width: contentSize.width,
-                    height: contentSize.height,
-                    child: CustomNetworkImage(
-                      widget.imageUrl,
-                      fit: BoxFit.fill,
-                      frameBuilder: (
-                        context,
-                        child,
-                        frame,
-                        wasSynchronouslyLoaded,
-                      ) {
-                        if (wasSynchronouslyLoaded || frame != null) {
-                          if (!_hasImageFrame) {
-                            WidgetsBinding.instance.addPostFrameCallback((_) {
-                              if (!mounted) {
-                                return;
-                              }
-                              setState(() {
-                                _hasImageFrame = true;
-                              });
-                            });
-                          }
-                        }
-                        return child;
-                      },
-                      errorBuilder: (_, __, ___) {
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: AnimatedOpacity(
+                duration: const Duration(milliseconds: 220),
+                opacity: _hasImageFrame ? 1 : 0,
+                curve: Curves.easeOut,
+                child: SizedBox(
+                  width: contentSize.width,
+                  height: contentSize.height,
+                  child: CustomNetworkImage(
+                    widget.imageUrl,
+                    fit: BoxFit.contain,
+                    filterQuality: FilterQuality.high,
+                    frameBuilder: (
+                      context,
+                      child,
+                      frame,
+                      wasSynchronouslyLoaded,
+                    ) {
+                      if (wasSynchronouslyLoaded || frame != null) {
                         if (!_hasImageFrame) {
                           WidgetsBinding.instance.addPostFrameCallback((_) {
                             if (!mounted) {
@@ -696,18 +679,31 @@ class _GalleryZoomableImageState extends State<_GalleryZoomableImage>
                             });
                           });
                         }
-                        return const Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 24),
-                          child: Text(
-                            '图片加载失败',
-                            style: TextStyle(
-                              color: CupertinoColors.white,
-                              fontSize: 16,
-                            ),
+                      }
+                      return child;
+                    },
+                    errorBuilder: (_, __, ___) {
+                      if (!_hasImageFrame) {
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                          if (!mounted) {
+                            return;
+                          }
+                          setState(() {
+                            _hasImageFrame = true;
+                          });
+                        });
+                      }
+                      return const Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 24),
+                        child: Text(
+                          '图片加载失败',
+                          style: TextStyle(
+                            color: CupertinoColors.white,
+                            fontSize: 16,
                           ),
-                        );
-                      },
-                    ),
+                        ),
+                      );
+                    },
                   ),
                 ),
               ),
