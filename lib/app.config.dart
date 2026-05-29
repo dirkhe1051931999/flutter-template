@@ -20,6 +20,18 @@ class AppConfig {
     'SHORT_VIDEO_COMMENT_API_BASE_URL',
     defaultValue: 'https://comment.ifeng.com',
   );
+  static const analyticsBaseUrl = String.fromEnvironment(
+    'ANALYTICS_BASE_URL',
+    defaultValue: 'http://127.0.0.1:8080',
+  );
+  static const analyticsIngestToken = String.fromEnvironment(
+    'ANALYTICS_INGEST_TOKEN',
+    defaultValue: 'local-dev-token',
+  );
+  static const analyticsEnabled = bool.fromEnvironment(
+    'ANALYTICS_ENABLED',
+    defaultValue: true,
+  );
   static const shortVideoCommentUploadInitUrl = String.fromEnvironment(
     'SHORT_VIDEO_COMMENT_UPLOAD_INIT_URL',
     defaultValue: 'https://ugc.ifeng.com/user/getid',

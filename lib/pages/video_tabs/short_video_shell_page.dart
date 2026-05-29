@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_redux/flutter_redux.dart';
+import 'package:oolaf_flutted/analytics/analytics_sdk.dart';
 import 'package:oolaf_flutted/api/ifeng_auth/index.dart';
 import 'package:oolaf_flutted/api/short_video/index.dart';
 import 'package:oolaf_flutted/components/app_asset_icon/index.dart';
@@ -48,6 +49,11 @@ class _ShortVideoPageState extends State<ShortVideoPage> {
   static const Duration _topTabLoadDebounceForTap = Duration(milliseconds: 140);
   static const Duration _topTabLoadDebounceForSwipe =
       Duration(milliseconds: 260);
+  static const List<String> _tabTrackNames = <String>[
+    'home',
+    'hot',
+    'profile',
+  ];
   static const List<ShortVideoTabItem> _tabItems = <ShortVideoTabItem>[
     ShortVideoTabItem(label: '首页'),
     ShortVideoTabItem(label: '热点'),
@@ -252,6 +258,7 @@ class _ShortVideoPageState extends State<ShortVideoPage> {
   }
 
   void _onTapBottomTab(int index) {
+    final previousIndex = _activeTabIndex;
     if (_activeTabIndex == index) {
       if (index == 0) {
         final now = DateTime.now();
@@ -268,6 +275,16 @@ class _ShortVideoPageState extends State<ShortVideoPage> {
     setState(() {
       _activeTabIndex = index;
     });
+
+    AnalyticsSdk.instance.track(
+      eventName: 'tab_switch',
+      pageUrl: '/video_tabs/shell',
+      properties: <String, dynamic>{
+        'from_tab': _tabTrackNames[previousIndex],
+        'to_tab': _tabTrackNames[index],
+        'tab_index': index,
+      },
+    );
 
     if (index == 0) {
       _syncTopTabVisibility(activeIndex: _activeHomeTopTabIndex);
@@ -694,7 +711,8 @@ class _ShortVideoProfilePageState extends State<_ShortVideoProfilePage> {
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 18),
                 child: CupertinoButton(
                   padding: EdgeInsets.zero,
-                  onPressed: _isLoggedIn ? _openPersonalHomePage : _openLoginPage,
+                  onPressed:
+                      _isLoggedIn ? _openPersonalHomePage : _openLoginPage,
                   child: Row(
                     children: [
                       ClipOval(
@@ -799,150 +817,150 @@ class _ShortVideoProfilePageState extends State<_ShortVideoProfilePage> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 14),
-                CupertinoListSection(
-                  margin: EdgeInsets.zero,
-                  backgroundColor: const Color(0xFFF4F5F7),
-                  separatorColor: const Color(0xFFF5F5F5),
-                  children: [
-                    CupertinoListTile(
-                      title: const Text('设置'),
-                      leading: const AppAssetIcon(
-                        assetName: 'settings',
-                        fallbackIcon: CupertinoIcons.gear_alt_fill,
-                      ),
-                      trailing: const CupertinoListTileChevron(),
-                      onTap: () {
-                        Navigator.of(context).push(
-                          CupertinoPageRoute<void>(
-                            builder: (_) => const _ShortVideoSettingsPage(),
-                          ),
-                        );
-                      },
+              const SizedBox(height: 14),
+              CupertinoListSection(
+                margin: EdgeInsets.zero,
+                backgroundColor: const Color(0xFFF4F5F7),
+                separatorColor: const Color(0xFFF5F5F5),
+                children: [
+                  CupertinoListTile(
+                    title: const Text('设置'),
+                    leading: const AppAssetIcon(
+                      assetName: 'settings',
+                      fallbackIcon: CupertinoIcons.gear_alt_fill,
                     ),
-                  ],
-                ),
-                CupertinoListSection(
-                  margin: const EdgeInsets.only(top: 6),
-                  backgroundColor: const Color(0xFFF4F5F7),
-                  separatorColor: const Color(0xFFF5F5F5),
-                  header: const Text('常用功能'),
-                  children: [
-                    CupertinoListTile(
-                      title: const Text('观看历史'),
-                      leading: const AppAssetIcon(
-                        assetName: 'time',
-                        fallbackIcon: CupertinoIcons.time,
-                      ),
-                      trailing: const CupertinoListTileChevron(),
-                      onTap: () {
-                        Navigator.of(context).push(
-                          CupertinoPageRoute<void>(
-                            builder: (_) => const ShortVideoWatchHistoryPage(),
-                          ),
-                        );
-                      },
-                    ),
-                    CupertinoListTile(
-                      title: const Text('文章查看历史'),
-                      leading: const AppAssetIcon(
-                        assetName: 'document-text',
-                        fallbackIcon: CupertinoIcons.doc_text,
-                      ),
-                      trailing: const CupertinoListTileChevron(),
-                      onTap: () {
-                        Navigator.of(context).push(
-                          CupertinoPageRoute<void>(
-                            builder: (_) => const ShortVideoArticleHistoryPage(),
-                          ),
-                        );
-                      },
-                    ),
-                    CupertinoListTile(
-                      title: const Text('我的喜欢'),
-                      leading: const AppAssetIcon(
-                        assetName: 'heart',
-                        fallbackIcon: CupertinoIcons.heart_fill,
-                      ),
-                      trailing: const CupertinoListTileChevron(),
-                      onTap: _handleMyFavorite,
-                    ),
-                    CupertinoListTile(
-                      title: const Text('离线缓存'),
-                      leading: const AppAssetIcon(
-                        assetName: 'arrow-down-circle',
-                        fallbackIcon: CupertinoIcons.arrow_down_circle_fill,
-                      ),
-                      trailing: const CupertinoListTileChevron(),
-                      onTap: () {
-                        Navigator.of(context).push(
-                          CupertinoPageRoute<void>(
-                            builder: (_) => const ShortVideoOfflineCachePage(),
-                          ),
-                        );
-                      },
-                    ),
-                    CupertinoListTile(
-                      title: const Text('稍后再看'),
-                      leading: const AppAssetIcon(
-                        assetName: 'bookmark',
-                        fallbackIcon: CupertinoIcons.bookmark_fill,
-                      ),
-                      trailing: const CupertinoListTileChevron(),
-                      onTap: _handleWatchLater,
-                    ),
-                    CupertinoListTile(
-                      title: const Text('屏蔽管理'),
-                      leading: const AppAssetIcon(
-                        assetName: 'eye-off',
-                        fallbackIcon: CupertinoIcons.eye_slash_fill,
-                      ),
-                      trailing: const CupertinoListTileChevron(),
-                      onTap: () {
-                        Navigator.of(context).push(
-                          CupertinoPageRoute<void>(
-                            builder: (_) => const ShortVideoBlockedManagePage(),
-                          ),
-                        );
-                      },
-                    ),
-                    CupertinoListTile(
-                      title: const Text('我的二维码'),
-                      leading: const AppAssetIcon(
-                        assetName: 'qr-code',
-                        fallbackIcon: CupertinoIcons.qrcode,
-                      ),
-                      trailing: const CupertinoListTileChevron(),
-                      onTap: _handleMyQrcode,
-                    ),
-                    CupertinoListTile(
-                      title: const Text('清理缓存'),
-                      leading: const AppAssetIcon(
-                        assetName: 'trash',
-                        fallbackIcon: CupertinoIcons.delete_solid,
-                      ),
-                      trailing: const CupertinoListTileChevron(),
-                      onTap: _clearShortVideoCache,
-                    ),
-                    if (_isLoggedIn)
-                      CupertinoListTile(
-                        title: const Text(
-                          '退出登录',
-                          style: TextStyle(
-                            color: CupertinoColors.systemRed,
-                            fontWeight: FontWeight.w600,
-                          ),
+                    trailing: const CupertinoListTileChevron(),
+                    onTap: () {
+                      Navigator.of(context).push(
+                        CupertinoPageRoute<void>(
+                          builder: (_) => const _ShortVideoSettingsPage(),
                         ),
-                        leading: const AppAssetIcon(
-                          assetName: 'log-out',
+                      );
+                    },
+                  ),
+                ],
+              ),
+              CupertinoListSection(
+                margin: const EdgeInsets.only(top: 6),
+                backgroundColor: const Color(0xFFF4F5F7),
+                separatorColor: const Color(0xFFF5F5F5),
+                header: const Text('常用功能'),
+                children: [
+                  CupertinoListTile(
+                    title: const Text('观看历史'),
+                    leading: const AppAssetIcon(
+                      assetName: 'time',
+                      fallbackIcon: CupertinoIcons.time,
+                    ),
+                    trailing: const CupertinoListTileChevron(),
+                    onTap: () {
+                      Navigator.of(context).push(
+                        CupertinoPageRoute<void>(
+                          builder: (_) => const ShortVideoWatchHistoryPage(),
+                        ),
+                      );
+                    },
+                  ),
+                  CupertinoListTile(
+                    title: const Text('文章查看历史'),
+                    leading: const AppAssetIcon(
+                      assetName: 'document-text',
+                      fallbackIcon: CupertinoIcons.doc_text,
+                    ),
+                    trailing: const CupertinoListTileChevron(),
+                    onTap: () {
+                      Navigator.of(context).push(
+                        CupertinoPageRoute<void>(
+                          builder: (_) => const ShortVideoArticleHistoryPage(),
+                        ),
+                      );
+                    },
+                  ),
+                  CupertinoListTile(
+                    title: const Text('我的喜欢'),
+                    leading: const AppAssetIcon(
+                      assetName: 'heart',
+                      fallbackIcon: CupertinoIcons.heart_fill,
+                    ),
+                    trailing: const CupertinoListTileChevron(),
+                    onTap: _handleMyFavorite,
+                  ),
+                  CupertinoListTile(
+                    title: const Text('离线缓存'),
+                    leading: const AppAssetIcon(
+                      assetName: 'arrow-down-circle',
+                      fallbackIcon: CupertinoIcons.arrow_down_circle_fill,
+                    ),
+                    trailing: const CupertinoListTileChevron(),
+                    onTap: () {
+                      Navigator.of(context).push(
+                        CupertinoPageRoute<void>(
+                          builder: (_) => const ShortVideoOfflineCachePage(),
+                        ),
+                      );
+                    },
+                  ),
+                  CupertinoListTile(
+                    title: const Text('稍后再看'),
+                    leading: const AppAssetIcon(
+                      assetName: 'bookmark',
+                      fallbackIcon: CupertinoIcons.bookmark_fill,
+                    ),
+                    trailing: const CupertinoListTileChevron(),
+                    onTap: _handleWatchLater,
+                  ),
+                  CupertinoListTile(
+                    title: const Text('屏蔽管理'),
+                    leading: const AppAssetIcon(
+                      assetName: 'eye-off',
+                      fallbackIcon: CupertinoIcons.eye_slash_fill,
+                    ),
+                    trailing: const CupertinoListTileChevron(),
+                    onTap: () {
+                      Navigator.of(context).push(
+                        CupertinoPageRoute<void>(
+                          builder: (_) => const ShortVideoBlockedManagePage(),
+                        ),
+                      );
+                    },
+                  ),
+                  CupertinoListTile(
+                    title: const Text('我的二维码'),
+                    leading: const AppAssetIcon(
+                      assetName: 'qr-code',
+                      fallbackIcon: CupertinoIcons.qrcode,
+                    ),
+                    trailing: const CupertinoListTileChevron(),
+                    onTap: _handleMyQrcode,
+                  ),
+                  CupertinoListTile(
+                    title: const Text('清理缓存'),
+                    leading: const AppAssetIcon(
+                      assetName: 'trash',
+                      fallbackIcon: CupertinoIcons.delete_solid,
+                    ),
+                    trailing: const CupertinoListTileChevron(),
+                    onTap: _clearShortVideoCache,
+                  ),
+                  if (_isLoggedIn)
+                    CupertinoListTile(
+                      title: const Text(
+                        '退出登录',
+                        style: TextStyle(
                           color: CupertinoColors.systemRed,
-                          fallbackIcon: CupertinoIcons.square_arrow_right,
+                          fontWeight: FontWeight.w600,
                         ),
-                        trailing: const CupertinoListTileChevron(),
-                        onTap: _handleLogout,
                       ),
-                  ],
-                ),
+                      leading: const AppAssetIcon(
+                        assetName: 'log-out',
+                        color: CupertinoColors.systemRed,
+                        fallbackIcon: CupertinoIcons.square_arrow_right,
+                      ),
+                      trailing: const CupertinoListTileChevron(),
+                      onTap: _handleLogout,
+                    ),
+                ],
+              ),
             ],
           ),
         ),

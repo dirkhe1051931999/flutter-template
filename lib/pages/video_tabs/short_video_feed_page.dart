@@ -1,5 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
+import 'dart:async';
+import 'package:oolaf_flutted/analytics/analytics_sdk.dart';
 import 'package:oolaf_flutted/api/short_video/comment.dart';
 import 'package:flutter_redux/flutter_redux.dart';
 import 'package:oolaf_flutted/api/short_video/index.dart';
@@ -84,6 +86,10 @@ class ShortVideoFeedPageState extends State<ShortVideoFeedPage>
   final Set<String> _danmakuLoadingVideoIds = <String>{};
   bool _isProgressInteracting = false;
   String? _commentSheetVideoId;
+  String? _lastTrackedExposeVideoId;
+  String? _lastTrackedPlayVideoId;
+  String? _lastTrackedPauseVideoId;
+  String? _lastTrackedCompleteVideoId;
 
   OolafVideoController? _activeStatusObservedController;
   VoidCallback? _activeStatusListener;
@@ -98,6 +104,7 @@ class ShortVideoFeedPageState extends State<ShortVideoFeedPage>
   }
 
   Future<void> _openCommentSheet(ShortVideoItem item) async {
+    unawaited(_trackVideoEvent('video_comment_open', item));
     if (mounted) {
       setState(() {
         _commentSheetVideoId = item.id;
@@ -364,12 +371,17 @@ class ShortVideoFeedPageState extends State<ShortVideoFeedPage>
 
   Future<void> _toggleFavorite(ShortVideoItem item) async {
     const persistence = ShortVideoCollectionPersistence.favorites;
+    final isFavorite = _favoriteVideoIds.contains(item.id);
     if (_favoriteVideoIds.contains(item.id)) {
       await persistence.remove(item.id);
     } else {
       await persistence.save(_collectionEntryOf(item));
     }
     await _loadFavoriteState();
+    unawaited(_trackVideoEvent(
+      isFavorite ? 'video_unfavorite' : 'video_favorite',
+      item,
+    ));
   }
 
   Future<void> _saveWatchLater(ShortVideoItem item) async {
@@ -380,6 +392,37 @@ class ShortVideoFeedPageState extends State<ShortVideoFeedPage>
   Future<void> _copyShareText(ShortVideoItem item) async {
     await Clipboard.setData(
       ClipboardData(text: '${item.title}\n${item.videoUrl}'),
+    );
+    unawaited(_trackVideoEvent('video_share', item));
+  }
+
+  Future<void> _trackVideoEvent(
+    String eventName,
+    ShortVideoItem item, {
+    Map<String, dynamic>? extraProperties,
+  }) {
+    final controller = _getActiveController();
+    final positionMs = controller?.position.value.inMilliseconds ?? 0;
+    final totalDurationMs = controller?.duration.value.inMilliseconds ?? 0;
+    return AnalyticsSdk.instance.track(
+      eventName: eventName,
+      pageUrl: _isChannelFeed ? '/video_tabs/channel_feed' : '/video_tabs/feed',
+      properties: <String, dynamic>{
+        'video_id': item.id,
+        'title': item.title,
+        'content_title': item.title,
+        'content_type': item.type,
+        'source': item.source,
+        'content_source': item.source,
+        'video_url': item.videoUrl,
+        'tab_key': _videoManagerOwnerKey,
+        'active_index': _activeIndex,
+        'watch_duration_ms': positionMs,
+        'position_ms': positionMs,
+        'total_duration_ms': totalDurationMs,
+        if (item.commentsCount.isNotEmpty) 'comments_count': item.commentsCount,
+        if (extraProperties != null) ...extraProperties,
+      },
     );
   }
 
@@ -992,10 +1035,43 @@ class ShortVideoFeedPageState extends State<ShortVideoFeedPage>
       return;
     }
 
+    final activeItem = currentActiveItem;
+    if (activeItem != null &&
+        position > Duration.zero &&
+        !controller.isPlaying.value &&
+        _lastTrackedPauseVideoId != activeItem.id) {
+      _lastTrackedPauseVideoId = activeItem.id;
+      unawaited(
+        _trackVideoEvent(
+          'video_pause',
+          activeItem,
+          extraProperties: <String, dynamic>{
+            'watch_duration_ms': position.inMilliseconds,
+            'position_ms': position.inMilliseconds,
+            'total_duration_ms': duration.inMilliseconds,
+          },
+        ),
+      );
+    }
+
     final threshold = duration - const Duration(milliseconds: 320);
     final reachedEnd = position >= threshold;
     if (!reachedEnd) {
       return;
+    }
+    if (activeItem != null && _lastTrackedCompleteVideoId != activeItem.id) {
+      _lastTrackedCompleteVideoId = activeItem.id;
+      unawaited(
+        _trackVideoEvent(
+          'video_complete',
+          activeItem,
+          extraProperties: <String, dynamic>{
+            'watch_duration_ms': position.inMilliseconds,
+            'position_ms': position.inMilliseconds,
+            'total_duration_ms': duration.inMilliseconds,
+          },
+        ),
+      );
     }
     if (_lastAutoNextTriggeredVideoId == videoId) {
       return;
@@ -1008,6 +1084,25 @@ class ShortVideoFeedPageState extends State<ShortVideoFeedPage>
   Future<void> _onActiveVideoOutputStatusChanged(
     OolafVideoOutputStatus status,
   ) async {
+    final item = currentActiveItem;
+    final controller = _getActiveController();
+    if (item != null &&
+        controller != null &&
+        status == OolafVideoOutputStatus.normal &&
+        controller.isPlaying.value &&
+        _lastTrackedPlayVideoId != item.id) {
+      _lastTrackedPlayVideoId = item.id;
+      _lastTrackedPauseVideoId = null;
+      unawaited(
+        _trackVideoEvent(
+          'video_play',
+          item,
+          extraProperties: <String, dynamic>{
+            'position_ms': controller.position.value.inMilliseconds,
+          },
+        ),
+      );
+    }
     if (mounted) {
       setState(() {});
     }
@@ -1132,8 +1227,15 @@ class ShortVideoFeedPageState extends State<ShortVideoFeedPage>
 
     _activeIndex = index;
     _prefetchDanmakuAroundActive();
+    if (_lastTrackedExposeVideoId != activeItem.id) {
+      _lastTrackedExposeVideoId = activeItem.id;
+      unawaited(_trackVideoEvent('video_expose', activeItem));
+    }
     await _recordWatchHistoryIfEnabled(activeItem);
     _lastAutoNextTriggeredVideoId = null;
+    _lastTrackedPlayVideoId = null;
+    _lastTrackedPauseVideoId = null;
+    _lastTrackedCompleteVideoId = null;
     _videoManager.setSources(
       _buildVideoSources(_items),
     );
@@ -1419,8 +1521,7 @@ class ShortVideoFeedPageState extends State<ShortVideoFeedPage>
     final indicatorOpacity = _isLoading
         ? 1.0
         : (_pullRefreshIndicatorOffset / _pullRefreshTriggerOffset)
-            .clamp(0.0, 1.0)
-            ;
+            .clamp(0.0, 1.0);
     VideoManager.instance.keepWindow = keepWindow;
     final shouldAutoPlayOnEnter =
         _isChannelFeed ? true : (shortVideoState?.autoPlayOnEnter ?? true);

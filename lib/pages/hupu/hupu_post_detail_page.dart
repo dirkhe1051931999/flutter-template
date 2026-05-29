@@ -983,9 +983,9 @@ class _HupuCheckReplySheetState extends State<_HupuCheckReplySheet> {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text(
+                        const Text(
                           '加载失败',
-                          style: const TextStyle(
+                          style: TextStyle(
                             color: Color(0xFF1C1C1E),
                             fontSize: 15,
                             fontWeight: FontWeight.w600,

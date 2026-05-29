@@ -3,6 +3,7 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:media_kit/media_kit.dart';
+import 'package:oolaf_flutted/analytics/analytics_sdk.dart';
 import 'package:oolaf_flutted/bootstrap.dart';
 import 'package:oolaf_flutted/layouts/index.dart';
 import 'package:oolaf_flutted/tools/developer_tools_center.dart';
@@ -25,13 +26,16 @@ void main() {
   runZonedGuarded(() {
     WidgetsFlutterBinding.ensureInitialized();
     MediaKit.ensureInitialized();
-    final bootstrap = createAppBootstrap();
-    runApp(
-      Layout(
-        router: bootstrap.router,
-        store: bootstrap.store,
-      ),
-    );
+    Future<void>(() async {
+      await AnalyticsSdk.instance.init();
+      final bootstrap = createAppBootstrap();
+      runApp(
+        Layout(
+          router: bootstrap.router,
+          store: bootstrap.store,
+        ),
+      );
+    });
   }, (error, stackTrace) {
     DeveloperToolsCenter.instance.recordError(
       source: 'runZonedGuarded',
