@@ -73,7 +73,7 @@ class _OolafRotatingDiscState extends State<OolafRotatingDisc>
                 child: child,
               );
             },
-            child: Container(
+            child: DecoratedBox(
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: const RadialGradient(

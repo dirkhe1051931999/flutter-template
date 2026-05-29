@@ -5,8 +5,8 @@ class ListModel extends INewsCommon {
     super.respStatus,
     super.respInfo,
     super.errorCode,
-    List<ListItem>? respData,
-  }) : super(respData: respData);
+    List<ListItem>? super.respData,
+  });
 
   factory ListModel.fromJson(Map<String, dynamic> json) => ListModel(
         respStatus: json["success"] == true ? "success" : "fail",

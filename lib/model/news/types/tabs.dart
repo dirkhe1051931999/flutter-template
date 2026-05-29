@@ -5,8 +5,8 @@ class TabsModel extends INewsCommon {
     super.respStatus,
     super.respInfo,
     super.errorCode,
-    TabsRespData? respData,
-  }) : super(respData: respData);
+    TabsRespData? super.respData,
+  });
 
   factory TabsModel.fromJson(Map<String, dynamic> json) => TabsModel(
         respStatus: json["success"] == true ? "success" : "fail",

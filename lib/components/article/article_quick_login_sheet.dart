@@ -201,7 +201,7 @@ class _ArticleQuickLoginSheetState extends State<_ArticleQuickLoginSheet> {
                 ),
               ),
               const SizedBox(height: 28),
-              Container(
+              DecoratedBox(
                 decoration: const BoxDecoration(
                   border: Border(
                     bottom: BorderSide(color: Color(0xFFE5E5EA)),
@@ -228,7 +228,7 @@ class _ArticleQuickLoginSheetState extends State<_ArticleQuickLoginSheet> {
                 Row(
                   children: [
                     Expanded(
-                      child: Container(
+                      child: DecoratedBox(
                         decoration: const BoxDecoration(
                           border: Border(
                             bottom: BorderSide(color: Color(0xFFE5E5EA)),

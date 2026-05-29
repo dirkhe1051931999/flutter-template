@@ -22,7 +22,7 @@ class HupuHomeFloatingButton extends StatelessWidget {
         child: AnimatedScale(
           duration: const Duration(milliseconds: 180),
           scale: isEmphasized ? 1 : 0.96,
-          child: Container(
+          child: DecoratedBox(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(999),
               boxShadow: const [

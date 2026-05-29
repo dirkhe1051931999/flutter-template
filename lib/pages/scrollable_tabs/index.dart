@@ -62,7 +62,7 @@ class _ScrollableTabsPageState extends State<ScrollableTabsPage>
     super.dispose();
   }
 
-  void _tabBarListener() async {
+  Future<void> _tabBarListener() async {
     int index = _tabController!.index;
     int tabId = allTabs?.respData?.columnTypeList?[index].id ?? 0;
     if (_newsIdMap[tabId] == null) {

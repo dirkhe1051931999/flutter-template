@@ -413,7 +413,7 @@ class _ShortVideoDanmakuOverlayState extends State<ShortVideoDanmakuOverlay>
             .clamp(140, 360)
             .toDouble();
     final trackCount =
-        (safeTrackHeight / _trackHeight).floor().clamp(4, 10).toInt();
+        (safeTrackHeight / _trackHeight).floor().clamp(4, 10);
 
     final needRebuild = _renderEntries.isEmpty ||
         (width - _lastLayoutWidth).abs() > 0.1 ||
@@ -645,7 +645,7 @@ class _ShortVideoDanmakuOverlayState extends State<ShortVideoDanmakuOverlay>
                 opacity: widget.opacity,
                 fontScale: widget.fontScale,
                 fontWeightValue: widget.fontWeight,
-                isFrozen: (_freezeStates[entry.id]?.isActive ?? false),
+                isFrozen: _freezeStates[entry.id]?.isActive ?? false,
                 onHoverChanged: (hovering) {
                   _setDanmakuHovering(
                     entry: entry,

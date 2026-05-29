@@ -7,13 +7,13 @@ import 'package:pull_to_refresh/pull_to_refresh.dart';
 
 class TabContent extends StatefulWidget {
   const TabContent({
-    Key? key,
+    super.key,
     required this.tabId,
     required this.newsIdMap,
     required this.pullToRefresh,
     required this.moreLoad,
     required this.itemTap,
-  }) : super(key: key);
+  });
   final int tabId;
   final Map<int, List<ListModel?>> newsIdMap;
   final Function(int, RefreshController) pullToRefresh;
@@ -44,13 +44,13 @@ class _TabContentState extends State<TabContent> {
 
 class CommonPage extends StatelessWidget {
   CommonPage({
-    Key? key,
+    super.key,
     required List<ListModel?> this.newsList,
     required this.tabId,
     required this.pullToRefresh,
     required this.moreLoad,
     required this.itemTap,
-  }) : super(key: key);
+  });
   final List<ListModel?>? newsList;
   final int tabId;
   final Function(int, RefreshController) pullToRefresh;

@@ -10,8 +10,7 @@ import 'package:marquee/marquee.dart';
 
 class ScrollableTabsDetailPage extends StatefulWidget {
   const ScrollableTabsDetailPage(
-      {Key? key, required this.title, required this.id})
-      : super(key: key);
+      {super.key, required this.title, required this.id});
   final String title;
   final int id;
 

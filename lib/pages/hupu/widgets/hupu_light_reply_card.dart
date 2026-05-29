@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:oolaf_flutted/api/hupu/index.dart';
 import 'package:oolaf_flutted/components/network_img/index.dart';
+import 'package:oolaf_flutted/model/hupu/index.dart';
 
 class HupuLightReplyCard extends StatelessWidget {
   const HupuLightReplyCard({

@@ -118,9 +118,10 @@ class _ShortVideoImageGalleryPageState extends State<_ShortVideoImageGalleryPage
   late int _currentIndex;
   double _verticalDragOffset = 0;
   bool _isCurrentImageZoomed = false;
+  bool _isCurrentImageHandlingVerticalDrag = false;
 
   double get _backgroundOpacity {
-    final progress = (_verticalDragOffset.abs() / 220).clamp(0.0, 0.7).toDouble();
+    final progress = (_verticalDragOffset.abs() / 220).clamp(0.0, 0.7);
     return 1 - progress;
   }
 
@@ -138,7 +139,7 @@ class _ShortVideoImageGalleryPageState extends State<_ShortVideoImageGalleryPage
   }
 
   void _handleVerticalDragUpdate(DragUpdateDetails details) {
-    if (_isCurrentImageZoomed) {
+    if (_isCurrentImageHandlingVerticalDrag) {
       return;
     }
     final delta = details.primaryDelta;
@@ -151,7 +152,7 @@ class _ShortVideoImageGalleryPageState extends State<_ShortVideoImageGalleryPage
   }
 
   void _handleVerticalDragEnd(DragEndDetails details) {
-    if (_isCurrentImageZoomed) {
+    if (_isCurrentImageHandlingVerticalDrag) {
       return;
     }
     final velocity = details.primaryVelocity ?? 0;
@@ -182,9 +183,14 @@ class _ShortVideoImageGalleryPageState extends State<_ShortVideoImageGalleryPage
                 child: galleryWrapWithDesktopFriendlyScrollBehavior(
                   GestureDetector(
                     behavior: HitTestBehavior.translucent,
-                    onVerticalDragUpdate: _handleVerticalDragUpdate,
-                    onVerticalDragEnd: _handleVerticalDragEnd,
+                    onVerticalDragUpdate:
+                        _isCurrentImageZoomed ? null : _handleVerticalDragUpdate,
+                    onVerticalDragEnd:
+                        _isCurrentImageZoomed ? null : _handleVerticalDragEnd,
                     onVerticalDragCancel: () {
+                      if (_isCurrentImageZoomed) {
+                        return;
+                      }
                       setState(() {
                         _verticalDragOffset = 0;
                       });
@@ -199,6 +205,7 @@ class _ShortVideoImageGalleryPageState extends State<_ShortVideoImageGalleryPage
                         setState(() {
                           _currentIndex = index;
                           _isCurrentImageZoomed = false;
+                          _isCurrentImageHandlingVerticalDrag = false;
                         });
                       },
                       itemBuilder: (context, index) {
@@ -212,6 +219,17 @@ class _ShortVideoImageGalleryPageState extends State<_ShortVideoImageGalleryPage
                               }
                               setState(() {
                                 _isCurrentImageZoomed = isZoomed;
+                              });
+                            },
+                            onVerticalGestureHandlingChanged: (isHandlingVerticalDrag) {
+                              if (_currentIndex != index ||
+                                  _isCurrentImageHandlingVerticalDrag ==
+                                      isHandlingVerticalDrag) {
+                                return;
+                              }
+                              setState(() {
+                                _isCurrentImageHandlingVerticalDrag =
+                                    isHandlingVerticalDrag;
                               });
                             },
                           ),
@@ -244,7 +262,7 @@ class _ShortVideoImageGalleryPageState extends State<_ShortVideoImageGalleryPage
                     ),
                     child: Row(
                       children: [
-                        Container(
+                        DecoratedBox(
                           decoration: BoxDecoration(
                             color: const Color(0x55000000),
                             borderRadius: BorderRadius.circular(999),
@@ -305,9 +323,11 @@ class _ShortVideoImageGalleryPageState extends State<_ShortVideoImageGalleryPage
                         color: const Color(0x55000000),
                         borderRadius: BorderRadius.circular(999),
                       ),
-                      child: const Text(
-                        '左右切图，双击放大，下滑关闭',
-                        style: TextStyle(
+                      child: Text(
+                        _isCurrentImageZoomed
+                            ? '缩放中可拖动画面，双指合拢退出'
+                            : '左右切图，双击放大，下滑关闭',
+                        style: const TextStyle(
                           color: CupertinoColors.white,
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
@@ -329,10 +349,12 @@ class _GalleryZoomableImage extends StatefulWidget {
   const _GalleryZoomableImage({
     required this.imageUrl,
     required this.onInteractionStateChanged,
+    required this.onVerticalGestureHandlingChanged,
   });
 
   final String imageUrl;
   final ValueChanged<bool> onInteractionStateChanged;
+  final ValueChanged<bool> onVerticalGestureHandlingChanged;
 
   @override
   State<_GalleryZoomableImage> createState() => _GalleryZoomableImageState();
@@ -347,6 +369,7 @@ class _GalleryZoomableImageState extends State<_GalleryZoomableImage>
   bool _hasImageFrame = false;
   Animation<Matrix4>? _zoomAnimation;
   bool _isZoomed = false;
+  bool _isHandlingVerticalDrag = false;
   Size? _rawImageSize;
   ImageStream? _imageStream;
   ImageStreamListener? _imageStreamListener;
@@ -425,6 +448,54 @@ class _GalleryZoomableImageState extends State<_GalleryZoomableImage>
     widget.onInteractionStateChanged(isZoomed);
   }
 
+  bool _isLongImage(Size viewportSize) {
+    final imageSize = _rawImageSize;
+    if (imageSize == null || imageSize.width <= 0 || imageSize.height <= 0) {
+      return false;
+    }
+
+    final widthFittedHeight = viewportSize.width * imageSize.height / imageSize.width;
+    return widthFittedHeight > viewportSize.height * 1.15;
+  }
+
+  Size _contentSize(Size viewportSize) {
+    final imageSize = _rawImageSize;
+    if (imageSize == null || imageSize.width <= 0 || imageSize.height <= 0) {
+      return viewportSize;
+    }
+
+    if (_isLongImage(viewportSize)) {
+      return Size(
+        viewportSize.width,
+        viewportSize.width * imageSize.height / imageSize.width,
+      );
+    }
+
+    final imageAspectRatio = imageSize.width / imageSize.height;
+    final viewportAspectRatio = viewportSize.width / viewportSize.height;
+    if (imageAspectRatio > viewportAspectRatio) {
+      return Size(viewportSize.width, viewportSize.width / imageAspectRatio);
+    }
+    return Size(viewportSize.height * imageAspectRatio, viewportSize.height);
+  }
+
+  void _notifyVerticalGestureHandling(Size viewportSize) {
+    final scale = _transformationController.value.getMaxScaleOnAxis();
+    final contentSize = _contentSize(viewportSize);
+    final shouldHandle =
+        scale > 1.01 || contentSize.height > viewportSize.height + 0.5;
+    if (_isHandlingVerticalDrag == shouldHandle) {
+      return;
+    }
+    _isHandlingVerticalDrag = shouldHandle;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+      widget.onVerticalGestureHandlingChanged(shouldHandle);
+    });
+  }
+
   void _animateTo(Matrix4 target) {
     _zoomAnimation = Matrix4Tween(
       begin: _transformationController.value,
@@ -452,33 +523,31 @@ class _GalleryZoomableImageState extends State<_GalleryZoomableImage>
       ..scaleByDouble(scale, scale, 1, 1);
   }
 
-  Size _displayedImageSize(Size viewportSize) {
-    final imageSize = _rawImageSize;
-    if (imageSize == null || imageSize.width <= 0 || imageSize.height <= 0) {
-      return viewportSize;
-    }
-    final imageAspectRatio = imageSize.width / imageSize.height;
-    final viewportAspectRatio = viewportSize.width / viewportSize.height;
-    if (imageAspectRatio > viewportAspectRatio) {
-      return Size(viewportSize.width, viewportSize.width / imageAspectRatio);
-    }
-    return Size(viewportSize.height * imageAspectRatio, viewportSize.height);
-  }
-
   ({double minDx, double maxDx, double minDy, double maxDy}) _translationBounds(
     Size viewportSize,
     double scale,
   ) {
-    final baseSize = _displayedImageSize(viewportSize);
+    final baseSize = _contentSize(viewportSize);
     final scaledWidth = baseSize.width * scale;
     final scaledHeight = baseSize.height * scale;
-    final horizontalOverflow = ((scaledWidth - viewportSize.width) / 2).clamp(0.0, double.infinity);
-    final verticalOverflow = ((scaledHeight - viewportSize.height) / 2).clamp(0.0, double.infinity);
+    final isLongImage = _isLongImage(viewportSize);
+
+    final horizontalInset = scaledWidth <= viewportSize.width
+        ? (viewportSize.width - scaledWidth) / 2
+        : 0.0;
+    final verticalInset = scaledHeight <= viewportSize.height
+        ? (isLongImage ? 0.0 : (viewportSize.height - scaledHeight) / 2)
+        : 0.0;
+
     return (
-      minDx: -horizontalOverflow,
-      maxDx: horizontalOverflow,
-      minDy: -verticalOverflow,
-      maxDy: verticalOverflow,
+      minDx: scaledWidth <= viewportSize.width
+          ? horizontalInset
+          : viewportSize.width - scaledWidth,
+      maxDx: scaledWidth <= viewportSize.width ? horizontalInset : 0.0,
+      minDy: scaledHeight <= viewportSize.height
+          ? verticalInset
+          : viewportSize.height - scaledHeight,
+      maxDy: scaledHeight <= viewportSize.height ? verticalInset : 0.0,
     );
   }
 
@@ -520,25 +589,25 @@ class _GalleryZoomableImageState extends State<_GalleryZoomableImage>
     final box = context.findRenderObject() as RenderBox?;
     final viewportSize = box?.size;
     if (viewportSize == null) {
-      _animateTo(Matrix4.identity()..scaleByDouble(zoomScale, zoomScale, 1, 1));
+      _animateTo(
+        Matrix4.identity()..scaleByDouble(zoomScale, zoomScale, 1, 1),
+      );
       return;
     }
-    final displayedSize = _displayedImageSize(viewportSize);
-    final imageOrigin = Offset(
-      (viewportSize.width - displayedSize.width) / 2,
-      (viewportSize.height - displayedSize.height) / 2,
-    );
+    final displayedSize = _contentSize(viewportSize);
+    final baseBounds = _translationBounds(viewportSize, 1);
+    final imageOrigin = Offset(baseBounds.minDx, baseBounds.minDy);
     final normalizedAnchor = Offset(
       ((position.dx - imageOrigin.dx) / displayedSize.width).clamp(0.0, 1.0),
       ((position.dy - imageOrigin.dy) / displayedSize.height).clamp(0.0, 1.0),
     );
-    final anchorOnImage = Offset(
-      imageOrigin.dx + displayedSize.width * normalizedAnchor.dx,
-      imageOrigin.dy + displayedSize.height * normalizedAnchor.dy,
+    final localAnchor = Offset(
+      displayedSize.width * normalizedAnchor.dx,
+      displayedSize.height * normalizedAnchor.dy,
     );
     final zoomedOffset = Offset(
-      -anchorOnImage.dx * (zoomScale - 1),
-      -anchorOnImage.dy * (zoomScale - 1),
+      position.dx - localAnchor.dx * zoomScale,
+      position.dy - localAnchor.dy * zoomScale,
     );
     final zoomed = _normalizedTransform(
       _matrixFor(zoomScale, zoomedOffset),
@@ -551,6 +620,10 @@ class _GalleryZoomableImageState extends State<_GalleryZoomableImage>
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
+        final viewportSize = Size(constraints.maxWidth, constraints.maxHeight);
+        final contentSize = _contentSize(viewportSize);
+        _notifyVerticalGestureHandling(viewportSize);
+
         return GestureDetector(
           onDoubleTapDown: (details) {
             _doubleTapDetails = details;
@@ -575,42 +648,30 @@ class _GalleryZoomableImageState extends State<_GalleryZoomableImage>
               _zoomAnimation = null;
             },
             onInteractionEnd: (_) {
-              _handleInteractionEnd(
-                Size(constraints.maxWidth, constraints.maxHeight),
-              );
+              _handleInteractionEnd(viewportSize);
             },
             child: SizedBox(
               width: constraints.maxWidth,
               height: constraints.maxHeight,
-              child: SizedBox(
-                width: constraints.maxWidth,
-                height: constraints.maxHeight,
-                child: Center(
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: AnimatedOpacity(
-                      duration: const Duration(milliseconds: 220),
-                      opacity: _hasImageFrame ? 1 : 0,
-                      curve: Curves.easeOut,
-                      child: CustomNetworkImage(
-                        widget.imageUrl,
-                        fit: BoxFit.contain,
-                        frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
-                          if (wasSynchronouslyLoaded || frame != null) {
-                            if (!_hasImageFrame) {
-                              WidgetsBinding.instance.addPostFrameCallback((_) {
-                                if (!mounted) {
-                                  return;
-                                }
-                                setState(() {
-                                  _hasImageFrame = true;
-                                });
-                              });
-                            }
-                          }
-                          return child;
-                        },
-                        errorBuilder: (_, __, ___) {
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: AnimatedOpacity(
+                  duration: const Duration(milliseconds: 220),
+                  opacity: _hasImageFrame ? 1 : 0,
+                  curve: Curves.easeOut,
+                  child: SizedBox(
+                    width: contentSize.width,
+                    height: contentSize.height,
+                    child: CustomNetworkImage(
+                      widget.imageUrl,
+                      fit: BoxFit.fill,
+                      frameBuilder: (
+                        context,
+                        child,
+                        frame,
+                        wasSynchronouslyLoaded,
+                      ) {
+                        if (wasSynchronouslyLoaded || frame != null) {
                           if (!_hasImageFrame) {
                             WidgetsBinding.instance.addPostFrameCallback((_) {
                               if (!mounted) {
@@ -621,18 +682,31 @@ class _GalleryZoomableImageState extends State<_GalleryZoomableImage>
                               });
                             });
                           }
-                          return const Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 24),
-                            child: Text(
-                              '图片加载失败',
-                              style: TextStyle(
-                                color: CupertinoColors.white,
-                                fontSize: 16,
-                              ),
+                        }
+                        return child;
+                      },
+                      errorBuilder: (_, __, ___) {
+                        if (!_hasImageFrame) {
+                          WidgetsBinding.instance.addPostFrameCallback((_) {
+                            if (!mounted) {
+                              return;
+                            }
+                            setState(() {
+                              _hasImageFrame = true;
+                            });
+                          });
+                        }
+                        return const Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 24),
+                          child: Text(
+                            '图片加载失败',
+                            style: TextStyle(
+                              color: CupertinoColors.white,
+                              fontSize: 16,
                             ),
-                          );
-                        },
-                      ),
+                          ),
+                        );
+                      },
                     ),
                   ),
                 ),

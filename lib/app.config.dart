@@ -28,9 +28,13 @@ class AppConfig {
     'SHORT_VIDEO_COMMENT_UPLOAD_URL',
     defaultValue: 'https://transmission.ifeng.com/upload',
   );
-  static const hupuBaseUrl = String.fromEnvironment(
-    'HUPU_BASE_URL',
+  static const hupuGamesBaseUrl = String.fromEnvironment(
+    'HUPU_GAMES_BASE_URL',
     defaultValue: 'https://games.mobileapi.hupu.com',
+  );
+  static const hupuBbsBaseUrl = String.fromEnvironment(
+    'HUPU_BBS_BASE_URL',
+    defaultValue: 'https://bbs.mobileapi.hupu.com',
   );
   static const shortVideoCommentLToken = String.fromEnvironment(
     'SHORT_VIDEO_COMMENT_LTOKEN',

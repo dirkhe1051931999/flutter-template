@@ -9,7 +9,7 @@ class FluroPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    void tappedMenuButton(BuildContext context, {required String key}) async {
+    Future<void> tappedMenuButton(BuildContext context, {required String key}) async {
       String message = "";
       String hexCode = "";
       TransitionType transitionType = TransitionType.native;

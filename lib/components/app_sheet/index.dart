@@ -13,6 +13,7 @@ Future<T?> showAppSheet<T>({
   Color backgroundColor = Colors.white,
   bool enableBlur = false,
   bool edgeToEdge = false,
+  bool showHandle = true,
 }) {
   return showGeneralDialog<T>(
     context: context,
@@ -27,6 +28,7 @@ Future<T?> showAppSheet<T>({
         backgroundColor: backgroundColor,
         enableBlur: enableBlur,
         edgeToEdge: edgeToEdge,
+        showHandle: showHandle,
         child: builder(context),
       );
     },
@@ -57,8 +59,9 @@ class AppSheet extends StatelessWidget {
     this.maxHeightFactor,
     this.padding,
     this.backgroundColor = Colors.white,
-    this.enableBlur = false,
-    this.edgeToEdge = false,
+  this.enableBlur = false,
+  this.edgeToEdge = false,
+  this.showHandle = true,
   });
 
   final Widget child;
@@ -68,6 +71,7 @@ class AppSheet extends StatelessWidget {
   final Color backgroundColor;
   final bool enableBlur;
   final bool edgeToEdge;
+  final bool showHandle;
 
   @override
   Widget build(BuildContext context) {
@@ -104,12 +108,14 @@ class AppSheet extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              AppSheetHandle(
-                color: backgroundColor.computeLuminance() < 0.35
-                    ? const Color(0x66FFFFFF)
-                    : const Color(0xFFD1D1D6),
-              ),
-              const SizedBox(height: 12),
+              if (showHandle) ...[
+                AppSheetHandle(
+                  color: backgroundColor.computeLuminance() < 0.35
+                      ? const Color(0x66FFFFFF)
+                      : const Color(0xFFD1D1D6),
+                ),
+                const SizedBox(height: 12),
+              ],
               Flexible(child: child),
             ],
           ),

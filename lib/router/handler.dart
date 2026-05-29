@@ -5,6 +5,7 @@ import 'package:oolaf_flutted/layouts/app_wrap/index.dart';
 import 'package:oolaf_flutted/pages/fluro/index.dart';
 import 'package:oolaf_flutted/pages/home/index.dart';
 import 'package:oolaf_flutted/pages/hupu/index.dart';
+import 'package:oolaf_flutted/pages/hupu/hupu_post_detail_page.dart';
 import 'package:oolaf_flutted/pages/oolaf_dynamic_audio/index.dart';
 import 'package:oolaf_flutted/pages/profile/index.dart';
 import 'package:oolaf_flutted/pages/request/index.dart';
@@ -176,5 +177,22 @@ var hupuRouteHandler = Handler(
     Map<String, List<String>> params,
   ) {
     return const HupuPage();
+  },
+);
+var hupuPostDetailRouteHandler = Handler(
+  handlerFunc: (
+    BuildContext? context,
+    Map<String, List<String>> params,
+  ) {
+    final tid = params['tid']?.first ?? '';
+    final fid = params['fid']?.first ?? '';
+    final topicId = int.tryParse(params['topicId']?.first ?? '') ?? 0;
+    final title = params['title']?.first ?? '';
+    return HupuPostDetailPage(
+      tid: tid,
+      fid: fid,
+      topicId: topicId,
+      initialTitle: title,
+    );
   },
 );

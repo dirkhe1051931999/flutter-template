@@ -89,14 +89,14 @@ class _LoginCaptchaDialogState extends State<LoginCaptchaDialog> {
       return;
     }
     final localPosition = details.localPosition;
-    final safeX = localPosition.dx.clamp(0.0, size.width).toDouble();
-    final safeY = localPosition.dy.clamp(0.0, size.height).toDouble();
+    final safeX = localPosition.dx.clamp(0.0, size.width);
+    final safeY = localPosition.dy.clamp(0.0, size.height);
     final scaledX = (safeX / size.width * _canonicalImageWidth)
         .clamp(0.0, _canonicalImageWidth)
-        .toDouble();
+        ;
     final scaledY = (safeY / size.height * _canonicalImageHeight)
         .clamp(0.0, _canonicalImageHeight)
-        .toDouble();
+        ;
     setState(() {
       _points.add(
         LoginCaptchaPoint(
@@ -365,10 +365,10 @@ class _CaptchaTapArea extends StatelessWidget {
                   Positioned(
                     left: (points[index].displayX - 12)
                         .clamp(0.0, width - 24)
-                        .toDouble(),
+                        ,
                     top: (points[index].displayY - 12)
                         .clamp(0.0, height - 24)
-                        .toDouble(),
+                        ,
                     child: Container(
                       width: 24,
                       height: 24,

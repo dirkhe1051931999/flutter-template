@@ -175,6 +175,22 @@ void main() {
 - 页面 Widget 不直接承担网络 client、router、store 初始化职责。
 - 可复用 UI 抽成 components，业务页面放 pages。
 
+## UI 框架与视觉规范（必须）
+
+目标：界面风格统一贴近 iOS，避免 Android/Material 视觉混用。
+
+### 规则
+
+- 业务 UI 默认只能使用 Cupertino 体系组件（`Cupertino*`）。
+- 禁止在业务页面和业务组件中引入或使用 Material 风格组件，例如 `Scaffold`、`AppBar`、`Material`、`Card`、`ElevatedButton`、`TextButton`、`FloatingActionButton`、`SnackBar`、`TabBar`、`PopupMenuButton`、`BottomNavigationBar` 等。
+- 禁止 `import 'package:flutter/material.dart'` 作为业务 UI 依赖；已有代码改造时优先替换为 `cupertino.dart`，必要时只保留 `widgets.dart` / `painting.dart` 等基础能力。
+- 交互反馈、弹窗、路由过渡、导航栏样式应优先使用 iOS 语义与动效（例如 `CupertinoPageScaffold`、`CupertinoNavigationBar`、`CupertinoButton`、`CupertinoDialog`、`CupertinoActionSheet`）。
+- 新增页面或重构页面时，视觉细节（间距、圆角、排版、层级、反馈）必须优先对齐 iOS，而不是 Android Material 风格。
+
+### 例外约束
+
+- 仅在 Flutter/Cupertino 不提供等价能力且明确说明原因时，允许最小范围使用 Material 能力；且不得引入可见的 Material 风格外观。
+
 ## 命名规则
 
 ### 错误写法

@@ -123,7 +123,7 @@ class ShortVideoArticleBodyHelper {
       if (headingTags.contains(localName)) {
         addTextNode((node.text ?? '').toString(), emphasized: true);
         for (final child in childElements) {
-          final childName = ((child.localName ?? '')).toString().toLowerCase();
+          final childName = (child.localName ?? '').toString().toLowerCase();
           if (childName == 'img') {
             addImageNode((child.attributes['src'] ?? '').toString());
           }
@@ -134,7 +134,7 @@ class ShortVideoArticleBodyHelper {
       if (blockTags.contains(localName)) {
         var hasImageChild = false;
         for (final child in childElements) {
-          final childName = ((child.localName ?? '')).toString().toLowerCase();
+          final childName = (child.localName ?? '').toString().toLowerCase();
           if (childName == 'img') {
             hasImageChild = true;
             break;

@@ -4,7 +4,7 @@ import 'package:oolaf_flutted/store/index.dart';
 import 'package:oolaf_flutted/store/todolist/type.dart';
 
 class AddWidget extends StatelessWidget {
-  const AddWidget({Key? key, required this.controller}) : super(key: key);
+  const AddWidget({super.key, required this.controller});
   final TextEditingController? controller;
 
   @override

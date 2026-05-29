@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:oolaf_flutted/api/hupu/index.dart';
 import 'package:oolaf_flutted/components/network_img/index.dart';
+import 'package:oolaf_flutted/model/hupu/index.dart';
 
 const double _hupuMediaPreviewMaxHeight = 220;
 
@@ -29,8 +29,8 @@ class HupuMediaBlock extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         child: LayoutBuilder(
           builder: (context, constraints) {
-            final aspectRatio =
-                video?.aspectRatio ?? _imageGridAspectRatio(previewImages.length);
+            final aspectRatio = video?.aspectRatio ??
+                _imageGridAspectRatio(previewImages.length);
             final maxWidth = constraints.maxWidth.isFinite
                 ? constraints.maxWidth
                 : MediaQuery.of(context).size.width;
@@ -89,7 +89,8 @@ class HupuMediaBlock extends StatelessWidget {
                     right: 10,
                     bottom: 10,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
                         color: const Color(0xB3000000),
                         borderRadius: BorderRadius.circular(999),

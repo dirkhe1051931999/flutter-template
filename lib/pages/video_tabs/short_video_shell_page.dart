@@ -706,9 +706,9 @@ class _ShortVideoProfilePageState extends State<_ShortVideoProfilePage> {
                                   _displayAvatarUrl,
                                   fit: BoxFit.cover,
                                 )
-                              : Container(
-                                  color: const Color(0xFFF2F3F5),
-                                  child: const Icon(
+                              : const ColoredBox(
+                                  color: Color(0xFFF2F3F5),
+                                  child: Icon(
                                     CupertinoIcons.person_crop_circle_fill,
                                     size: 42,
                                     color: Color(0xFFB8BDC7),

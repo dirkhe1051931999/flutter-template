@@ -3,10 +3,10 @@ import 'dart:ui';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
-import 'package:oolaf_flutted/api/hupu/index.dart';
 import 'package:oolaf_flutted/components/app_asset_icon/index.dart';
 import 'package:oolaf_flutted/components/network_img/index.dart';
 import 'package:oolaf_flutted/components/short_video/short_video_player_wrapper.dart';
+import 'package:oolaf_flutted/model/hupu/index.dart';
 import 'package:oolaf_flutted/utils/oolaf_video_controller.dart';
 import 'package:oolaf_flutted/utils/video_manager.dart';
 
@@ -290,7 +290,8 @@ class _HupuVideoQueuePageState extends State<HupuVideoQueuePage>
                   ),
                   const SizedBox(height: 18),
                   CupertinoButton(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 10),
                     color: const Color(0x1AFFFFFF),
                     borderRadius: BorderRadius.circular(18),
                     onPressed: () => Navigator.of(context).maybePop(),
@@ -327,7 +328,8 @@ class _HupuVideoQueuePageState extends State<HupuVideoQueuePage>
           itemBuilder: (context, index) {
             final item = _videoItems[index];
             return _HupuVideoPageItem(
-              key: ValueKey<String>('hupu_video_page_${item.uniqueKey}_$_playerRefreshEpoch'),
+              key: ValueKey<String>(
+                  'hupu_video_page_${item.uniqueKey}_$_playerRefreshEpoch'),
               item: item,
               controller: _controllerOf(item),
               isActive: index == _activeIndex,
@@ -385,7 +387,7 @@ class _CollapseHandleButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return DecoratedBox(
       decoration: BoxDecoration(
         border: Border.all(color: const Color(0x4DFFFFFF)),
         shape: BoxShape.circle,
@@ -462,7 +464,7 @@ class _TopActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return DecoratedBox(
       decoration: BoxDecoration(
         color: const Color(0x1FFFFFFF),
         borderRadius: BorderRadius.circular(16),
@@ -709,7 +711,8 @@ class _HupuVideoPageItem extends StatelessWidget {
                                 crossAxisAlignment: CrossAxisAlignment.center,
                                 children: [
                                   if (!isDetailsExpanded) ...[
-                                    _ExpandHandleButton(onPressed: onExpandDetails),
+                                    _ExpandHandleButton(
+                                        onPressed: onExpandDetails),
                                     const SizedBox(width: 10),
                                   ],
                                   ClipOval(
@@ -722,10 +725,13 @@ class _HupuVideoPageItem extends StatelessWidget {
                                   const SizedBox(width: 12),
                                   Expanded(
                                     child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Text(
-                                          item.nickname.isEmpty ? '虎扑用户' : item.nickname,
+                                          item.nickname.isEmpty
+                                              ? '虎扑用户'
+                                              : item.nickname,
                                           maxLines: 1,
                                           overflow: TextOverflow.ellipsis,
                                           style: const TextStyle(
@@ -750,7 +756,8 @@ class _HupuVideoPageItem extends StatelessWidget {
                                     ),
                                   ),
                                   Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 10, vertical: 6),
                                     decoration: BoxDecoration(
                                       color: const Color(0x1FFFFFFF),
                                       borderRadius: BorderRadius.circular(999),
@@ -766,7 +773,8 @@ class _HupuVideoPageItem extends StatelessWidget {
                                   ),
                                   if (isDetailsExpanded) ...[
                                     const SizedBox(width: 10),
-                                    _CollapseHandleButton(onPressed: onCollapseDetails),
+                                    _CollapseHandleButton(
+                                        onPressed: onCollapseDetails),
                                   ],
                                 ],
                               ),
@@ -777,7 +785,8 @@ class _HupuVideoPageItem extends StatelessWidget {
                                 alignment: Alignment.topCenter,
                                 child: isDetailsExpanded
                                     ? Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
                                         children: [
                                           Text(
                                             item.title,
@@ -804,11 +813,19 @@ class _HupuVideoPageItem extends StatelessWidget {
                                             spacing: 8,
                                             runSpacing: 8,
                                             children: [
-                                              _InfoChip(label: item.topicName.isEmpty ? '未分类' : item.topicName),
-                                              _InfoChip(label: '${item.replies}回复'),
-                                              _InfoChip(label: '${item.lights}亮了'),
-                                              if (video.bulletCommentCount.isNotEmpty)
-                                                _InfoChip(label: '${video.bulletCommentCount}弹幕'),
+                                              _InfoChip(
+                                                  label: item.topicName.isEmpty
+                                                      ? '未分类'
+                                                      : item.topicName),
+                                              _InfoChip(
+                                                  label: '${item.replies}回复'),
+                                              _InfoChip(
+                                                  label: '${item.lights}亮了'),
+                                              if (video.bulletCommentCount
+                                                  .isNotEmpty)
+                                                _InfoChip(
+                                                    label:
+                                                        '${video.bulletCommentCount}弹幕'),
                                             ],
                                           ),
                                           const SizedBox(height: 14),
@@ -817,21 +834,27 @@ class _HupuVideoPageItem extends StatelessWidget {
                                               Expanded(
                                                 child: _StatCapsule(
                                                   title: '播放热度',
-                                                  value: video.playCount.isEmpty ? '--' : video.playCount,
+                                                  value: video.playCount.isEmpty
+                                                      ? '--'
+                                                      : video.playCount,
                                                 ),
                                               ),
                                               const SizedBox(width: 10),
                                               Expanded(
                                                 child: _StatCapsule(
                                                   title: '视频时长',
-                                                  value: video.duration.isEmpty ? '--' : video.duration,
+                                                  value: video.duration.isEmpty
+                                                      ? '--'
+                                                      : video.duration,
                                                 ),
                                               ),
                                               const SizedBox(width: 10),
                                               Expanded(
                                                 child: _StatCapsule(
                                                   title: '文件大小',
-                                                  value: video.size.isEmpty ? '--' : video.size,
+                                                  value: video.size.isEmpty
+                                                      ? '--'
+                                                      : video.size,
                                                 ),
                                               ),
                                             ],
@@ -856,8 +879,10 @@ class _HupuVideoPageItem extends StatelessWidget {
                   child: isActive
                       ? Center(
                           child: Container(
-                            key: ValueKey<String>('queue_hint_${item.uniqueKey}'),
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                            key: ValueKey<String>(
+                                'queue_hint_${item.uniqueKey}'),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 7),
                             decoration: BoxDecoration(
                               color: const Color(0x33000000),
                               borderRadius: BorderRadius.circular(999),
@@ -873,13 +898,12 @@ class _HupuVideoPageItem extends StatelessWidget {
                           ),
                         )
                       : const SizedBox.shrink(),
-                  ),
+                ),
               ],
             ),
           ),
         ),
-        if (!isActive)
-          const SizedBox.shrink(),
+        if (!isActive) const SizedBox.shrink(),
       ],
     );
   }

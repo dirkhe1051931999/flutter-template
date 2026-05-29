@@ -50,6 +50,18 @@ This repository uses `.windsurfrules` as a source of truth for engineering style
 - Reusable UI belongs in `lib/components/**`.
 - Do not perform request client, router, or store initialization inside page widgets.
 
+## UI Framework And Visual Style (Required)
+
+- Business UI must use Cupertino widgets by default (`Cupertino*`).
+- Do not use Material-style widgets in feature pages/components, including `Scaffold`, `AppBar`, `Material`, `Card`, `ElevatedButton`, `TextButton`, `FloatingActionButton`, `SnackBar`, `TabBar`, `PopupMenuButton`, and `BottomNavigationBar`.
+- Do not rely on `package:flutter/material.dart` for business UI; prefer `cupertino.dart`, and only keep minimal base Flutter imports when needed.
+- Interaction feedback, dialogs, navigation transitions, and top/bottom bars should follow iOS conventions first.
+- New or refactored UI should visually align closer to iOS, not Android Material.
+
+## UI Style Exception
+
+- If Cupertino has no equivalent capability, Material usage is allowed only in a minimal, isolated way, and must not expose obvious Material visual style.
+
 ## UI Data Rules
 
 - In `lib/pages/**`, do not use `json['xx']` or `response.data['xx']` for direct rendering.

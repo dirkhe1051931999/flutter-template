@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 
 class PageScaffold extends StatelessWidget {
   const PageScaffold({
-    Key? key,
+    super.key,
     required this.title,
     required this.widget,
-  }) : super(key: key);
+  });
 
   final String title;
   final Widget widget;

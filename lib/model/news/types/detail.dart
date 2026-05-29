@@ -6,8 +6,8 @@ class DetailModel extends INewsCommon {
     super.respStatus,
     super.respInfo,
     super.errorCode,
-    DetailRespData? respData,
-  }) : super(respData: respData);
+    DetailRespData? super.respData,
+  });
 
   factory DetailModel.fromJson(Map<String, dynamic> json, [int? id]) =>
       DetailModel(

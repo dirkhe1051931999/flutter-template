@@ -4,11 +4,11 @@ import 'package:oolaf_flutted/utils/helper.dart';
 
 class TransitionDetailPage extends StatelessWidget {
   const TransitionDetailPage({
-    Key? key,
+    super.key,
     this.message = 'Flutter Template',
     this.color = const Color(0xFFFFFFFF),
     this.result,
-  }) : super(key: key);
+  });
 
   final String message;
   final Color color;

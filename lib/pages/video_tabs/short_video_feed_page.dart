@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
+import 'package:oolaf_flutted/api/short_video/comment.dart';
 import 'package:flutter_redux/flutter_redux.dart';
 import 'package:oolaf_flutted/api/short_video/index.dart';
 import 'package:oolaf_flutted/components/app_asset_icon/index.dart';
@@ -1419,11 +1420,10 @@ class ShortVideoFeedPageState extends State<ShortVideoFeedPage>
         ? 1.0
         : (_pullRefreshIndicatorOffset / _pullRefreshTriggerOffset)
             .clamp(0.0, 1.0)
-            .toDouble();
+            ;
     VideoManager.instance.keepWindow = keepWindow;
-    final shouldAutoPlayOnEnter = _isChannelFeed
-        ? true
-        : (shortVideoState?.autoPlayOnEnter ?? true);
+    final shouldAutoPlayOnEnter =
+        _isChannelFeed ? true : (shortVideoState?.autoPlayOnEnter ?? true);
 
     if (_isFeedVisibleInTab &&
         shouldAutoPlayOnEnter &&
@@ -1701,5 +1701,3 @@ class _VideoTabCacheState {
   final int nextPullNum;
   final bool hasMore;
 }
-
-
