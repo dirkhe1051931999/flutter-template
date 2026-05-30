@@ -16,6 +16,8 @@ class HupuPostDetail {
     required this.shareCount,
     required this.viewCount,
     required this.lightCount,
+    required this.tagInfoList,
+    required this.cardList,
   });
 
   final String tid;
@@ -34,6 +36,8 @@ class HupuPostDetail {
   final int shareCount;
   final int viewCount;
   final int lightCount;
+  final List<HupuPostTagInfo> tagInfoList;
+  final List<HupuPostRelatedCard> cardList;
 
   factory HupuPostDetail.fromJson(Map<String, dynamic> json) {
     final offlineData = json['offline_data'];
@@ -85,6 +89,90 @@ class HupuPostDetail {
       shareCount: _parseInt(payload['share_num'] ?? json['share_num']),
       viewCount: _parseInt(authorPayload['view'] ?? payload['visits']),
       lightCount: _parseInt(payload['lights'] ?? json['lights']),
+      tagInfoList: _parseTagInfoList(json['tagInfoList']),
+      cardList: _parseRelatedCardList(json['cardList']),
+    );
+  }
+}
+
+class HupuPostTagInfo {
+  const HupuPostTagInfo({
+    required this.tagId,
+    required this.tagName,
+    required this.tagSchema,
+    required this.description,
+    required this.followNum,
+    required this.discussNum,
+    required this.icon,
+    required this.banner,
+    required this.bannerRgb,
+    required this.followed,
+    required this.aggregationType,
+    required this.heat,
+    required this.activityJumpUrl,
+    required this.activityIcon,
+  });
+
+  final int tagId;
+  final String tagName;
+  final String tagSchema;
+  final String description;
+  final int followNum;
+  final int discussNum;
+  final String icon;
+  final String banner;
+  final String bannerRgb;
+  final int followed;
+  final String aggregationType;
+  final String heat;
+  final String activityJumpUrl;
+  final String activityIcon;
+
+  factory HupuPostTagInfo.fromJson(Map<String, dynamic> json) {
+    return HupuPostTagInfo(
+      tagId: _parseInt(json['tagId']),
+      tagName: json['tagName']?.toString() ?? '',
+      tagSchema: json['tagSchema']?.toString() ?? '',
+      description: json['description']?.toString() ?? '',
+      followNum: _parseInt(json['followNum']),
+      discussNum: _parseInt(json['discussNum']),
+      icon: json['icon']?.toString() ?? '',
+      banner: json['banner']?.toString() ?? '',
+      bannerRgb: json['bannerRgb']?.toString() ?? '',
+      followed: _parseInt(json['followed']),
+      aggregationType: json['aggregationType']?.toString() ?? '',
+      heat: json['heat']?.toString() ?? '',
+      activityJumpUrl: json['activityJumpUrl']?.toString() ?? '',
+      activityIcon: json['activityIcon']?.toString() ?? '',
+    );
+  }
+}
+
+class HupuPostRelatedCard {
+  const HupuPostRelatedCard({
+    required this.image,
+    required this.bizId,
+    required this.cardType,
+    required this.title,
+    required this.url,
+    required this.isNational,
+  });
+
+  final String image;
+  final String bizId;
+  final int cardType;
+  final String title;
+  final String url;
+  final bool isNational;
+
+  factory HupuPostRelatedCard.fromJson(Map<String, dynamic> json) {
+    return HupuPostRelatedCard(
+      image: json['image']?.toString() ?? '',
+      bizId: json['bizId']?.toString() ?? '',
+      cardType: _parseInt(json['cardType']),
+      title: json['title']?.toString() ?? '',
+      url: json['url']?.toString() ?? '',
+      isNational: json['isNational'] == true,
     );
   }
 }
@@ -108,7 +196,9 @@ class HupuPostCommentResponse {
     int currentPage = 1,
   }) {
     final data = json['data'];
-    final payload = data is Map<String, dynamic> ? data : json;
+    final dataPayload = data is Map<String, dynamic> ? data : json;
+    final result = dataPayload['result'];
+    final payload = result is Map<String, dynamic> ? result : dataPayload;
     final list = payload['list'];
     final comments = list is List
         ? list
@@ -264,4 +354,28 @@ int _parseInt(dynamic value) {
     return value.toInt();
   }
   return int.tryParse(value?.toString() ?? '') ?? 0;
+}
+
+List<HupuPostTagInfo> _parseTagInfoList(dynamic rawItems) {
+  if (rawItems is! List) {
+    return const <HupuPostTagInfo>[];
+  }
+
+  return rawItems
+      .whereType<Map>()
+      .map((item) => HupuPostTagInfo.fromJson(Map<String, dynamic>.from(item)))
+      .toList(growable: false);
+}
+
+List<HupuPostRelatedCard> _parseRelatedCardList(dynamic rawItems) {
+  if (rawItems is! List) {
+    return const <HupuPostRelatedCard>[];
+  }
+
+  return rawItems
+      .whereType<Map>()
+      .map(
+        (item) => HupuPostRelatedCard.fromJson(Map<String, dynamic>.from(item)),
+      )
+      .toList(growable: false);
 }

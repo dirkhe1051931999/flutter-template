@@ -9,6 +9,7 @@ import 'package:oolaf_flutted/pages/hupu/hupu_post_detail_page.dart';
 import 'package:oolaf_flutted/pages/hupu/hupu_video_queue_page.dart';
 import 'package:oolaf_flutted/pages/hupu/widgets/hupu_feed_card.dart';
 import 'package:oolaf_flutted/pages/hupu/widgets/hupu_load_more_footer.dart';
+import 'package:oolaf_flutted/pages/hupu/widgets/hupu_nba_top_tab_view.dart';
 import 'package:oolaf_flutted/pages/hupu/widgets/hupu_refresh_indicator.dart';
 import 'package:oolaf_flutted/pages/hupu/widgets/hupu_status_view.dart';
 import 'package:oolaf_flutted/pages/video_tabs/short_video_gallery_preview.dart';
@@ -318,7 +319,9 @@ class _HupuHomePageState extends State<HupuHomePage> {
             },
           ),
           Expanded(
-            child: _buildBody(),
+            child: _activeTopTabIndex == 2
+                ? const _HupuNbaEntryView()
+                : _buildBody(),
           ),
         ],
       ),
@@ -518,5 +521,14 @@ class _HupuHomeHeader extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+class _HupuNbaEntryView extends StatelessWidget {
+  const _HupuNbaEntryView();
+
+  @override
+  Widget build(BuildContext context) {
+    return const HupuNbaTopTabView();
   }
 }
