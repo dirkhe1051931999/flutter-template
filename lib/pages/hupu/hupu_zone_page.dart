@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:oolaf_flutted/api/hupu/index.dart';
 import 'package:oolaf_flutted/components/network_img/index.dart';
 import 'package:oolaf_flutted/model/hupu/index.dart';
+import 'package:oolaf_flutted/pages/hupu/hupu_search_page.dart';
 import 'package:oolaf_flutted/pages/hupu/widgets/hupu_status_view.dart';
 
 class HupuZonePage extends StatefulWidget {
@@ -71,7 +72,15 @@ class _HupuZonePageState extends State<HupuZonePage> {
       color: Colors.white,
       child: Column(
         children: [
-          const _HupuZoneHeader(),
+          _HupuZoneHeader(
+            onTapSearch: () {
+              Navigator.of(context).push<void>(
+                CupertinoPageRoute<void>(
+                  builder: (_) => const HupuSearchPage(),
+                ),
+              );
+            },
+          ),
           Expanded(
             child: _buildBody(),
           ),
@@ -201,7 +210,11 @@ class _HupuZonePageState extends State<HupuZonePage> {
 }
 
 class _HupuZoneHeader extends StatelessWidget {
-  const _HupuZoneHeader();
+  const _HupuZoneHeader({
+    required this.onTapSearch,
+  });
+
+  final VoidCallback onTapSearch;
 
   @override
   Widget build(BuildContext context) {
@@ -217,9 +230,9 @@ class _HupuZoneHeader extends StatelessWidget {
           ),
         ),
       ),
-      child: const Row(
+      child: Row(
         children: [
-          Padding(
+          const Padding(
             padding: EdgeInsets.only(left: 2, right: 14),
             child: Text(
               '虎扑',
@@ -231,7 +244,7 @@ class _HupuZoneHeader extends StatelessWidget {
               ),
             ),
           ),
-          Expanded(
+          const Expanded(
             child: Align(
               alignment: Alignment.centerLeft,
               child: Text(
@@ -244,12 +257,19 @@ class _HupuZoneHeader extends StatelessWidget {
               ),
             ),
           ),
-          Icon(
-            CupertinoIcons.search,
-            size: 22,
-            color: Color(0xFF202127),
+          GestureDetector(
+            onTap: onTapSearch,
+            behavior: HitTestBehavior.opaque,
+            child: const Padding(
+              padding: EdgeInsets.all(4),
+              child: Icon(
+                CupertinoIcons.search,
+                size: 22,
+                color: Color(0xFF202127),
+              ),
+            ),
           ),
-          SizedBox(width: 8),
+          const SizedBox(width: 8),
         ],
       ),
     );

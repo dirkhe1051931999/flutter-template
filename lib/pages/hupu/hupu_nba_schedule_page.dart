@@ -3,6 +3,7 @@ import 'dart:ui';
 
 import 'package:flutter/cupertino.dart';
 import 'package:oolaf_flutted/api/hupu/index.dart';
+import 'package:oolaf_flutted/components/linked_tab_view/index.dart';
 import 'package:oolaf_flutted/components/hupu_page_header/index.dart';
 import 'package:oolaf_flutted/model/hupu/index.dart';
 import 'package:oolaf_flutted/pages/hupu/widgets/hupu_refresh_indicator.dart';
@@ -15,8 +16,6 @@ const Set<PointerDeviceKind> _nbaScheduleDragDevices = <PointerDeviceKind>{
   PointerDeviceKind.invertedStylus,
   PointerDeviceKind.unknown,
 };
-
-const double _nbaScheduleRefreshTriggerDistance = 108;
 
 class HupuNbaSchedulePage extends StatefulWidget {
   const HupuNbaSchedulePage({super.key});
@@ -33,7 +32,6 @@ class _HupuNbaSchedulePageState extends State<HupuNbaSchedulePage> {
 
   List<HupuNbaDataTab> _tabs = const <HupuNbaDataTab>[];
   HupuNbaScheduleStats? _stats;
-  String _activeTabId = 'games';
   bool _isInitialLoading = true;
   bool _isRefreshing = false;
   bool _isLoadingPrev = false;
@@ -307,23 +305,105 @@ class _HupuNbaSchedulePageState extends State<HupuNbaSchedulePage> {
 
   Widget _buildRefreshIndicator(
     BuildContext context,
-    RefreshIndicatorMode refreshState,
-    double pulledExtent,
-    double refreshTriggerPullDistance,
-    double refreshIndicatorExtent,
+    LinkedTabRefreshState state,
+    double progress,
   ) {
-    final progress =
-        (pulledExtent / refreshTriggerPullDistance).clamp(0.0, 1.2);
-    final isArmed = refreshState == RefreshIndicatorMode.armed ||
-        refreshState == RefreshIndicatorMode.refresh;
-    final isRefreshing =
-        refreshState == RefreshIndicatorMode.refresh || _isRefreshing;
+    final isArmed = state == LinkedTabRefreshState.armed ||
+        state == LinkedTabRefreshState.refreshing;
+    final isRefreshing = state == LinkedTabRefreshState.refreshing ||
+        state == LinkedTabRefreshState.complete ||
+        _isRefreshing;
     return HupuRefreshIndicator(
       progress: progress,
       isArmed: isArmed,
       isRefreshing: isRefreshing,
     );
   }
+
+  List<LinkedTabItem> _buildLinkedTabs() {
+    final sourceTabs = _tabs.isEmpty ? _fallbackTabs : _tabs;
+    return sourceTabs.map((tab) {
+      switch (tab.id) {
+        case 'games':
+          return LinkedTabItem(
+            id: tab.id,
+            label: tab.name,
+            child: _ScheduleGamesTab(
+              isInitialLoading: _isInitialLoading,
+              days: _days,
+              errorMessage: _errorMessage,
+              isLoadingPrev: _isLoadingPrev,
+              hasPrev: _hasPrev,
+              isLoadingNext: _isLoadingNext,
+              hasNext: _hasNext,
+              showTodayButton: _showTodayButton,
+              scrollController: _scrollController,
+              anchorForDay: _anchorForDay,
+              onRefresh: _onRefresh,
+              refreshIndicatorBuilder: _buildRefreshIndicator,
+              onScrollToToday: _scrollToToday,
+            ),
+          );
+        case 'against_playoff':
+          return LinkedTabItem(
+            id: tab.id,
+            label: tab.name,
+            child: const _PlayoffBracketView(),
+          );
+        case 'playersrank':
+          return LinkedTabItem(
+            id: tab.id,
+            label: tab.name,
+            child: const _PlayerRankView(),
+          );
+        default:
+          return LinkedTabItem(
+            id: tab.id,
+            label: tab.name,
+            child: _ScheduleLinkedPlaceholderTab(title: tab.name),
+          );
+      }
+    }).toList(growable: false);
+  }
+
+  int _initialLinkedTabIndex() {
+    final sourceTabs = _tabs.isEmpty ? _fallbackTabs : _tabs;
+    final index = sourceTabs.indexWhere((tab) => tab.id == 'games');
+    return index < 0 ? 0 : index;
+  }
+
+  static const List<HupuNbaDataTab> _fallbackTabs = <HupuNbaDataTab>[
+    HupuNbaDataTab(
+      id: 'games',
+      name: '赛程',
+      type: 'native',
+      url: '',
+    ),
+    HupuNbaDataTab(
+      id: 'against_playoff',
+      name: '季后赛',
+      type: 'native',
+      url: '',
+    ),
+    HupuNbaDataTab(
+      id: 'playersrank',
+      name: '球员榜',
+      type: 'native',
+      url: '',
+    ),
+    HupuNbaDataTab(
+      id: 'teamsrank',
+      name: '球队榜',
+      type: 'native',
+      url: '',
+    ),
+    HupuNbaDataTab(
+      id: 'dailyrank',
+      name: '日榜',
+      type: 'native',
+      url: '',
+    ),
+  ];
 
   GlobalKey _anchorForDay(String day) {
     return _dayAnchors.putIfAbsent(day, GlobalKey.new);
@@ -347,146 +427,26 @@ class _HupuNbaSchedulePageState extends State<HupuNbaSchedulePage> {
                     title: 'NBA',
                     onBack: () => Navigator.of(context).maybePop(),
                   ),
-                  _DataTabBar(
-                    tabs: _tabs,
-                    activeTabId: _activeTabId,
-                    onTap: (tab) {
-                      setState(() {
-                        _activeTabId = tab.id;
-                      });
-                    },
+                  Expanded(
+                    child: LinkedTabView(
+                      items: _buildLinkedTabs(),
+                      initialIndex: _initialLinkedTabIndex(),
+                      tabBarHeight: 60,
+                      tabBarPadding:
+                          const EdgeInsets.symmetric(horizontal: 20),
+                      tabSpacing: 32,
+                      activeTabColor: const Color(0xFF202127),
+                      inactiveTabColor: const Color(0xFF8F96A3),
+                      activeIndicatorColor: const Color(0xFFE91B2A),
+                      activeFontSize: 23,
+                      inactiveFontSize: 23,
+                    ),
                   ),
-                  Expanded(child: _buildBody()),
                 ],
               ),
-              if (_showTodayButton)
-                Positioned(
-                  left: 0,
-                  right: 0,
-                  bottom: 78,
-                  child: Center(
-                    child: _TodayFloatingButton(onTap: _scrollToToday),
-                  ),
-                ),
             ],
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildBody() {
-    if (_activeTabId == 'against_playoff') {
-      return const _PlayoffBracketView();
-    }
-    if (_activeTabId == 'playersrank') {
-      return const _PlayerRankView();
-    }
-    if (_isInitialLoading) {
-      return const Center(child: CupertinoActivityIndicator(radius: 14));
-    }
-    if (_days.isEmpty) {
-      return _ScheduleEmptyState(detail: _errorMessage);
-    }
-    return CustomScrollView(
-      controller: _scrollController,
-      physics: const BouncingScrollPhysics(
-        parent: AlwaysScrollableScrollPhysics(),
-      ),
-      slivers: [
-        CupertinoSliverRefreshControl(
-          onRefresh: _onRefresh,
-          refreshTriggerPullDistance: _nbaScheduleRefreshTriggerDistance,
-          refreshIndicatorExtent: 96,
-          builder: _buildRefreshIndicator,
-        ),
-        SliverToBoxAdapter(
-          child: _TopLoadingIndicator(
-            isLoading: _isLoadingPrev,
-            hasMore: _hasPrev,
-          ),
-        ),
-        SliverList.builder(
-          itemCount: _days.length,
-          itemBuilder: (context, index) {
-            final day = _days[index];
-            return _ScheduleDaySection(
-              key: _anchorForDay(day.day),
-              day: day,
-            );
-          },
-        ),
-        SliverToBoxAdapter(
-          child: _BottomLoadingIndicator(
-            isLoading: _isLoadingNext,
-            hasMore: _hasNext,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _DataTabBar extends StatelessWidget {
-  const _DataTabBar({
-    required this.tabs,
-    required this.activeTabId,
-    required this.onTap,
-  });
-
-  final List<HupuNbaDataTab> tabs;
-  final String activeTabId;
-  final ValueChanged<HupuNbaDataTab> onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 60,
-      decoration: const BoxDecoration(
-        color: CupertinoColors.white,
-        border: Border(
-          bottom: BorderSide(color: Color(0xFFEDEEF2), width: 1),
-        ),
-      ),
-      child: ListView.separated(
-        padding: const EdgeInsets.symmetric(horizontal: 20),
-        scrollDirection: Axis.horizontal,
-        itemCount: tabs.length,
-        itemBuilder: (context, index) {
-          final tab = tabs[index];
-          final isActive = tab.id == activeTabId;
-          return GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: () => onTap(tab),
-            child: SizedBox(
-              height: 60,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  Text(
-                    tab.name,
-                    style: TextStyle(
-                      color: isActive
-                          ? const Color(0xFF202127)
-                          : const Color(0xFF8F96A3),
-                      fontSize: 23,
-                      fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Container(
-                    width: 40,
-                    height: 4,
-                    color: isActive
-                        ? const Color(0xFFE91B2A)
-                        : CupertinoColors.transparent,
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
-        separatorBuilder: (context, index) => const SizedBox(width: 32),
       ),
     );
   }
@@ -658,6 +618,182 @@ class _ScheduleMatchTile extends StatelessWidget {
   }
 
   String _scoreText(int? score) => score == null ? '-' : '$score';
+}
+
+class _ScheduleGamesTab extends StatelessWidget {
+  const _ScheduleGamesTab({
+    required this.isInitialLoading,
+    required this.days,
+    required this.errorMessage,
+    required this.isLoadingPrev,
+    required this.hasPrev,
+    required this.isLoadingNext,
+    required this.hasNext,
+    required this.showTodayButton,
+    required this.scrollController,
+    required this.anchorForDay,
+    required this.onRefresh,
+    required this.refreshIndicatorBuilder,
+    required this.onScrollToToday,
+  });
+
+  final bool isInitialLoading;
+  final List<HupuNbaScheduleDay> days;
+  final String? errorMessage;
+  final bool isLoadingPrev;
+  final bool hasPrev;
+  final bool isLoadingNext;
+  final bool hasNext;
+  final bool showTodayButton;
+  final ScrollController scrollController;
+  final GlobalKey Function(String day) anchorForDay;
+  final Future<void> Function() onRefresh;
+  final LinkedTabRefreshIndicatorBuilder refreshIndicatorBuilder;
+  final VoidCallback onScrollToToday;
+
+  @override
+  Widget build(BuildContext context) {
+    if (isInitialLoading) {
+      return const Center(child: CupertinoActivityIndicator(radius: 14));
+    }
+    if (days.isEmpty) {
+      return _ScheduleEmptyState(detail: errorMessage);
+    }
+    return Stack(
+      children: [
+        LinkedTabPageRefresh(
+          onRefresh: onRefresh,
+          indicatorBuilder: refreshIndicatorBuilder,
+          child: CustomScrollView(
+            controller: scrollController,
+            physics: const BouncingScrollPhysics(
+              parent: AlwaysScrollableScrollPhysics(),
+            ),
+            slivers: [
+              SliverToBoxAdapter(
+                child: _TopLoadingIndicator(
+                  isLoading: isLoadingPrev,
+                  hasMore: hasPrev,
+                ),
+              ),
+              SliverList.builder(
+                itemCount: days.length,
+                itemBuilder: (context, index) {
+                  final day = days[index];
+                  return _ScheduleDaySection(
+                    key: anchorForDay(day.day),
+                    day: day,
+                  );
+                },
+              ),
+              SliverToBoxAdapter(
+                child: _BottomLoadingIndicator(
+                  isLoading: isLoadingNext,
+                  hasMore: hasNext,
+                ),
+              ),
+            ],
+          ),
+        ),
+        if (showTodayButton)
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 78,
+            child: Center(
+              child: _TodayFloatingButton(onTap: onScrollToToday),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+class _ScheduleLinkedPlaceholderTab extends StatelessWidget {
+  const _ScheduleLinkedPlaceholderTab({required this.title});
+
+  final String title;
+
+  Future<void> _onRefresh() async {
+    await Future<void>.delayed(const Duration(milliseconds: 500));
+  }
+
+  Widget _buildRefreshIndicator(
+    BuildContext context,
+    LinkedTabRefreshState state,
+    double progress,
+  ) {
+    final isArmed = state == LinkedTabRefreshState.armed ||
+        state == LinkedTabRefreshState.refreshing;
+    final isRefreshing = state == LinkedTabRefreshState.refreshing ||
+        state == LinkedTabRefreshState.complete;
+    return HupuRefreshIndicator(
+      progress: progress,
+      isArmed: isArmed,
+      isRefreshing: isRefreshing,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return LinkedTabPageRefresh(
+      onRefresh: _onRefresh,
+      indicatorBuilder: _buildRefreshIndicator,
+      child: CustomScrollView(
+        physics: const BouncingScrollPhysics(
+          parent: AlwaysScrollableScrollPhysics(),
+        ),
+        slivers: [
+          SliverFillRemaining(
+            hasScrollBody: false,
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
+                  decoration: BoxDecoration(
+                    color: CupertinoColors.white,
+                    borderRadius: BorderRadius.circular(18),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Color(0x0D101828),
+                        blurRadius: 18,
+                        offset: Offset(0, 8),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        title,
+                        style: const TextStyle(
+                          color: Color(0xFF202127),
+                          fontSize: 24,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        '$title页先占位，后续再接实际内容。',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          color: Color(0xFF8E8E93),
+                          fontSize: 14,
+                          height: 1.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _TeamLine extends StatelessWidget {

@@ -1,8 +1,11 @@
+// ignore_for_file: file_names
+
 import 'dart:async';
 import 'dart:ui';
 
 import 'package:flutter/cupertino.dart';
 import 'package:oolaf_flutted/api/hupu/index.dart';
+import 'package:oolaf_flutted/components/linked_tab_view/index.dart';
 import 'package:oolaf_flutted/model/hupu/index.dart';
 import 'package:oolaf_flutted/pages/hupu/hupu_nba_hot_news_page.dart';
 import 'package:oolaf_flutted/pages/hupu/hupu_nba_schedule_page.dart';
@@ -18,92 +21,15 @@ const Set<PointerDeviceKind> _nbaTopTabDragDevices = <PointerDeviceKind>{
   PointerDeviceKind.unknown,
 };
 
-const double _nbaTopTabRefreshTriggerDistance = 108;
-
-class HupuNbaTopTabView extends StatefulWidget {
-  const HupuNbaTopTabView({super.key});
+class HupuSportsNbaNewsTab extends StatefulWidget {
+  const HupuSportsNbaNewsTab({super.key});
 
   @override
-  State<HupuNbaTopTabView> createState() => _HupuNbaTopTabViewState();
+  State<HupuSportsNbaNewsTab> createState() => _HupuSportsNbaNewsTabState();
 }
 
-class _HupuNbaTopTabViewState extends State<HupuNbaTopTabView> {
-  static const List<String> _subTabs = <String>[
-    '主队资讯',
-    'NBA',
-    '中国篮球',
-    '国际足球',
-    '中国足球',
-  ];
-
-  late final PageController _pageController;
-  int _activeSubTabIndex = 1;
-
-  @override
-  void initState() {
-    super.initState();
-    _pageController = PageController(initialPage: _activeSubTabIndex);
-  }
-
-  @override
-  void dispose() {
-    _pageController.dispose();
-    super.dispose();
-  }
-
-  void _handleSubTabTap(int index) {
-    setState(() {
-      _activeSubTabIndex = index;
-    });
-    _pageController.animateToPage(
-      index,
-      duration: const Duration(milliseconds: 220),
-      curve: Curves.easeOutCubic,
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: const BoxDecoration(color: CupertinoColors.white),
-      child: Column(
-        children: [
-          _NbaSubTabBar(
-            tabs: _subTabs,
-            activeIndex: _activeSubTabIndex,
-            onTap: _handleSubTabTap,
-          ),
-          Expanded(
-            child: PageView.builder(
-              controller: _pageController,
-              itemCount: _subTabs.length,
-              onPageChanged: (index) {
-                setState(() {
-                  _activeSubTabIndex = index;
-                });
-              },
-              itemBuilder: (context, index) {
-                if (index == 1) {
-                  return const _NbaTabContent();
-                }
-                return const _NbaEmptyState();
-              },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _NbaTabContent extends StatefulWidget {
-  const _NbaTabContent();
-
-  @override
-  State<_NbaTabContent> createState() => _NbaTabContentState();
-}
-
-class _NbaTabContentState extends State<_NbaTabContent> {
+class _HupuSportsNbaNewsTabState extends State<HupuSportsNbaNewsTab>
+    with AutomaticKeepAliveClientMixin<HupuSportsNbaNewsTab> {
   final ScrollController _scrollController = ScrollController();
   List<HupuNbaShortcut> _shortcuts = const <HupuNbaShortcut>[];
   HupuNbaRecommendedMatch? _recommendedMatch;
@@ -116,6 +42,9 @@ class _NbaTabContentState extends State<_NbaTabContent> {
   bool _hasMore = true;
   String? _errorMessage;
   int _topNewsCount = 0;
+
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
@@ -231,25 +160,20 @@ class _NbaTabContentState extends State<_NbaTabContent> {
         setState(() {
           _isRefreshing = false;
         });
-      } else {
-        _isRefreshing = false;
       }
     }
   }
 
   Widget _buildRefreshIndicator(
     BuildContext context,
-    RefreshIndicatorMode refreshState,
-    double pulledExtent,
-    double refreshTriggerPullDistance,
-    double refreshIndicatorExtent,
+    LinkedTabRefreshState state,
+    double progress,
   ) {
-    final progress =
-        (pulledExtent / refreshTriggerPullDistance).clamp(0.0, 1.2);
-    final isArmed = refreshState == RefreshIndicatorMode.armed ||
-        refreshState == RefreshIndicatorMode.refresh;
-    final isRefreshing =
-        refreshState == RefreshIndicatorMode.refresh || _isRefreshing;
+    final isArmed = state == LinkedTabRefreshState.armed ||
+        state == LinkedTabRefreshState.refreshing;
+    final isRefreshing = state == LinkedTabRefreshState.refreshing ||
+        state == LinkedTabRefreshState.complete ||
+        _isRefreshing;
     return HupuRefreshIndicator(
       progress: progress,
       isArmed: isArmed,
@@ -296,52 +220,72 @@ class _NbaTabContentState extends State<_NbaTabContent> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
+
     if (_isInitialLoading) {
       return const Center(child: CupertinoActivityIndicator(radius: 14));
     }
 
     if (_news.isEmpty && _errorMessage != null) {
-      return _NbaEmptyState(detail: _errorMessage);
+      return const SizedBox.shrink();
     }
 
-    return ScrollConfiguration(
-      behavior: const CupertinoScrollBehavior().copyWith(
-        dragDevices: _nbaTopTabDragDevices,
-      ),
-      child: CustomScrollView(
-        controller: _scrollController,
-        physics: const BouncingScrollPhysics(
-          parent: AlwaysScrollableScrollPhysics(),
+    return LinkedTabPageRefresh(
+      onRefresh: _onRefresh,
+      indicatorBuilder: _buildRefreshIndicator,
+      child: ScrollConfiguration(
+        behavior: const CupertinoScrollBehavior().copyWith(
+          dragDevices: _nbaTopTabDragDevices,
         ),
-        slivers: [
-          CupertinoSliverRefreshControl(
-            onRefresh: _onRefresh,
-            refreshTriggerPullDistance: _nbaTopTabRefreshTriggerDistance,
-            refreshIndicatorExtent: 96,
-            builder: _buildRefreshIndicator,
+        child: CustomScrollView(
+          controller: _scrollController,
+          physics: const BouncingScrollPhysics(
+            parent: AlwaysScrollableScrollPhysics(),
           ),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(18, 8, 18, 0),
-              child: Column(
-                children: [
-                  if (_recommendedMatch != null)
-                    _NbaMatchCard(
-                      match: _recommendedMatch!,
-                      onTapSchedule: _openSchedulePage,
-                    ),
-                  if (_recommendedMatch != null) const SizedBox(height: 30),
-                  if (_shortcuts.isNotEmpty) _NbaShortcutRow(items: _shortcuts),
-                  const SizedBox(height: 26),
-                ],
+          slivers: [
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(18, 8, 18, 0),
+                child: Column(
+                  children: [
+                    if (_recommendedMatch != null)
+                      _NbaMatchCard(
+                        match: _recommendedMatch!,
+                        onTapSchedule: _openSchedulePage,
+                      ),
+                    if (_recommendedMatch != null) const SizedBox(height: 30),
+                    if (_shortcuts.isNotEmpty) _NbaShortcutRow(items: _shortcuts),
+                    const SizedBox(height: 26),
+                  ],
+                ),
               ),
             ),
-          ),
-          if (_news.length > _topNewsCount)
+            if (_news.length > _topNewsCount)
+              SliverList.builder(
+                itemCount: _topNewsCount,
+                itemBuilder: (context, index) {
+                  final item = _news[index];
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 18),
+                    child: _NbaArticleTile(
+                      article: item,
+                      onTap: () => _openPostDetail(item),
+                    ),
+                  );
+                },
+              ),
+            if (_hotNews.isNotEmpty)
+              SliverToBoxAdapter(
+                child: _NbaHotNewsSection(
+                  items: _hotNews,
+                  onTapItem: _openPostDetail,
+                  onTapMore: _openHotNewsPage,
+                ),
+              ),
             SliverList.builder(
-              itemCount: _topNewsCount,
+              itemCount: (_news.length - _topNewsCount).clamp(0, _news.length),
               itemBuilder: (context, index) {
-                final item = _news[index];
+                final item = _news[index + _topNewsCount];
                 return Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 18),
                   child: _NbaArticleTile(
@@ -351,88 +295,16 @@ class _NbaTabContentState extends State<_NbaTabContent> {
                 );
               },
             ),
-          if (_hotNews.isNotEmpty)
             SliverToBoxAdapter(
-              child: _NbaHotNewsSection(
-                items: _hotNews,
-                onTapItem: _openPostDetail,
-                onTapMore: _openHotNewsPage,
+              child: _NbaLoadMoreFooter(
+                isLoading: _isLoadingMore,
+                hasMore: _hasMore,
+                errorMessage: _errorMessage,
+                onRetry: _loadMoreNews,
               ),
             ),
-          SliverList.builder(
-            itemCount: (_news.length - _topNewsCount).clamp(0, _news.length),
-            itemBuilder: (context, index) {
-              final item = _news[index + _topNewsCount];
-              return Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 18),
-                child: _NbaArticleTile(
-                  article: item,
-                  onTap: () => _openPostDetail(item),
-                ),
-              );
-            },
-          ),
-          SliverToBoxAdapter(
-            child: _NbaLoadMoreFooter(
-              isLoading: _isLoadingMore,
-              hasMore: _hasMore,
-              errorMessage: _errorMessage,
-              onRetry: _loadMoreNews,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _NbaSubTabBar extends StatelessWidget {
-  const _NbaSubTabBar({
-    required this.tabs,
-    required this.activeIndex,
-    required this.onTap,
-  });
-
-  final List<String> tabs;
-  final int activeIndex;
-  final ValueChanged<int> onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 44,
-      decoration: const BoxDecoration(
-        border: Border(
-          bottom: BorderSide(color: Color(0xFFF0F1F4), width: 1),
+          ],
         ),
-      ),
-      child: ListView.separated(
-        padding: const EdgeInsets.symmetric(horizontal: 13),
-        scrollDirection: Axis.horizontal,
-        itemCount: tabs.length,
-        itemBuilder: (context, index) {
-          final isActive = index == activeIndex;
-          return GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: () => onTap(index),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              child: Center(
-                child: Text(
-                  tabs[index],
-                  style: TextStyle(
-                    color: isActive
-                        ? const Color(0xFF202127)
-                        : const Color(0xFF9398A5),
-                    fontSize: 17,
-                    fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
-                  ),
-                ),
-              ),
-            ),
-          );
-        },
-        separatorBuilder: (context, index) => const SizedBox(width: 28),
       ),
     );
   }
@@ -909,30 +781,6 @@ class _NbaLoadMoreFooter extends StatelessWidget {
         child: Text(
           hasMore ? '上拉加载更多' : '没有更多了',
           style: const TextStyle(color: Color(0xFF8E8E93), fontSize: 13),
-        ),
-      ),
-    );
-  }
-}
-
-class _NbaEmptyState extends StatelessWidget {
-  const _NbaEmptyState({this.detail});
-
-  final String? detail;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Text(
-          detail == null ? '暂无内容' : '加载失败\n$detail',
-          textAlign: TextAlign.center,
-          style: const TextStyle(
-            color: Color(0xFF8E8E93),
-            fontSize: 14,
-            height: 1.5,
-          ),
         ),
       ),
     );

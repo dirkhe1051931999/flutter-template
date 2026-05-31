@@ -1,17 +1,21 @@
-import 'package:flutter/cupertino.dart';
+﻿import 'package:flutter/cupertino.dart';
 import 'package:html/parser.dart' as html_parser;
+import 'dart:async';
 import 'package:oolaf_flutted/api/hupu/index.dart';
 import 'package:oolaf_flutted/components/app_sheet/index.dart';
 import 'package:oolaf_flutted/components/comment/comment_panel_scaffold.dart';
+import 'package:oolaf_flutted/components/hupu_page_header/index.dart';
 import 'package:oolaf_flutted/components/network_img/index.dart';
+import 'package:oolaf_flutted/components/short_video/short_video_player_wrapper.dart';
 import 'package:oolaf_flutted/model/hupu/index.dart';
 import 'package:oolaf_flutted/pages/video_tabs/short_video_article_body_helper.dart';
 import 'package:oolaf_flutted/pages/video_tabs/short_video_gallery_preview.dart';
+import 'package:oolaf_flutted/utils/oolaf_video_player_controller.dart';
 
 enum HupuPostCommentSort {
-  hot('最亮'),
+  hot('最热'),
   earliest('最早'),
-  latest('最晚'),
+  latest('最新'),
   author('楼主');
 
   const HupuPostCommentSort(this.label);
@@ -41,6 +45,7 @@ class _HupuPostDetailPageState extends State<HupuPostDetailPage> {
   final ScrollController _scrollController = ScrollController();
 
   HupuPostDetail? _detail;
+  OolafVideoPlayerController? _videoController;
   List<HupuPostComment> _lightReplies = const <HupuPostComment>[];
   final List<HupuPostComment> _allComments = <HupuPostComment>[];
   bool _isLoading = true;
@@ -84,6 +89,10 @@ class _HupuPostDetailPageState extends State<HupuPostDetailPage> {
 
   @override
   void dispose() {
+    final videoController = _videoController;
+    if (videoController != null) {
+      unawaited(videoController.dispose());
+    }
     _scrollController
       ..removeListener(_handleScroll)
       ..dispose();
@@ -111,6 +120,7 @@ class _HupuPostDetailPageState extends State<HupuPostDetailPage> {
 
     try {
       final detail = await getHupuPostDetail(tid: widget.tid);
+      final videoController = await _buildVideoController(detail);
       final fid = widget.fid.isNotEmpty ? widget.fid : detail.fid;
       final topicId = widget.topicId > 0 ? widget.topicId : detail.topicId;
       final responses = await Future.wait<dynamic>([
@@ -132,8 +142,10 @@ class _HupuPostDetailPageState extends State<HupuPostDetailPage> {
 
       final lightReplies = responses[0] as HupuPostCommentResponse;
       final comments = responses[1] as HupuPostCommentResponse;
+      final previousVideoController = _videoController;
       setState(() {
         _detail = detail;
+        _videoController = videoController;
         _lightReplies = lightReplies.comments;
         _allComments
           ..clear()
@@ -142,6 +154,10 @@ class _HupuPostDetailPageState extends State<HupuPostDetailPage> {
         _totalPages = comments.totalPages;
         _isLoading = false;
       });
+      if (previousVideoController != null &&
+          !identical(previousVideoController, videoController)) {
+        unawaited(previousVideoController.dispose());
+      }
     } catch (error) {
       if (!mounted) {
         return;
@@ -151,6 +167,19 @@ class _HupuPostDetailPageState extends State<HupuPostDetailPage> {
         _isLoading = false;
       });
     }
+  }
+
+  Future<OolafVideoPlayerController?> _buildVideoController(
+    HupuPostDetail detail,
+  ) async {
+    final videoUrl = detail.videoInfo?.videoUrl.trim() ?? '';
+    if (videoUrl.isEmpty) {
+      return null;
+    }
+
+    final controller = await OolafVideoPlayerController.fromUrl(videoUrl);
+    await controller.setLooping(false);
+    return controller;
   }
 
   Future<void> _loadMoreComments() async {
@@ -319,110 +348,22 @@ class _HupuPostDetailPageState extends State<HupuPostDetailPage> {
     );
   }
 
-  CupertinoNavigationBar _buildNavigationBar() {
+  ObstructingPreferredSizeWidget _buildNavigationBar() {
     final detail = _detail;
 
-    return CupertinoNavigationBar(
-      backgroundColor: const Color(0xFFFFFFFF),
-      border: null,
-      padding: const EdgeInsetsDirectional.only(start: 8, end: 10),
-      leading: CupertinoButton(
-        padding: EdgeInsets.zero,
-        minimumSize: const Size(32, 32),
-        onPressed: () => Navigator.of(context).pop(),
-        child: const Icon(
-          CupertinoIcons.back,
-          color: Color(0xFF1C1C1E),
-          size: 22,
-        ),
-      ),
-      middle: SizedBox(
-        height: 38,
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ClipOval(
-              child: CustomNetworkImage(
-                detail?.authorAvatar ?? '',
-                width: 32,
-                height: 32,
-                skeletonBorderRadius: BorderRadius.circular(16),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  detail?.authorName.isNotEmpty == true
-                      ? detail!.authorName
-                      : '帖子详情',
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF1C1C1E),
-                  ),
-                ),
-                Text(
-                  detail?.authorPublishTime.isNotEmpty == true
-                      ? detail!.authorPublishTime
-                      : widget.initialTitle,
-                  style: const TextStyle(
-                    fontSize: 11,
-                    color: Color(0xFF8E8E93),
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-      trailing: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: const Color(0xFFE5484D)),
-            ),
-            child: const Row(
-              children: [
-                Icon(
-                  CupertinoIcons.add,
-                  size: 12,
-                  color: Color(0xFFE5484D),
-                ),
-                SizedBox(width: 2),
-                Text(
-                  '关注',
-                  style: TextStyle(
-                    color: Color(0xFFE5484D),
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          CupertinoButton(
-            padding: const EdgeInsets.only(left: 10),
-            minimumSize: const Size(30, 30),
-            onPressed: () {},
-            child: const Icon(
-              CupertinoIcons.ellipsis_vertical,
-              color: Color(0xFF1C1C1E),
-              size: 18,
-            ),
-          ),
-        ],
-      ),
+    return HupuPageNavigationBar(
+      title: detail?.authorName.isNotEmpty == true ? detail!.authorName : '帖子详情',
+      subtitle: detail?.authorPublishTime.isNotEmpty == true
+          ? detail!.authorPublishTime
+          : widget.initialTitle,
+      avatarUrl: detail?.authorAvatar ?? '',
+      onBack: () => Navigator.of(context).pop(),
+      showFollowButton: true,
+      showMoreButton: true,
+      onTapFollow: () {},
+      onTapMore: () {},
     );
   }
-
   Widget _buildErrorView() {
     return Center(
       child: Padding(
@@ -479,6 +420,10 @@ class _HupuPostDetailPageState extends State<HupuPostDetailPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          if (detail.hasVideo) ...[
+            _buildVideoHero(detail),
+            const SizedBox(height: 16),
+          ],
           Text(
             detail.title,
             style: const TextStyle(
@@ -503,6 +448,106 @@ class _HupuPostDetailPageState extends State<HupuPostDetailPage> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildVideoHero(HupuPostDetail detail) {
+    final videoInfo = detail.videoInfo;
+    if (videoInfo == null) {
+      return const SizedBox.shrink();
+    }
+
+    final controller = _videoController;
+    final aspectRatio = videoInfo.aspectRatio ?? 16 / 9;
+    final clampedRatio = aspectRatio.clamp(1.1, 2.2);
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: DecoratedBox(
+        decoration: const BoxDecoration(
+          color: Color(0xFF000000),
+        ),
+        child: Column(
+          children: [
+            AspectRatio(
+              aspectRatio: clampedRatio,
+              child: controller == null
+                  ? CustomNetworkImage(
+                      videoInfo.coverUrl.isNotEmpty
+                          ? videoInfo.coverUrl
+                          : videoInfo.posterUrl,
+                      fit: BoxFit.cover,
+                    )
+                  : ShortVideoPlayerWrapper(
+                      controller: controller,
+                      fit: BoxFit.contain,
+                      enableVerticalSwipeGestures: false,
+                      onSingleTap: () async {
+                        if (controller.isPlaying.value) {
+                          await controller.pause();
+                        } else {
+                          await controller.play();
+                        }
+                        if (mounted) {
+                          setState(() {});
+                        }
+                      },
+                      onLongPress: () {},
+                      onDoubleTap: () {},
+                      onSwipeUp: () {},
+                      onSwipeDown: () {},
+                    ),
+            ),
+            Container(
+              width: double.infinity,
+              color: const Color(0xFFFFFFFF),
+              padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+              child: Row(
+                children: [
+                  if (detail.topicName.trim().isNotEmpty)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 5,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF5F6F8),
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: Text(
+                        detail.topicName,
+                        style: const TextStyle(
+                          color: Color(0xFF6E7683),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  const Spacer(),
+                  if (videoInfo.playCountText.trim().isNotEmpty)
+                    Text(
+                      '${videoInfo.playCountText}播放',
+                      style: const TextStyle(
+                        color: Color(0xFF8E8E93),
+                        fontSize: 12,
+                      ),
+                    ),
+                  if (videoInfo.durationText.trim().isNotEmpty) ...[
+                    const SizedBox(width: 10),
+                    Text(
+                      '${videoInfo.durationText}s',
+                      style: const TextStyle(
+                        color: Color(0xFF8E8E93),
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -610,7 +655,7 @@ class _HupuPostDetailPageState extends State<HupuPostDetailPage> {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      metaParts.join(' · '),
+                      metaParts.join(' 路 '),
                       style: const TextStyle(
                         color: Color(0xFF999999),
                         fontSize: 11,
@@ -669,7 +714,7 @@ class _HupuPostDetailPageState extends State<HupuPostDetailPage> {
                       GestureDetector(
                         onTap: () => _openCheckReplies(comment),
                         child: Text(
-                          '查看${comment.replyCount}条回复 >',
+                          '查看${comment.replyCount}条回复>',
                           style: const TextStyle(
                             color: Color(0xFF1C63B7),
                             fontSize: 13,
@@ -689,7 +734,7 @@ class _HupuPostDetailPageState extends State<HupuPostDetailPage> {
                         const SizedBox(width: 18),
                         _buildActionItem(
                           icon: CupertinoIcons.gift,
-                          label: '送礼',
+                          label: '礼物',
                         ),
                         const SizedBox(width: 18),
                         _buildActionItem(
@@ -1046,7 +1091,7 @@ class _HupuCheckReplySheetState extends State<_HupuCheckReplySheet> {
                             ),
                             const Spacer(),
                             _buildSortButton(
-                              label: '最亮',
+                              label: '最热',
                               active: _sort == HupuPostCommentSort.hot,
                               onTap: () {
                                 setState(() {
@@ -1172,3 +1217,7 @@ _ParsedCommentBody _parseCommentHtml(String html) {
     imageUrls: List<String>.unmodifiable(imageUrls),
   );
 }
+
+
+
+

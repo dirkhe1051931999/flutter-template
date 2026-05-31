@@ -18,6 +18,7 @@ class HupuPostDetail {
     required this.lightCount,
     required this.tagInfoList,
     required this.cardList,
+    required this.videoInfo,
   });
 
   final String tid;
@@ -38,6 +39,9 @@ class HupuPostDetail {
   final int lightCount;
   final List<HupuPostTagInfo> tagInfoList;
   final List<HupuPostRelatedCard> cardList;
+  final HupuPostVideoInfo? videoInfo;
+
+  bool get hasVideo => videoInfo?.videoUrl.trim().isNotEmpty == true;
 
   factory HupuPostDetail.fromJson(Map<String, dynamic> json) {
     final offlineData = json['offline_data'];
@@ -91,6 +95,57 @@ class HupuPostDetail {
       lightCount: _parseInt(payload['lights'] ?? json['lights']),
       tagInfoList: _parseTagInfoList(json['tagInfoList']),
       cardList: _parseRelatedCardList(json['cardList']),
+      videoInfo: _parseVideoInfo(
+        json['video_info'] ?? payload['video_info'],
+      ),
+    );
+  }
+}
+
+class HupuPostVideoInfo {
+  const HupuPostVideoInfo({
+    required this.videoUrl,
+    required this.coverUrl,
+    required this.posterUrl,
+    required this.backgroundUrl,
+    required this.originUrl,
+    required this.videoId,
+    required this.durationText,
+    required this.playCountText,
+    required this.width,
+    required this.height,
+  });
+
+  final String videoUrl;
+  final String coverUrl;
+  final String posterUrl;
+  final String backgroundUrl;
+  final String originUrl;
+  final String videoId;
+  final String durationText;
+  final String playCountText;
+  final double width;
+  final double height;
+
+  double? get aspectRatio {
+    if (width <= 0 || height <= 0) {
+      return null;
+    }
+    return width / height;
+  }
+
+  factory HupuPostVideoInfo.fromJson(Map<String, dynamic> json) {
+    return HupuPostVideoInfo(
+      videoUrl: json['src']?.toString() ?? '',
+      coverUrl: json['cover_url']?.toString() ?? '',
+      posterUrl: json['img']?.toString() ?? '',
+      backgroundUrl: json['bg_img']?.toString() ?? '',
+      originUrl: json['from_url']?.toString() ?? '',
+      videoId: json['vid']?.toString() ?? '',
+      durationText: json['duration']?.toString() ?? '',
+      playCountText: json['play_num']?.toString() ?? '',
+      width: _parseDouble(json['width']),
+      height: _parseDouble(json['height']),
     );
   }
 }
@@ -356,6 +411,13 @@ int _parseInt(dynamic value) {
   return int.tryParse(value?.toString() ?? '') ?? 0;
 }
 
+double _parseDouble(dynamic value) {
+  if (value is num) {
+    return value.toDouble();
+  }
+  return double.tryParse(value?.toString() ?? '') ?? 0;
+}
+
 List<HupuPostTagInfo> _parseTagInfoList(dynamic rawItems) {
   if (rawItems is! List) {
     return const <HupuPostTagInfo>[];
@@ -378,4 +440,14 @@ List<HupuPostRelatedCard> _parseRelatedCardList(dynamic rawItems) {
         (item) => HupuPostRelatedCard.fromJson(Map<String, dynamic>.from(item)),
       )
       .toList(growable: false);
+}
+
+HupuPostVideoInfo? _parseVideoInfo(dynamic rawData) {
+  if (rawData is Map<String, dynamic>) {
+    return HupuPostVideoInfo.fromJson(rawData);
+  }
+  if (rawData is Map) {
+    return HupuPostVideoInfo.fromJson(Map<String, dynamic>.from(rawData));
+  }
+  return null;
 }
