@@ -2,7 +2,6 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_redux/flutter_redux.dart';
-import 'package:oolaf_flutted/analytics/analytics_sdk.dart';
 import 'package:oolaf_flutted/api/ifeng_auth/index.dart';
 import 'package:oolaf_flutted/api/short_video/index.dart';
 import 'package:oolaf_flutted/components/app_asset_icon/index.dart';
@@ -49,11 +48,6 @@ class _ShortVideoPageState extends State<ShortVideoPage> {
   static const Duration _topTabLoadDebounceForTap = Duration(milliseconds: 140);
   static const Duration _topTabLoadDebounceForSwipe =
       Duration(milliseconds: 260);
-  static const List<String> _tabTrackNames = <String>[
-    'home',
-    'hot',
-    'profile',
-  ];
   static const List<ShortVideoTabItem> _tabItems = <ShortVideoTabItem>[
     ShortVideoTabItem(label: '首页'),
     ShortVideoTabItem(label: '热点'),
@@ -258,7 +252,6 @@ class _ShortVideoPageState extends State<ShortVideoPage> {
   }
 
   void _onTapBottomTab(int index) {
-    final previousIndex = _activeTabIndex;
     if (_activeTabIndex == index) {
       if (index == 0) {
         final now = DateTime.now();
@@ -275,16 +268,6 @@ class _ShortVideoPageState extends State<ShortVideoPage> {
     setState(() {
       _activeTabIndex = index;
     });
-
-    AnalyticsSdk.instance.track(
-      eventName: 'tab_switch',
-      pageUrl: '/video_tabs/shell',
-      properties: <String, dynamic>{
-        'from_tab': _tabTrackNames[previousIndex],
-        'to_tab': _tabTrackNames[index],
-        'tab_index': index,
-      },
-    );
 
     if (index == 0) {
       _syncTopTabVisibility(activeIndex: _activeHomeTopTabIndex);

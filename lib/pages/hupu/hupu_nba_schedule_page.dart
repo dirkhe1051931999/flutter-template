@@ -4,7 +4,7 @@ import 'dart:ui';
 import 'package:flutter/cupertino.dart';
 import 'package:oolaf_flutted/api/hupu/index.dart';
 import 'package:oolaf_flutted/components/linked_tab_view/index.dart';
-import 'package:oolaf_flutted/components/hupu_page_header/index.dart';
+import 'package:oolaf_flutted/components/route_page_header/index.dart';
 import 'package:oolaf_flutted/model/hupu/index.dart';
 import 'package:oolaf_flutted/pages/hupu/widgets/hupu_refresh_indicator.dart';
 
@@ -18,7 +18,12 @@ const Set<PointerDeviceKind> _nbaScheduleDragDevices = <PointerDeviceKind>{
 };
 
 class HupuNbaSchedulePage extends StatefulWidget {
-  const HupuNbaSchedulePage({super.key});
+  const HupuNbaSchedulePage({
+    super.key,
+    this.initialTabId,
+  });
+
+  final String? initialTabId;
 
   @override
   State<HupuNbaSchedulePage> createState() => _HupuNbaSchedulePageState();
@@ -281,7 +286,7 @@ class _HupuNbaSchedulePageState extends State<HupuNbaSchedulePage> {
       if (item.day == day) {
         return offset;
       }
-      offset += 56 + (item.matches.length * 134);
+      offset += 42 + (item.matches.length * 98);
     }
     return null;
   }
@@ -356,6 +361,12 @@ class _HupuNbaSchedulePageState extends State<HupuNbaSchedulePage> {
             label: tab.name,
             child: const _PlayerRankView(),
           );
+        case 'teamsrank':
+          return LinkedTabItem(
+            id: tab.id,
+            label: tab.name,
+            child: const _TeamRankView(),
+          );
         default:
           return LinkedTabItem(
             id: tab.id,
@@ -368,6 +379,15 @@ class _HupuNbaSchedulePageState extends State<HupuNbaSchedulePage> {
 
   int _initialLinkedTabIndex() {
     final sourceTabs = _tabs.isEmpty ? _fallbackTabs : _tabs;
+    final initialTabId = widget.initialTabId;
+    if (initialTabId != null && initialTabId.isNotEmpty) {
+      final configuredIndex = sourceTabs.indexWhere(
+        (tab) => tab.id == initialTabId,
+      );
+      if (configuredIndex >= 0) {
+        return configuredIndex;
+      }
+    }
     final index = sourceTabs.indexWhere((tab) => tab.id == 'games');
     return index < 0 ? 0 : index;
   }
@@ -411,6 +431,7 @@ class _HupuNbaSchedulePageState extends State<HupuNbaSchedulePage> {
 
   @override
   Widget build(BuildContext context) {
+    final isCompact = MediaQuery.sizeOf(context).width <= 450;
     return ScrollConfiguration(
       behavior: const CupertinoScrollBehavior().copyWith(
         dragDevices: _nbaScheduleDragDevices,
@@ -423,7 +444,7 @@ class _HupuNbaSchedulePageState extends State<HupuNbaSchedulePage> {
             children: [
               Column(
                 children: [
-                  HupuPageHeader(
+                  RoutePageHeader(
                     title: 'NBA',
                     onBack: () => Navigator.of(context).maybePop(),
                   ),
@@ -431,15 +452,16 @@ class _HupuNbaSchedulePageState extends State<HupuNbaSchedulePage> {
                     child: LinkedTabView(
                       items: _buildLinkedTabs(),
                       initialIndex: _initialLinkedTabIndex(),
-                      tabBarHeight: 60,
-                      tabBarPadding:
-                          const EdgeInsets.symmetric(horizontal: 20),
-                      tabSpacing: 32,
+                      tabBarHeight: isCompact ? 46 : 52,
+                      tabBarPadding: EdgeInsets.symmetric(
+                        horizontal: isCompact ? 12 : 20,
+                      ),
+                      tabSpacing: isCompact ? 18 : 32,
                       activeTabColor: const Color(0xFF202127),
                       inactiveTabColor: const Color(0xFF8F96A3),
                       activeIndicatorColor: const Color(0xFFE91B2A),
-                      activeFontSize: 23,
-                      inactiveFontSize: 23,
+                      activeFontSize: isCompact ? 16 : 20,
+                      inactiveFontSize: isCompact ? 16 : 20,
                     ),
                   ),
                 ],
@@ -466,15 +488,15 @@ class _ScheduleDaySection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Container(
-          height: 56,
+          height: 42,
           alignment: Alignment.centerLeft,
-          padding: const EdgeInsets.symmetric(horizontal: 22),
+          padding: const EdgeInsets.symmetric(horizontal: 14),
           color: const Color(0xFFF0F1F5),
           child: Text(
             day.dayBlock,
             style: const TextStyle(
               color: Color(0xFF6E7582),
-              fontSize: 18,
+              fontSize: 14,
             ),
           ),
         ),
@@ -492,19 +514,19 @@ class _ScheduleMatchTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 134,
+      height: 98,
       decoration: const BoxDecoration(
         color: CupertinoColors.white,
         border: Border(
-          bottom: BorderSide(color: Color(0xFFEDEEF2), width: 1),
+          bottom: BorderSide(color: Color(0xFFEDEEF2), width: 0.7),
         ),
       ),
       child: Row(
         children: [
           SizedBox(
-            width: 104,
+            width: 70,
             child: Padding(
-              padding: const EdgeInsets.only(left: 22),
+              padding: const EdgeInsets.only(left: 14),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -513,16 +535,16 @@ class _ScheduleMatchTile extends StatelessWidget {
                     match.timeText,
                     style: const TextStyle(
                       color: Color(0xFF202127),
-                      fontSize: 18,
+                      fontSize: 13,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 6),
                   Text(
                     match.stageText,
                     style: const TextStyle(
                       color: Color(0xFF9AA1AE),
-                      fontSize: 16,
+                      fontSize: 11,
                     ),
                   ),
                 ],
@@ -538,7 +560,7 @@ class _ScheduleMatchTile extends StatelessWidget {
                   name: match.awayTeamName,
                   bigScore: match.awayBigScore,
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 8),
                 _TeamLine(
                   logoUrl: match.homeTeamLogo,
                   name: match.homeTeamName,
@@ -548,7 +570,7 @@ class _ScheduleMatchTile extends StatelessWidget {
             ),
           ),
           SizedBox(
-            width: 58,
+            width: 38,
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.end,
@@ -559,16 +581,16 @@ class _ScheduleMatchTile extends StatelessWidget {
                     color: match.isCompleted
                         ? const Color(0xFF9AA1AE)
                         : const Color(0xFF202127),
-                    fontSize: 21,
+                    fontSize: 15,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
-                const SizedBox(height: 18),
+                const SizedBox(height: 12),
                 Text(
                   _scoreText(match.homeScore),
                   style: const TextStyle(
                     color: Color(0xFF202127),
-                    fontSize: 21,
+                    fontSize: 15,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -577,14 +599,14 @@ class _ScheduleMatchTile extends StatelessWidget {
           ),
           Container(
             width: 1,
-            height: 82,
-            margin: const EdgeInsets.symmetric(horizontal: 18),
+            height: 58,
+            margin: const EdgeInsets.symmetric(horizontal: 10),
             color: const Color(0xFFEDEEF2),
           ),
           Padding(
-            padding: const EdgeInsets.only(right: 18),
+            padding: const EdgeInsets.only(right: 10),
             child: SizedBox(
-              width: 76,
+              width: 52,
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -592,19 +614,19 @@ class _ScheduleMatchTile extends StatelessWidget {
                     match.rightTitle,
                     style: const TextStyle(
                       color: Color(0xFF202127),
-                      fontSize: 18,
+                      fontSize: 13,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
                   if (match.scoreText.isNotEmpty) ...[
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 6),
                     Text(
                       match.scoreText,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         color: Color(0xFF9AA1AE),
-                        fontSize: 14,
+                        fontSize: 10,
                       ),
                     ),
                   ],
@@ -814,11 +836,11 @@ class _TeamLine extends StatelessWidget {
       children: [
         Image.network(
           logoUrl,
-          width: 34,
-          height: 34,
+          width: 24,
+          height: 24,
           fit: BoxFit.contain,
         ),
-        const SizedBox(width: 10),
+        const SizedBox(width: 8),
         Expanded(
           child: Text(
             '$name$suffix',
@@ -826,8 +848,8 @@ class _TeamLine extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(
               color: Color(0xFF202127),
-              fontSize: 20,
-              fontWeight: FontWeight.w700,
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
             ),
           ),
         ),
@@ -901,16 +923,16 @@ class _BottomLoadingIndicator extends StatelessWidget {
   Widget build(BuildContext context) {
     if (isLoading) {
       return const SizedBox(
-        height: 58,
+        height: 52,
         child: Center(child: CupertinoActivityIndicator(radius: 10)),
       );
     }
     return SizedBox(
-      height: 58,
+      height: 52,
       child: Center(
         child: Text(
           hasMore ? '' : '没有更多了',
-          style: const TextStyle(color: Color(0xFF9AA1AE), fontSize: 16),
+          style: const TextStyle(color: Color(0xFF9AA1AE), fontSize: 13),
         ),
       ),
     );
@@ -2041,7 +2063,10 @@ class _PlayerRankViewState extends State<_PlayerRankView> {
     if (!_metricScrollController.hasClients) {
       return;
     }
-    final target = (index * 82.0 - 120).clamp(
+    final isCompact = MediaQuery.sizeOf(context).width <= 450;
+    final itemExtent = isCompact ? 70.0 : 82.0;
+    final leadingOffset = isCompact ? 96.0 : 120.0;
+    final target = (index * itemExtent - leadingOffset).clamp(
       _metricScrollController.position.minScrollExtent,
       _metricScrollController.position.maxScrollExtent,
     );
@@ -2231,78 +2256,87 @@ class _PlayerRankViewState extends State<_PlayerRankView> {
     if (dimensions.isEmpty) {
       return const _ScheduleEmptyState();
     }
+    final isCompact = MediaQuery.sizeOf(context).width <= 450;
+    final topBarHeight = isCompact ? 68.0 : 82.0;
+    final sideColumnWidth = isCompact ? 92.0 : 118.0;
+    final sideItemHeight = isCompact ? 70.0 : 82.0;
     final dimension = dimensions[_activeDimensionIndex];
     _ensureRankKeys(dimension.items.length);
     return Column(
       children: [
         Container(
-          height: 82,
-          padding: const EdgeInsets.symmetric(horizontal: 18),
+          height: topBarHeight,
+          padding: EdgeInsets.symmetric(horizontal: isCompact ? 10 : 18),
           decoration: const BoxDecoration(
             color: CupertinoColors.white,
             border: Border(
               bottom: BorderSide(color: Color(0xFFEDEEF2), width: 1),
             ),
           ),
-          child: Row(
-            children: [
-              CupertinoButton(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
-                color: const Color(0xFFF3F5FA),
-                borderRadius: BorderRadius.circular(4),
-                onPressed: _showSeasonPicker,
-                child: Text(
-                  '${_selectedSeason?.displayName ?? '选择赛季'} ▾',
-                  style: const TextStyle(
-                    color: Color(0xFF202127),
-                    fontSize: 20,
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                CupertinoButton(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: isCompact ? 12 : 18,
+                    vertical: isCompact ? 8 : 10,
+                  ),
+                  color: const Color(0xFFF3F5FA),
+                  borderRadius: BorderRadius.circular(4),
+                  onPressed: _showSeasonPicker,
+                  child: Text(
+                    '${_selectedSeason?.displayName ?? '选择赛季'} ▾',
+                    style: TextStyle(
+                      color: const Color(0xFF202127),
+                      fontSize: isCompact ? 16 : 20,
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 16),
-              ...List.generate(dimensions.length, (index) {
-                final item = dimensions[index];
-                final isActive = index == _activeDimensionIndex;
-                return Padding(
-                  padding: const EdgeInsets.only(right: 12),
-                  child: CupertinoButton(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 24,
-                      vertical: 10,
-                    ),
-                    color: const Color(0xFFF3F5FA),
-                    borderRadius: BorderRadius.circular(4),
-                    onPressed: () {
-                      setState(() {
-                        _activeDimensionIndex = index;
-                        _activeItemIndex = 0;
-                      });
-                      _ensureRankKeys(item.items.length);
-                      if (_rankScrollController.hasClients) {
-                        _rankScrollController.jumpTo(0);
-                      }
-                    },
-                    child: Text(
-                      item.chineseName,
-                      style: TextStyle(
-                        color: isActive
-                            ? const Color(0xFF202127)
-                            : const Color(0xFF8F96A3),
-                        fontSize: 20,
+                SizedBox(width: isCompact ? 10 : 16),
+                ...List.generate(dimensions.length, (index) {
+                  final item = dimensions[index];
+                  final isActive = index == _activeDimensionIndex;
+                  return Padding(
+                    padding: EdgeInsets.only(right: isCompact ? 8 : 12),
+                    child: CupertinoButton(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: isCompact ? 14 : 24,
+                        vertical: isCompact ? 8 : 10,
+                      ),
+                      color: const Color(0xFFF3F5FA),
+                      borderRadius: BorderRadius.circular(4),
+                      onPressed: () {
+                        setState(() {
+                          _activeDimensionIndex = index;
+                          _activeItemIndex = 0;
+                        });
+                        _ensureRankKeys(item.items.length);
+                        if (_rankScrollController.hasClients) {
+                          _rankScrollController.jumpTo(0);
+                        }
+                      },
+                      child: Text(
+                        item.chineseName,
+                        style: TextStyle(
+                          color: isActive
+                              ? const Color(0xFF202127)
+                              : const Color(0xFF8F96A3),
+                          fontSize: isCompact ? 16 : 20,
+                        ),
                       ),
                     ),
-                  ),
-                );
-              }),
-            ],
+                  );
+                }),
+              ],
+            ),
           ),
         ),
         Expanded(
           child: Row(
             children: [
               Container(
-                width: 118,
+                width: sideColumnWidth,
                 color: const Color(0xFFF3F5FA),
                 child: ListView.builder(
                   controller: _metricScrollController,
@@ -2314,18 +2348,21 @@ class _PlayerRankViewState extends State<_PlayerRankView> {
                       behavior: HitTestBehavior.opaque,
                       onTap: () => _jumpToRankItem(index),
                       child: Container(
-                        height: 82,
+                        height: sideItemHeight,
                         alignment: Alignment.centerLeft,
-                        padding: const EdgeInsets.only(left: 22, right: 12),
+                        padding: EdgeInsets.only(
+                          left: isCompact ? 12 : 22,
+                          right: isCompact ? 8 : 12,
+                        ),
                         decoration: BoxDecoration(
                           color: isActive
                               ? CupertinoColors.white
                               : const Color(0xFFF3F5FA),
                           border: isActive
-                              ? const Border(
+                              ? Border(
                                   left: BorderSide(
-                                    color: Color(0xFFE91B2A),
-                                    width: 4,
+                                    color: const Color(0xFFE91B2A),
+                                    width: isCompact ? 3 : 4,
                                   ),
                                 )
                               : null,
@@ -2338,7 +2375,7 @@ class _PlayerRankViewState extends State<_PlayerRankView> {
                             color: isActive
                                 ? const Color(0xFF202127)
                                 : const Color(0xFF8F96A3),
-                            fontSize: 18,
+                            fontSize: isCompact ? 15 : 18,
                           ),
                         ),
                       ),
@@ -2447,6 +2484,1077 @@ class _RankItemContentV2 extends StatelessWidget {
   }
 }
 
+class _TeamRankView extends StatefulWidget {
+  const _TeamRankView();
+
+  @override
+  State<_TeamRankView> createState() => _TeamRankViewState();
+}
+
+class _TeamRankViewState extends State<_TeamRankView> {
+  final ScrollController _contentScrollController = ScrollController();
+  final ScrollController _menuScrollController = ScrollController();
+  final List<GlobalKey> _sectionKeys = <GlobalKey>[];
+
+  HupuNbaRankSeason? _selectedSeason;
+  List<HupuNbaRankSeason> _seasons = const <HupuNbaRankSeason>[];
+  List<_TeamRankSection> _sections = const <_TeamRankSection>[];
+  int _activeSectionIndex = 0;
+  bool _isLoading = true;
+  String? _errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    _contentScrollController.addListener(_handleContentScroll);
+    unawaited(_fetchInitial());
+  }
+
+  @override
+  void dispose() {
+    _contentScrollController
+      ..removeListener(_handleContentScroll)
+      ..dispose();
+    _menuScrollController.dispose();
+    super.dispose();
+  }
+
+  void _ensureSectionKeys(int count) {
+    if (_sectionKeys.length == count) {
+      return;
+    }
+    _sectionKeys
+      ..clear()
+      ..addAll(List<GlobalKey>.generate(count, (_) => GlobalKey()));
+  }
+
+  void _handleContentScroll() {
+    if (_sections.isEmpty) {
+      return;
+    }
+    var nextIndex = _activeSectionIndex;
+    for (var index = 0; index < _sections.length; index += 1) {
+      final context = _sectionKeys[index].currentContext;
+      if (context == null) {
+        continue;
+      }
+      final box = context.findRenderObject();
+      if (box is! RenderBox) {
+        continue;
+      }
+      final top = box.localToGlobal(Offset.zero).dy;
+      if (top <= 180) {
+        nextIndex = index;
+      }
+    }
+    if (nextIndex != _activeSectionIndex && mounted) {
+      setState(() {
+        _activeSectionIndex = nextIndex;
+      });
+      _scrollMenuIntoView(nextIndex);
+    }
+  }
+
+  void _scrollMenuIntoView(int index) {
+    if (!_menuScrollController.hasClients) {
+      return;
+    }
+    final isCompact = MediaQuery.sizeOf(context).width <= 450;
+    final itemExtent = isCompact ? 68.0 : 78.0;
+    final leadingOffset = isCompact ? 88.0 : 118.0;
+    final target = (index * itemExtent - leadingOffset).clamp(
+      _menuScrollController.position.minScrollExtent,
+      _menuScrollController.position.maxScrollExtent,
+    );
+    unawaited(
+      _menuScrollController.animateTo(
+        target,
+        duration: const Duration(milliseconds: 180),
+        curve: Curves.easeOutCubic,
+      ),
+    );
+  }
+
+  void _jumpToSection(int index) {
+    if (index < 0 || index >= _sectionKeys.length) {
+      return;
+    }
+    final context = _sectionKeys[index].currentContext;
+    if (context == null) {
+      return;
+    }
+    setState(() {
+      _activeSectionIndex = index;
+    });
+    Scrollable.ensureVisible(
+      context,
+      duration: const Duration(milliseconds: 260),
+      curve: Curves.easeOutCubic,
+      alignment: 0,
+    );
+  }
+
+  Future<void> _fetchInitial() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+    try {
+      final seasons = await getHupuNbaRankSeasons();
+      final selected = seasons.seasons.isEmpty ? null : seasons.selected;
+      final standingData = selected == null
+          ? const HupuNbaTeamStandingData(
+              season: '',
+              competitionStageType: '',
+              eastRows: <HupuNbaTeamStandingRow>[],
+              westRows: <HupuNbaTeamStandingRow>[],
+              divisionGroups: <HupuNbaTeamStandingDivisionGroup>[],
+            )
+          : await getHupuNbaTeamStandingList(
+              season: selected.season,
+              competitionStageType: selected.seasonType,
+            );
+      final teamRankData = selected == null
+          ? const HupuNbaTeamRankData(categories: <HupuNbaTeamRankCategory>[])
+          : await getHupuNbaTeamSeasonRank(
+              season: selected.season,
+              competitionStageType: selected.seasonType,
+            );
+      if (!mounted) {
+        return;
+      }
+      final sections = _buildTeamRankSections(standingData, teamRankData);
+      setState(() {
+        _seasons = seasons.seasons;
+        _selectedSeason = selected;
+        _sections = sections;
+        _activeSectionIndex = 0;
+        _isLoading = false;
+      });
+      _ensureSectionKeys(sections.length);
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _errorMessage = error.toString();
+        _isLoading = false;
+      });
+    }
+  }
+
+  List<_TeamRankSection> _buildTeamRankSections(
+    HupuNbaTeamStandingData standingData,
+    HupuNbaTeamRankData teamRankData,
+  ) {
+    final sections = <_TeamRankSection>[];
+    if (standingData.eastRows.isNotEmpty) {
+      sections.add(
+        _TeamRankSection.conference(
+          id: 'east',
+          title: '东部排行',
+          rows: standingData.eastRows,
+        ),
+      );
+    }
+    if (standingData.westRows.isNotEmpty) {
+      sections.add(
+        _TeamRankSection.conference(
+          id: 'west',
+          title: '西部排行',
+          rows: standingData.westRows,
+        ),
+      );
+    }
+    if (standingData.divisionGroups.isNotEmpty) {
+      sections.add(
+        _TeamRankSection.division(
+          id: 'division',
+          title: '分区排行',
+          groups: standingData.divisionGroups,
+        ),
+      );
+    }
+    for (final category in teamRankData.categories) {
+      sections.add(
+        _TeamRankSection.metric(
+          id: 'metric-${category.rankType}',
+          title: category.name,
+          rows: category.rows,
+        ),
+      );
+    }
+    return sections;
+  }
+
+  Future<void> _selectSeason(HupuNbaRankSeason season) async {
+    Navigator.of(context).pop();
+    setState(() {
+      _selectedSeason = season;
+      _isLoading = true;
+      _activeSectionIndex = 0;
+    });
+    try {
+      final results = await Future.wait([
+        getHupuNbaTeamStandingList(
+          season: season.season,
+          competitionStageType: season.seasonType,
+        ),
+        getHupuNbaTeamSeasonRank(
+          season: season.season,
+          competitionStageType: season.seasonType,
+        ),
+      ]);
+      if (!mounted) {
+        return;
+      }
+      final sections = _buildTeamRankSections(
+        results[0] as HupuNbaTeamStandingData,
+        results[1] as HupuNbaTeamRankData,
+      );
+      setState(() {
+        _sections = sections;
+        _isLoading = false;
+      });
+      _ensureSectionKeys(sections.length);
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _errorMessage = error.toString();
+        _isLoading = false;
+      });
+    }
+  }
+
+  void _showSeasonPicker() {
+    showCupertinoModalPopup<void>(
+      context: context,
+      builder: (context) {
+        return Container(
+          height: 360,
+          decoration: const BoxDecoration(
+            color: CupertinoColors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
+          ),
+          child: Column(
+            children: [
+              SizedBox(
+                height: 56,
+                child: Row(
+                  children: [
+                    CupertinoButton(
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      onPressed: () => Navigator.of(context).pop(),
+                      child: const Text(
+                        '取消',
+                        style: TextStyle(color: Color(0xFF8F96A3)),
+                      ),
+                    ),
+                    const Spacer(),
+                    CupertinoButton(
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      onPressed: () => Navigator.of(context).pop(),
+                      child: const Text(
+                        '确定',
+                        style: TextStyle(color: Color(0xFFE91B2A)),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const DividerLine(),
+              Expanded(
+                child: ListView.builder(
+                  itemCount: _seasons.length,
+                  itemBuilder: (context, index) {
+                    final season = _seasons[index];
+                    final isSelected =
+                        season.season == _selectedSeason?.season &&
+                            season.seasonType == _selectedSeason?.seasonType;
+                    return GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () => _selectSeason(season),
+                      child: Container(
+                        height: 52,
+                        alignment: Alignment.center,
+                        color: isSelected
+                            ? const Color(0xFFF3F5FA)
+                            : CupertinoColors.white,
+                        child: Text(
+                          season.displayName,
+                          style: TextStyle(
+                            color: isSelected
+                                ? const Color(0xFF202127)
+                                : const Color(0xFF8F96A3),
+                            fontSize: isSelected ? 24 : 21,
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Center(child: CupertinoActivityIndicator(radius: 14));
+    }
+    if (_errorMessage != null) {
+      return _ScheduleEmptyState(detail: _errorMessage);
+    }
+    if (_sections.isEmpty) {
+      return const _ScheduleEmptyState();
+    }
+    final isCompact = MediaQuery.sizeOf(context).width <= 450;
+    final topBarHeight = isCompact ? 68.0 : 82.0;
+    final menuWidth = isCompact ? 92.0 : 108.0;
+    final menuItemHeight = isCompact ? 68.0 : 78.0;
+
+    _ensureSectionKeys(_sections.length);
+
+    return Column(
+      children: [
+        Container(
+          height: topBarHeight,
+          padding: EdgeInsets.symmetric(horizontal: isCompact ? 10 : 18),
+          decoration: const BoxDecoration(
+            color: CupertinoColors.white,
+            border: Border(
+              bottom: BorderSide(color: Color(0xFFEDEEF2), width: 1),
+            ),
+          ),
+          alignment: Alignment.centerLeft,
+          child: CupertinoButton(
+            padding: EdgeInsets.symmetric(
+              horizontal: isCompact ? 12 : 18,
+              vertical: isCompact ? 8 : 10,
+            ),
+            color: const Color(0xFFF3F5FA),
+            borderRadius: BorderRadius.circular(4),
+            onPressed: _showSeasonPicker,
+            child: Text(
+              '${_selectedSeason?.displayName ?? '选择赛季'} ▾',
+              style: TextStyle(
+                color: const Color(0xFF202127),
+                fontSize: isCompact ? 16 : 20,
+              ),
+            ),
+          ),
+        ),
+        Expanded(
+          child: Row(
+            children: [
+              Container(
+                width: menuWidth,
+                color: const Color(0xFFF3F5FA),
+                child: ListView.builder(
+                  controller: _menuScrollController,
+                  itemCount: _sections.length,
+                  itemBuilder: (context, index) {
+                    final section = _sections[index];
+                    final isActive = index == _activeSectionIndex;
+                    return GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () => _jumpToSection(index),
+                      child: Container(
+                        height: menuItemHeight,
+                        alignment: Alignment.centerLeft,
+                        padding: EdgeInsets.only(
+                          left: isCompact ? 12 : 16,
+                          right: isCompact ? 8 : 12,
+                        ),
+                        decoration: BoxDecoration(
+                          color: isActive
+                              ? CupertinoColors.white
+                              : const Color(0xFFF3F5FA),
+                          border: isActive
+                              ? Border(
+                                  left: BorderSide(
+                                    color: const Color(0xFFE91B2A),
+                                    width: isCompact ? 3 : 4,
+                                  ),
+                                )
+                              : null,
+                        ),
+                        child: Text(
+                          section.title,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: isActive
+                                ? const Color(0xFF202127)
+                                : const Color(0xFF8F96A3),
+                            fontSize: isCompact ? 15 : 17,
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+              Expanded(
+                child: ListView.builder(
+                  controller: _contentScrollController,
+                  padding: EdgeInsets.zero,
+                  itemCount: _sections.length,
+                  itemBuilder: (context, index) {
+                    final section = _sections[index];
+                    return Container(
+                      key: _sectionKeys[index],
+                      child: _TeamRankSectionBlock(
+                        section: section,
+                        isCompact: isCompact,
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _TeamRankSection {
+  const _TeamRankSection._({
+    required this.id,
+    required this.title,
+    required this.kind,
+    this.conferenceRows = const <HupuNbaTeamStandingRow>[],
+    this.divisionGroups = const <HupuNbaTeamStandingDivisionGroup>[],
+    this.metricRows = const <HupuNbaTeamRankRow>[],
+  });
+
+  factory _TeamRankSection.conference({
+    required String id,
+    required String title,
+    required List<HupuNbaTeamStandingRow> rows,
+  }) {
+    return _TeamRankSection._(
+      id: id,
+      title: title,
+      kind: _TeamRankSectionKind.conference,
+      conferenceRows: rows,
+    );
+  }
+
+  factory _TeamRankSection.division({
+    required String id,
+    required String title,
+    required List<HupuNbaTeamStandingDivisionGroup> groups,
+  }) {
+    return _TeamRankSection._(
+      id: id,
+      title: title,
+      kind: _TeamRankSectionKind.division,
+      divisionGroups: groups,
+    );
+  }
+
+  factory _TeamRankSection.metric({
+    required String id,
+    required String title,
+    required List<HupuNbaTeamRankRow> rows,
+  }) {
+    return _TeamRankSection._(
+      id: id,
+      title: title,
+      kind: _TeamRankSectionKind.metric,
+      metricRows: rows,
+    );
+  }
+
+  final String id;
+  final String title;
+  final _TeamRankSectionKind kind;
+  final List<HupuNbaTeamStandingRow> conferenceRows;
+  final List<HupuNbaTeamStandingDivisionGroup> divisionGroups;
+  final List<HupuNbaTeamRankRow> metricRows;
+}
+
+enum _TeamRankSectionKind {
+  conference,
+  division,
+  metric,
+}
+
+class _TeamRankSectionBlock extends StatelessWidget {
+  const _TeamRankSectionBlock({
+    required this.section,
+    required this.isCompact,
+  });
+
+  final _TeamRankSection section;
+  final bool isCompact;
+
+  @override
+  Widget build(BuildContext context) {
+    switch (section.kind) {
+      case _TeamRankSectionKind.conference:
+        return _ConferenceSection(
+          title: section.title,
+          rows: section.conferenceRows,
+          isCompact: isCompact,
+        );
+      case _TeamRankSectionKind.division:
+        return _DivisionSection(
+          title: section.title,
+          groups: section.divisionGroups,
+          isCompact: isCompact,
+        );
+      case _TeamRankSectionKind.metric:
+        return _MetricSection(
+          title: section.title,
+          rows: section.metricRows,
+          isCompact: isCompact,
+        );
+    }
+  }
+}
+
+class _ConferenceSection extends StatelessWidget {
+  const _ConferenceSection({
+    required this.title,
+    required this.rows,
+    required this.isCompact,
+  });
+
+  final String title;
+  final List<HupuNbaTeamStandingRow> rows;
+  final bool isCompact;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _TeamSectionTitle(title: title, isCompact: isCompact),
+        _ConferenceHeader(isCompact: isCompact),
+        ...rows.map(
+          (row) => _ConferenceRow(row: row, isCompact: isCompact),
+        ),
+      ],
+    );
+  }
+}
+
+class _DivisionSection extends StatelessWidget {
+  const _DivisionSection({
+    required this.title,
+    required this.groups,
+    required this.isCompact,
+  });
+
+  final String title;
+  final List<HupuNbaTeamStandingDivisionGroup> groups;
+  final bool isCompact;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _TeamSectionTitle(title: title, isCompact: isCompact),
+        ...groups.map(
+          (group) => Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Container(
+                height: isCompact ? 34 : 40,
+                padding: EdgeInsets.symmetric(horizontal: isCompact ? 10 : 14),
+                alignment: Alignment.centerLeft,
+                color: const Color(0xFFF7F8FB),
+                child: Text(
+                  group.title,
+                  style: TextStyle(
+                    color: const Color(0xFF6E7582),
+                    fontSize: isCompact ? 13 : 15,
+                  ),
+                ),
+              ),
+              _DivisionHeader(isCompact: isCompact),
+              ...group.rows.map(
+                (row) => _DivisionRow(row: row, isCompact: isCompact),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _MetricSection extends StatelessWidget {
+  const _MetricSection({
+    required this.title,
+    required this.rows,
+    required this.isCompact,
+  });
+
+  final String title;
+  final List<HupuNbaTeamRankRow> rows;
+  final bool isCompact;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _TeamSectionTitle(title: title, isCompact: isCompact),
+        _MetricHeader(isCompact: isCompact),
+        ...rows.map((row) => _MetricRow(row: row, isCompact: isCompact)),
+      ],
+    );
+  }
+}
+
+class _TeamSectionTitle extends StatelessWidget {
+  const _TeamSectionTitle({required this.title, required this.isCompact});
+
+  final String title;
+  final bool isCompact;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: isCompact ? 34 : 40,
+      alignment: Alignment.centerLeft,
+      padding: EdgeInsets.symmetric(horizontal: isCompact ? 10 : 14),
+      color: const Color(0xFFF0F1F5),
+      child: Text(
+        title,
+        style: TextStyle(
+          color: const Color(0xFF6E7582),
+          fontSize: isCompact ? 13 : 15,
+        ),
+      ),
+    );
+  }
+}
+
+class _ConferenceHeader extends StatelessWidget {
+  const _ConferenceHeader({required this.isCompact});
+
+  final bool isCompact;
+
+  @override
+  Widget build(BuildContext context) {
+    final fontSize = isCompact ? 12.0 : 14.0;
+    return Container(
+      height: isCompact ? 36 : 42,
+      padding: EdgeInsets.symmetric(horizontal: isCompact ? 10 : 14),
+      decoration: const BoxDecoration(
+        color: CupertinoColors.white,
+        border: Border(
+          bottom: BorderSide(color: Color(0xFFEDEEF2), width: 1),
+        ),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            flex: 40,
+            child: Text('球队', style: TextStyle(fontSize: fontSize)),
+          ),
+          Expanded(
+            flex: 18,
+            child: Text(
+              '胜-负',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: fontSize),
+            ),
+          ),
+          Expanded(
+            flex: 24,
+            child: Text(
+              '胜率/胜场差',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: fontSize),
+            ),
+          ),
+          Expanded(
+            flex: 18,
+            child: Text(
+              '近况',
+              textAlign: TextAlign.right,
+              style: TextStyle(fontSize: fontSize),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ConferenceRow extends StatelessWidget {
+  const _ConferenceRow({required this.row, required this.isCompact});
+
+  final HupuNbaTeamStandingRow row;
+  final bool isCompact;
+
+  @override
+  Widget build(BuildContext context) {
+    final fontSize = isCompact ? 12.0 : 14.0;
+    return Container(
+      height: isCompact ? 52 : 60,
+      padding: EdgeInsets.symmetric(horizontal: isCompact ? 10 : 14),
+      decoration: const BoxDecoration(
+        color: CupertinoColors.white,
+        border: Border(
+          bottom: BorderSide(color: Color(0xFFEDEEF2), width: 1),
+        ),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            flex: 40,
+            child: Row(
+              children: [
+                SizedBox(
+                  width: isCompact ? 16 : 20,
+                  child: Text(
+                    '${row.rank}',
+                    style: TextStyle(
+                      color: row.rank == 1
+                          ? const Color(0xFFE91B2A)
+                          : const Color(0xFF202127),
+                      fontSize: fontSize,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 4),
+                Image.network(
+                  row.logoLink,
+                  width: isCompact ? 22 : 26,
+                  height: isCompact ? 22 : 26,
+                  fit: BoxFit.contain,
+                ),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    row.teamShortName,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(fontSize: fontSize),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            flex: 18,
+            child: Text(
+              row.wl,
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: fontSize),
+            ),
+          ),
+          Expanded(
+            flex: 24,
+            child: Text(
+              '${row.winRate}/${row.gb}',
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: fontSize,
+                color: const Color(0xFF6E7582),
+              ),
+            ),
+          ),
+          Expanded(
+            flex: 18,
+            child: Text(
+              row.streakText,
+              textAlign: TextAlign.right,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: fontSize,
+                color: const Color(0xFF6E7582),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DivisionHeader extends StatelessWidget {
+  const _DivisionHeader({required this.isCompact});
+
+  final bool isCompact;
+
+  @override
+  Widget build(BuildContext context) {
+    final fontSize = isCompact ? 11.0 : 13.0;
+    return Container(
+      height: isCompact ? 34 : 40,
+      padding: EdgeInsets.symmetric(horizontal: isCompact ? 10 : 14),
+      decoration: const BoxDecoration(
+        color: CupertinoColors.white,
+        border: Border(
+          bottom: BorderSide(color: Color(0xFFEDEEF2), width: 1),
+        ),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            flex: 36,
+            child: Text('球队', style: TextStyle(fontSize: fontSize)),
+          ),
+          Expanded(
+            flex: 16,
+            child: Text(
+              '胜-负',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: fontSize),
+            ),
+          ),
+          Expanded(
+            flex: 12,
+            child: Text(
+              '胜差',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: fontSize),
+            ),
+          ),
+          Expanded(
+            flex: 20,
+            child: Text(
+              '联盟胜-负',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: fontSize),
+            ),
+          ),
+          Expanded(
+            flex: 16,
+            child: Text(
+              '分区胜-负',
+              textAlign: TextAlign.right,
+              style: TextStyle(fontSize: fontSize),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DivisionRow extends StatelessWidget {
+  const _DivisionRow({required this.row, required this.isCompact});
+
+  final HupuNbaTeamStandingRow row;
+  final bool isCompact;
+
+  @override
+  Widget build(BuildContext context) {
+    final fontSize = isCompact ? 11.0 : 13.0;
+    return Container(
+      height: isCompact ? 50 : 58,
+      padding: EdgeInsets.symmetric(horizontal: isCompact ? 10 : 14),
+      decoration: const BoxDecoration(
+        color: CupertinoColors.white,
+        border: Border(
+          bottom: BorderSide(color: Color(0xFFEDEEF2), width: 1),
+        ),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            flex: 36,
+            child: Row(
+              children: [
+                SizedBox(
+                  width: isCompact ? 16 : 20,
+                  child: Text(
+                    '${row.rank}',
+                    style: TextStyle(
+                      color: row.rank == 1
+                          ? const Color(0xFFE91B2A)
+                          : const Color(0xFF202127),
+                      fontSize: fontSize,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 4),
+                Image.network(
+                  row.logoLink,
+                  width: isCompact ? 22 : 26,
+                  height: isCompact ? 22 : 26,
+                  fit: BoxFit.contain,
+                ),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    row.teamShortName,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(fontSize: fontSize),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            flex: 16,
+            child: Text(
+              row.wl,
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: fontSize),
+            ),
+          ),
+          Expanded(
+            flex: 12,
+            child: Text(
+              row.gb,
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: fontSize),
+            ),
+          ),
+          Expanded(
+            flex: 20,
+            child: Text(
+              row.confWl,
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: fontSize),
+            ),
+          ),
+          Expanded(
+            flex: 16,
+            child: Text(
+              row.divWl,
+              textAlign: TextAlign.right,
+              style: TextStyle(fontSize: fontSize),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MetricHeader extends StatelessWidget {
+  const _MetricHeader({required this.isCompact});
+
+  final bool isCompact;
+
+  @override
+  Widget build(BuildContext context) {
+    final fontSize = isCompact ? 12.0 : 14.0;
+    return Container(
+      height: isCompact ? 36 : 42,
+      padding: EdgeInsets.symmetric(horizontal: isCompact ? 10 : 14),
+      decoration: const BoxDecoration(
+        color: CupertinoColors.white,
+        border: Border(
+          bottom: BorderSide(color: Color(0xFFEDEEF2), width: 1),
+        ),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            flex: 76,
+            child: Text('球队', style: TextStyle(fontSize: fontSize)),
+          ),
+          Expanded(
+            flex: 24,
+            child: Text(
+              '数据',
+              textAlign: TextAlign.right,
+              style: TextStyle(fontSize: fontSize),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MetricRow extends StatelessWidget {
+  const _MetricRow({required this.row, required this.isCompact});
+
+  final HupuNbaTeamRankRow row;
+  final bool isCompact;
+
+  @override
+  Widget build(BuildContext context) {
+    final fontSize = isCompact ? 12.0 : 14.0;
+    return Container(
+      height: isCompact ? 52 : 60,
+      padding: EdgeInsets.symmetric(horizontal: isCompact ? 10 : 14),
+      decoration: const BoxDecoration(
+        color: CupertinoColors.white,
+        border: Border(
+          bottom: BorderSide(color: Color(0xFFEDEEF2), width: 1),
+        ),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            flex: 76,
+            child: Row(
+              children: [
+                SizedBox(
+                  width: isCompact ? 16 : 20,
+                  child: Text(
+                    '${row.rank}',
+                    style: TextStyle(
+                      color: row.rank == 1
+                          ? const Color(0xFFE91B2A)
+                          : const Color(0xFF202127),
+                      fontSize: fontSize,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 4),
+                Image.network(
+                  row.logoUrl,
+                  width: isCompact ? 22 : 26,
+                  height: isCompact ? 22 : 26,
+                  fit: BoxFit.contain,
+                ),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    row.teamShortName,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(fontSize: fontSize),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            flex: 24,
+            child: Text(
+              row.value,
+              textAlign: TextAlign.right,
+              style: TextStyle(
+                color: const Color(0xFF202127),
+                fontSize: fontSize,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _RankHeader extends StatelessWidget {
   const _RankHeader({required this.title});
 
@@ -2454,9 +3562,13 @@ class _RankHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isCompact = MediaQuery.sizeOf(context).width <= 450;
     return Container(
-      height: 48,
-      padding: const EdgeInsets.only(left: 18, right: 22),
+      height: isCompact ? 42 : 48,
+      padding: EdgeInsets.only(
+        left: isCompact ? 12 : 18,
+        right: isCompact ? 14 : 22,
+      ),
       decoration: const BoxDecoration(
         color: CupertinoColors.white,
         border: Border(
@@ -2468,17 +3580,26 @@ class _RankHeader extends StatelessWidget {
           Expanded(
             child: Text(
               title,
-              style: const TextStyle(fontSize: 18, color: Color(0xFF202127)),
+              style: TextStyle(
+                fontSize: isCompact ? 15 : 18,
+                color: const Color(0xFF202127),
+              ),
             ),
           ),
-          const Text(
+          Text(
             '球队',
-            style: TextStyle(fontSize: 18, color: Color(0xFF202127)),
+            style: TextStyle(
+              fontSize: isCompact ? 15 : 18,
+              color: const Color(0xFF202127),
+            ),
           ),
-          const SizedBox(width: 40),
-          const Text(
+          SizedBox(width: isCompact ? 26 : 40),
+          Text(
             '数据',
-            style: TextStyle(fontSize: 18, color: Color(0xFF202127)),
+            style: TextStyle(
+              fontSize: isCompact ? 15 : 18,
+              color: const Color(0xFF202127),
+            ),
           ),
         ],
       ),
@@ -2493,9 +3614,13 @@ class _RankPlayerTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isCompact = MediaQuery.sizeOf(context).width <= 450;
     return Container(
-      height: 82,
-      padding: const EdgeInsets.only(left: 18, right: 22),
+      height: isCompact ? 72 : 82,
+      padding: EdgeInsets.only(
+        left: isCompact ? 12 : 18,
+        right: isCompact ? 14 : 22,
+      ),
       decoration: const BoxDecoration(
         color: CupertinoColors.white,
         border: Border(
@@ -2505,24 +3630,24 @@ class _RankPlayerTile extends StatelessWidget {
       child: Row(
         children: [
           SizedBox(
-            width: 30,
+            width: isCompact ? 24 : 30,
             child: Text(
               '${player.rank}',
               style: TextStyle(
                 color: player.rank == 1
                     ? const Color(0xFFE91B2A)
                     : const Color(0xFF202127),
-                fontSize: 18,
+                fontSize: isCompact ? 15 : 18,
               ),
             ),
           ),
           Image.network(
             player.photo,
-            width: 52,
-            height: 52,
+            width: isCompact ? 44 : 52,
+            height: isCompact ? 44 : 52,
             fit: BoxFit.cover,
           ),
-          const SizedBox(width: 12),
+          SizedBox(width: isCompact ? 8 : 12),
           Expanded(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -2532,9 +3657,9 @@ class _RankPlayerTile extends StatelessWidget {
                   player.playerName,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Color(0xFF202127),
-                    fontSize: 19,
+                  style: TextStyle(
+                    color: const Color(0xFF202127),
+                    fontSize: isCompact ? 16 : 19,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -2542,30 +3667,35 @@ class _RankPlayerTile extends StatelessWidget {
                   player.statSummary,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Color(0xFF8F96A3),
-                    fontSize: 15,
+                  style: TextStyle(
+                    color: const Color(0xFF8F96A3),
+                    fontSize: isCompact ? 13 : 15,
                   ),
                 ),
               ],
             ),
           ),
           SizedBox(
-            width: 68,
+            width: isCompact ? 56 : 68,
             child: Text(
               player.teamShortName,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               textAlign: TextAlign.center,
-              style: const TextStyle(color: Color(0xFF202127), fontSize: 18),
+              style: TextStyle(
+                color: const Color(0xFF202127),
+                fontSize: isCompact ? 15 : 18,
+              ),
             ),
           ),
           SizedBox(
-            width: 58,
+            width: isCompact ? 48 : 58,
             child: Text(
               player.value,
               textAlign: TextAlign.right,
-              style: const TextStyle(
-                color: Color(0xFF202127),
-                fontSize: 18,
+              style: TextStyle(
+                color: const Color(0xFF202127),
+                fontSize: isCompact ? 16 : 18,
                 fontWeight: FontWeight.w700,
               ),
             ),

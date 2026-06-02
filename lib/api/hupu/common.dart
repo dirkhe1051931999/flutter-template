@@ -29,6 +29,26 @@ Map<String, String> createHupuCommonQueryParameters({
   };
 }
 
+Map<String, String> createHupuPlayerQueryParameters({
+  required String crt,
+}) {
+  return <String, String>{
+    'competitionType': 'nba',
+    'competitionLeagueType': 'nba',
+    'leagueType': 'nba',
+    'night': '0',
+    'time_zone': 'Asia/Shanghai',
+    'clientId': '93977196',
+    'bddid': 'INWK7IEZHDOWLRDUVJLCW36KD24ARNRT3JSKQEJTSHP3IMSYODUQ01',
+    'vertical': '1',
+    'deviceId':
+        'BCtf5ftI9riLwz8qMBbURdnw75+M6LNdimOKdfzOaHIrjqYkTHAoc/BtvYK6Y8mRQw+hAG/R1oLkPQyxEKG32Vw==',
+    'gid': '2',
+    'crt': crt,
+    'client': 'DDBD9376-0105-4792-B30B-38420FEBD352',
+  };
+}
+
 Map<String, dynamic> decodeHupuJson(dynamic rawBytes) {
   if (rawBytes is! List<int>) {
     throw StateError('Unexpected Hupu response bytes');

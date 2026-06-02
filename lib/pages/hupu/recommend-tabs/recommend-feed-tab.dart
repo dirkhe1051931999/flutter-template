@@ -5,6 +5,7 @@ import 'dart:ui';
 
 import 'package:flutter/cupertino.dart';
 import 'package:oolaf_flutted/api/hupu/index.dart';
+import 'package:oolaf_flutted/components/gallery_preview/index.dart';
 import 'package:oolaf_flutted/components/linked_tab_view/index.dart';
 import 'package:oolaf_flutted/model/hupu/index.dart';
 import 'package:oolaf_flutted/pages/hupu/hupu_post_detail_page.dart';
@@ -13,7 +14,6 @@ import 'package:oolaf_flutted/pages/hupu/widgets/hupu_feed_card.dart';
 import 'package:oolaf_flutted/pages/hupu/widgets/hupu_load_more_footer.dart';
 import 'package:oolaf_flutted/pages/hupu/widgets/hupu_refresh_indicator.dart';
 import 'package:oolaf_flutted/pages/hupu/widgets/hupu_status_view.dart';
-import 'package:oolaf_flutted/pages/video_tabs/short_video_gallery_preview.dart';
 
 const Set<PointerDeviceKind> _hupuRecommendDragDevices = <PointerDeviceKind>{
   PointerDeviceKind.touch,
@@ -242,7 +242,7 @@ class _HupuRecommendFeedTabState extends State<HupuRecommendFeedTab>
     if (imageUrls.isEmpty) {
       return;
     }
-    await openShortVideoImageGallery(
+    await openGalleryPreview(
       context,
       imageUrls: imageUrls,
       initialImageUrl: imageUrls.first,

@@ -507,6 +507,205 @@ class HupuNbaRankPlayer {
   }
 }
 
+class HupuNbaTeamStandingData {
+  const HupuNbaTeamStandingData({
+    required this.season,
+    required this.competitionStageType,
+    required this.eastRows,
+    required this.westRows,
+    required this.divisionGroups,
+  });
+
+  final String season;
+  final String competitionStageType;
+  final List<HupuNbaTeamStandingRow> eastRows;
+  final List<HupuNbaTeamStandingRow> westRows;
+  final List<HupuNbaTeamStandingDivisionGroup> divisionGroups;
+
+  factory HupuNbaTeamStandingData.fromJson(Map<String, dynamic> json) {
+    final result = _asMap(json['result']);
+    final rankTypeListMap = _asMap(result['rankTypeListMap']);
+    final divRankTypeListMap = _asMap(result['divRankTypeListMap']);
+    final seasonStageType = _asMap(result['competitionSeasonStageType']);
+    final seasonType = _asMap(seasonStageType['competitionSeasonType']);
+
+    return HupuNbaTeamStandingData(
+      season: _stringValue(seasonType['season']),
+      competitionStageType: _stringValue(
+        seasonStageType['competitionStageTypeName'],
+      ),
+      eastRows: _parseTeamStandingRows(rankTypeListMap['E']),
+      westRows: _parseTeamStandingRows(rankTypeListMap['W']),
+      divisionGroups: divRankTypeListMap.entries
+          .map(
+            (entry) => HupuNbaTeamStandingDivisionGroup(
+              key: entry.key,
+              title: _resolveDivisionTitle(entry.value),
+              rows: _parseTeamStandingRows(entry.value),
+            ),
+          )
+          .where((group) => group.rows.isNotEmpty)
+          .toList(growable: false),
+    );
+  }
+}
+
+class HupuNbaTeamStandingDivisionGroup {
+  const HupuNbaTeamStandingDivisionGroup({
+    required this.key,
+    required this.title,
+    required this.rows,
+  });
+
+  final String key;
+  final String title;
+  final List<HupuNbaTeamStandingRow> rows;
+}
+
+class HupuNbaTeamStandingRow {
+  const HupuNbaTeamStandingRow({
+    required this.rank,
+    required this.teamName,
+    required this.teamShortName,
+    required this.logoLink,
+    required this.won,
+    required this.lost,
+    required this.winRate,
+    required this.gb,
+    required this.strk,
+    required this.confWins,
+    required this.confLosses,
+    required this.divWins,
+    required this.divLosses,
+  });
+
+  final int rank;
+  final String teamName;
+  final String teamShortName;
+  final String logoLink;
+  final int won;
+  final int lost;
+  final String winRate;
+  final String gb;
+  final String strk;
+  final int confWins;
+  final int confLosses;
+  final int divWins;
+  final int divLosses;
+
+  String get wl => '$won-$lost';
+  String get confWl => '$confWins-$confLosses';
+  String get divWl => '$divWins-$divLosses';
+  String get streakText {
+    final value = strk.trim();
+    if (value.isEmpty || value == '0') {
+      return '--';
+    }
+    if (value.startsWith('-')) {
+      return '${value.substring(1)}连败';
+    }
+    return '$value连胜';
+  }
+
+  factory HupuNbaTeamStandingRow.fromJson(Map<String, dynamic> json) {
+    return HupuNbaTeamStandingRow(
+      rank: _nullableInt(json['rank']) ?? 0,
+      teamName: _stringValue(json['teamName']),
+      teamShortName: _stringValue(json['teamShortName'] ?? json['teamName']),
+      logoLink: _stringValue(json['logoLink']),
+      won: _nullableInt(json['won']) ?? 0,
+      lost: _nullableInt(json['lost']) ?? 0,
+      winRate: _stringValue(json['winRate']),
+      gb: _stringValue(json['gb']),
+      strk: _stringValue(json['strk']),
+      confWins: _nullableInt(json['confWins']) ?? 0,
+      confLosses: _nullableInt(json['confLosses']) ?? 0,
+      divWins: _nullableInt(json['divWins']) ?? 0,
+      divLosses: _nullableInt(json['divLosses']) ?? 0,
+    );
+  }
+}
+
+class HupuNbaTeamRankData {
+  const HupuNbaTeamRankData({required this.categories});
+
+  final List<HupuNbaTeamRankCategory> categories;
+
+  factory HupuNbaTeamRankData.fromJson(Map<String, dynamic> json) {
+    final result = json['result'];
+    if (result is! List) {
+      return const HupuNbaTeamRankData(categories: <HupuNbaTeamRankCategory>[]);
+    }
+    return HupuNbaTeamRankData(
+      categories: result
+          .whereType<Map>()
+          .map(
+            (item) => HupuNbaTeamRankCategory.fromJson(
+              Map<String, dynamic>.from(item),
+            ),
+          )
+          .where((item) => item.rows.isNotEmpty)
+          .toList(growable: false),
+    );
+  }
+}
+
+class HupuNbaTeamRankCategory {
+  const HupuNbaTeamRankCategory({
+    required this.name,
+    required this.rankType,
+    required this.rows,
+  });
+
+  final String name;
+  final String rankType;
+  final List<HupuNbaTeamRankRow> rows;
+
+  factory HupuNbaTeamRankCategory.fromJson(Map<String, dynamic> json) {
+    final data = json['data'];
+    return HupuNbaTeamRankCategory(
+      name: _stringValue(json['name']),
+      rankType: _stringValue(json['rankType']),
+      rows: data is List
+          ? data
+              .whereType<Map>()
+              .map(
+                (item) => HupuNbaTeamRankRow.fromJson(
+                  Map<String, dynamic>.from(item),
+                ),
+              )
+              .toList(growable: false)
+          : const <HupuNbaTeamRankRow>[],
+    );
+  }
+}
+
+class HupuNbaTeamRankRow {
+  const HupuNbaTeamRankRow({
+    required this.rank,
+    required this.teamName,
+    required this.teamShortName,
+    required this.logoUrl,
+    required this.value,
+  });
+
+  final int rank;
+  final String teamName;
+  final String teamShortName;
+  final String logoUrl;
+  final String value;
+
+  factory HupuNbaTeamRankRow.fromJson(Map<String, dynamic> json) {
+    return HupuNbaTeamRankRow(
+      rank: _nullableInt(json['rank']) ?? 0,
+      teamName: _stringValue(json['teamName']),
+      teamShortName: _stringValue(json['teamShortName'] ?? json['teamName']),
+      logoUrl: _stringValue(json['logoUrl']),
+      value: _stringValue(json['value']),
+    );
+  }
+}
+
 Map<String, dynamic> _asMap(dynamic value) {
   if (value is Map<String, dynamic>) {
     return value;
@@ -559,4 +758,33 @@ List<HupuNbaScheduleMatch> _parseScheduleMatches(dynamic rawItems) {
         ),
       )
       .toList(growable: false);
+}
+
+List<HupuNbaTeamStandingRow> _parseTeamStandingRows(dynamic rawItems) {
+  if (rawItems is! List) {
+    return const <HupuNbaTeamStandingRow>[];
+  }
+  return rawItems
+      .whereType<Map>()
+      .map(
+        (item) => HupuNbaTeamStandingRow.fromJson(
+          Map<String, dynamic>.from(item),
+        ),
+      )
+      .toList(growable: false);
+}
+
+String _resolveDivisionTitle(dynamic rawItems) {
+  if (rawItems is! List) {
+    return '';
+  }
+  for (final item in rawItems) {
+    if (item is Map) {
+      final title = _stringValue(item['rankTypeDesc']);
+      if (title.isNotEmpty) {
+        return title;
+      }
+    }
+  }
+  return '';
 }

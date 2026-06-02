@@ -1,0 +1,124 @@
+{
+  "tabs": [
+    {
+      "id": "featured",
+      "label": "精选",
+      "description": "基础 linked tab 交互区，保留状态并支持左右滑动。",
+      "accentColor": "#F05A5A",
+      "keepAlive": true,
+      "swipeEnabled": true,
+      "cards": [
+        {
+          "id": "featured-1",
+          "title": "可滑动选项卡",
+          "summary": "首页入口对应的新实现。横向切 tab、内容联动、样式插值都由 linked_tab_view 承担。",
+          "tag": "核心入口",
+          "meta": "点击 tab / 左右滑动都可切换",
+          "icon": "square.grid.2x2"
+        },
+        {
+          "id": "featured-2",
+          "title": "顶部标签自动居中",
+          "summary": "当前激活项切换时会自动滚动到中间，长标签列表不需要手写控制器同步。",
+          "tag": "TabBar",
+          "meta": "Scrollable.ensureVisible 已内置",
+          "icon": "arrow.left.and.right.square"
+        },
+        {
+          "id": "featured-3",
+          "title": "激活态字体渐变",
+          "summary": "linked_tab_view 内部会根据 page 偏移插值字号、颜色和指示条透明度。",
+          "tag": "动效",
+          "meta": "active / inactive 样式已统一",
+          "icon": "sparkles"
+        }
+      ]
+    },
+    {
+      "id": "refresh",
+      "label": "刷新",
+      "description": "每个 tab 独立接入下拉刷新配置，这里用 mock 数据轮换顺序模拟新内容。",
+      "accentColor": "#2E8BFF",
+      "keepAlive": true,
+      "swipeEnabled": true,
+      "cards": [
+        {
+          "id": "refresh-1",
+          "title": "独立刷新回调",
+          "summary": "通过 LinkedTabRefreshConfig 绑定当前页自己的 onRefresh，不需要全局刷新控制器。",
+          "tag": "Refresh",
+          "meta": "下拉后会重排卡片顺序",
+          "icon": "arrow.clockwise"
+        },
+        {
+          "id": "refresh-2",
+          "title": "自定义刷新提示",
+          "summary": "indicatorBuilder 可以替换默认样式，这个 demo 给每个 tab 用了带标题和进度的胶囊提示。",
+          "tag": "Indicator",
+          "meta": "支持 pulling / armed / refreshing / complete",
+          "icon": "wand.and.stars"
+        },
+        {
+          "id": "refresh-3",
+          "title": "无需接口也能验交互",
+          "summary": "接口挂掉时，先用 mock 数据把 linked_tab_view 整个链路跑通，比留旧请求更干净。",
+          "tag": "Mock",
+          "meta": "这批数据来自本目录 mock.json",
+          "icon": "doc.text"
+        }
+      ]
+    },
+    {
+      "id": "lifecycle",
+      "label": "状态",
+      "description": "这个 tab 关闭 keepAlive，用来观察页面会话重新创建的效果。",
+      "accentColor": "#7C5CFF",
+      "keepAlive": false,
+      "swipeEnabled": true,
+      "cards": [
+        {
+          "id": "lifecycle-1",
+          "title": "keepAlive = false",
+          "summary": "离开后页面状态可以被回收，适合重页面或不需要长期保留滚动位置的内容。",
+          "tag": "Lifecycle",
+          "meta": "返回本页时会生成新的会话标识",
+          "icon": "clock.arrow.circlepath"
+        },
+        {
+          "id": "lifecycle-2",
+          "title": "轻量调试信息",
+          "summary": "页面里会展示当前 tab 的 mountedAt 和 refreshCount，方便确认 linked_tab_view 的保活行为。",
+          "tag": "Debug",
+          "meta": "不用再翻 PageStorageKey 逻辑",
+          "icon": "chart.bar.doc.horizontal"
+        }
+      ]
+    },
+    {
+      "id": "tap-only",
+      "label": "仅点击",
+      "description": "当前 tab 禁止横向手势，只允许点击顶部标签切换，验证 swipeEnabled 的分页控制。",
+      "accentColor": "#18A06A",
+      "keepAlive": true,
+      "swipeEnabled": false,
+      "cards": [
+        {
+          "id": "tap-only-1",
+          "title": "swipeEnabled = false",
+          "summary": "进入当前 tab 后，左右滑动翻页会被锁住，但顶部 tab 点击仍然正常工作。",
+          "tag": "Gesture",
+          "meta": "适合包含复杂横向手势的内容页",
+          "icon": "hand.tap"
+        },
+        {
+          "id": "tap-only-2",
+          "title": "程序化切换也保留",
+          "summary": "页面右上角提供了一个跳转按钮，依然会走 linked_tab_view 的 programmatic 切换通道。",
+          "tag": "Programmatic",
+          "meta": "onIndexChanged 会回传 source",
+          "icon": "paperplane"
+        }
+      ]
+    }
+  ]
+}

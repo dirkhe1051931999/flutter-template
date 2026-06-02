@@ -7,10 +7,14 @@ import 'package:flutter/cupertino.dart';
 import 'package:oolaf_flutted/api/hupu/index.dart';
 import 'package:oolaf_flutted/components/linked_tab_view/index.dart';
 import 'package:oolaf_flutted/model/hupu/index.dart';
+import 'package:oolaf_flutted/pages/hupu/hupu_home_team_page.dart';
 import 'package:oolaf_flutted/pages/hupu/hupu_nba_hot_news_page.dart';
 import 'package:oolaf_flutted/pages/hupu/hupu_nba_schedule_page.dart';
 import 'package:oolaf_flutted/pages/hupu/hupu_post_detail_page.dart';
 import 'package:oolaf_flutted/pages/hupu/widgets/hupu_refresh_indicator.dart';
+
+const String _homeTeamShortcutIconUrl =
+    'http://i11.hoopchina.com.cn/all-backend/D7D19A2B49E6DBE3772809B9AFDC4DD0_1657690785182.png';
 
 const Set<PointerDeviceKind> _nbaTopTabDragDevices = <PointerDeviceKind>{
   PointerDeviceKind.touch,
@@ -20,6 +24,22 @@ const Set<PointerDeviceKind> _nbaTopTabDragDevices = <PointerDeviceKind>{
   PointerDeviceKind.invertedStylus,
   PointerDeviceKind.unknown,
 };
+
+String _resolveShortcutIcon(HupuNbaShortcut item) {
+  if (_isHomeTeamShortcut(item)) {
+    return _homeTeamShortcutIconUrl;
+  }
+  return item.icon;
+}
+
+bool _isHomeTeamShortcut(HupuNbaShortcut item) {
+  final name = item.name;
+  if (name.contains('主队')) {
+    return true;
+  }
+  final schema = item.schema.toLowerCase();
+  return schema.contains('home') && schema.contains('team');
+}
 
 class HupuSportsNbaNewsTab extends StatefulWidget {
   const HupuSportsNbaNewsTab({super.key});
@@ -210,12 +230,51 @@ class _HupuSportsNbaNewsTabState extends State<HupuSportsNbaNewsTab>
     );
   }
 
-  Future<void> _openSchedulePage() async {
+  Future<void> _openHomeTeamPage() async {
     await Navigator.of(context).push<void>(
       CupertinoPageRoute<void>(
-        builder: (_) => const HupuNbaSchedulePage(),
+        builder: (_) => const HupuHomeTeamPage(),
       ),
     );
+  }
+
+  Future<void> _openSchedulePage({String? initialTabId}) async {
+    await Navigator.of(context).push<void>(
+      CupertinoPageRoute<void>(
+        builder: (_) => HupuNbaSchedulePage(initialTabId: initialTabId),
+      ),
+    );
+  }
+
+  Future<void> _handleShortcutTap(HupuNbaShortcut shortcut) async {
+    if (_isHomeTeamShortcut(shortcut)) {
+      await _openHomeTeamPage();
+      return;
+    }
+    final initialTabId = _resolveShortcutInitialTabId(shortcut);
+    if (initialTabId == null) {
+      return;
+    }
+    await _openSchedulePage(initialTabId: initialTabId);
+  }
+
+  String? _resolveShortcutInitialTabId(HupuNbaShortcut shortcut) {
+    final name = shortcut.name;
+    if (name.contains('赛程')) {
+      return 'games';
+    }
+    if (name.contains('排名')) {
+      return 'playersrank';
+    }
+
+    final schema = shortcut.schema.toLowerCase();
+    if (schema.contains('playersrank')) {
+      return 'playersrank';
+    }
+    if (schema.contains('games') || schema.contains('schedule')) {
+      return 'games';
+    }
+    return null;
   }
 
   @override
@@ -254,7 +313,11 @@ class _HupuSportsNbaNewsTabState extends State<HupuSportsNbaNewsTab>
                         onTapSchedule: _openSchedulePage,
                       ),
                     if (_recommendedMatch != null) const SizedBox(height: 30),
-                    if (_shortcuts.isNotEmpty) _NbaShortcutRow(items: _shortcuts),
+                    if (_shortcuts.isNotEmpty)
+                      _NbaShortcutRow(
+                        items: _shortcuts,
+                        onTapItem: _handleShortcutTap,
+                      ),
                     const SizedBox(height: 26),
                   ],
                 ),
@@ -322,7 +385,7 @@ class _NbaMatchCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(24, 22, 24, 0),
+      padding: const EdgeInsets.fromLTRB(16, 22, 16, 0),
       decoration: BoxDecoration(
         color: CupertinoColors.white,
         borderRadius: BorderRadius.circular(4),
@@ -347,9 +410,9 @@ class _NbaMatchCard extends StatelessWidget {
                   alignRight: true,
                 ),
               ),
-              const SizedBox(width: 18),
+              const SizedBox(width: 10),
               _MatchTime(match: match),
-              const SizedBox(width: 18),
+              const SizedBox(width: 10),
               Expanded(
                 child: _MatchTeam(
                   rank: '[${match.homeBigScore}]',
@@ -422,24 +485,27 @@ class _MatchTeam extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final text = Text(
-      '$rank $name',
-      maxLines: 1,
-      overflow: TextOverflow.ellipsis,
-      style: const TextStyle(fontSize: 16, color: Color(0xFF202127)),
+    final text = FittedBox(
+      fit: BoxFit.scaleDown,
+      alignment: alignRight ? Alignment.centerRight : Alignment.centerLeft,
+      child: Text(
+        '$rank $name',
+        maxLines: 1,
+        style: const TextStyle(fontSize: 16, color: Color(0xFF202127)),
+      ),
     );
     final logo = Image.network(
       logoUrl,
-      width: 48,
-      height: 48,
+      width: 42,
+      height: 42,
       fit: BoxFit.contain,
     );
     return Row(
       mainAxisAlignment:
           alignRight ? MainAxisAlignment.end : MainAxisAlignment.start,
       children: alignRight
-          ? <Widget>[Flexible(child: text), const SizedBox(width: 8), logo]
-          : <Widget>[logo, const SizedBox(width: 8), Flexible(child: text)],
+          ? <Widget>[Flexible(child: text), const SizedBox(width: 6), logo]
+          : <Widget>[logo, const SizedBox(width: 6), Flexible(child: text)],
     );
   }
 }
@@ -473,75 +539,91 @@ class _MatchTime extends StatelessWidget {
 }
 
 class _NbaShortcutRow extends StatelessWidget {
-  const _NbaShortcutRow({required this.items});
+  const _NbaShortcutRow({
+    required this.items,
+    required this.onTapItem,
+  });
 
   final List<HupuNbaShortcut> items;
+  final ValueChanged<HupuNbaShortcut> onTapItem;
 
   @override
   Widget build(BuildContext context) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: items.take(5).map((item) => _ShortcutItem(item: item)).toList(),
+      children: items
+          .take(5)
+          .map((item) => _ShortcutItem(item: item, onTap: () => onTapItem(item)))
+          .toList(),
     );
   }
 }
 
 class _ShortcutItem extends StatelessWidget {
-  const _ShortcutItem({required this.item});
+  const _ShortcutItem({
+    required this.item,
+    required this.onTap,
+  });
 
   final HupuNbaShortcut item;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: 68,
-      child: Column(
-        children: [
-          Stack(
-            clipBehavior: Clip.none,
-            children: [
-              Container(
-                width: 64,
-                height: 64,
-                decoration: const BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Color(0xFFF7F7FB),
+    final displayIcon = _resolveShortcutIcon(item);
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: SizedBox(
+        width: 68,
+        child: Column(
+          children: [
+            Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Container(
+                  width: 64,
+                  height: 64,
+                  decoration: const BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Color(0xFFF7F7FB),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Image.network(displayIcon, fit: BoxFit.contain),
+                  ),
                 ),
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Image.network(item.icon, fit: BoxFit.contain),
-                ),
-              ),
-              if (item.name == '2K手游')
-                Positioned(
-                  top: 0,
-                  right: -1,
-                  child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFF453A),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: const Text(
-                      '新游',
-                      style: TextStyle(
-                        color: CupertinoColors.white,
-                        fontSize: 9,
-                        fontWeight: FontWeight.w600,
+                if (item.name == '2K手游')
+                  Positioned(
+                    top: 0,
+                    right: -1,
+                    child: Container(
+                      padding:
+                          const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFF453A),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: const Text(
+                        '新游',
+                        style: TextStyle(
+                          color: CupertinoColors.white,
+                          fontSize: 9,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                   ),
-                ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          Text(
-            item.name,
-            maxLines: 1,
-            style: const TextStyle(fontSize: 16, color: Color(0xFF202127)),
-          ),
-        ],
+              ],
+            ),
+            const SizedBox(height: 10),
+            Text(
+              item.name,
+              maxLines: 1,
+              style: const TextStyle(fontSize: 16, color: Color(0xFF202127)),
+            ),
+          ],
+        ),
       ),
     );
   }

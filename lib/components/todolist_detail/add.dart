@@ -1,79 +1,44 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_redux/flutter_redux.dart';
 import 'package:oolaf_flutted/store/index.dart';
 import 'package:oolaf_flutted/store/todolist/type.dart';
 
 class AddWidget extends StatelessWidget {
   const AddWidget({super.key, required this.controller});
+
   final TextEditingController? controller;
 
   @override
   Widget build(BuildContext context) {
     return StoreConnector<AppState, VoidCallback>(
       builder: (context, callback) {
-        return ElevatedButton(
+        return CupertinoButton.filled(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          borderRadius: BorderRadius.circular(16),
           onPressed: callback,
-          child: const Text('Add'),
+          child: const Text(
+            '添加',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
         );
       },
       converter: (store) {
         return () {
-          // 不能是空的
           if (controller!.text.isEmpty) {
-            ScaffoldMessenger.of(context).clearSnackBars();
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                // 多次点击只会显示一次
-                backgroundColor: Colors.redAccent,
-                behavior: SnackBarBehavior.floating,
-                duration: const Duration(seconds: 1),
-                content: const Text('Please input something'),
-                action: SnackBarAction(
-                  label: 'OK',
-                  onPressed: () {
-                    ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                  },
-                ),
-              ),
-            );
+            EasyLoading.showToast('Please input something');
             return;
           }
-          // 不添加重复项
           if (store.state.todos.contains(controller!.text)) {
-            ScaffoldMessenger.of(context).clearSnackBars();
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                backgroundColor: Colors.redAccent,
-                behavior: SnackBarBehavior.floating,
-                duration: const Duration(seconds: 1),
-                content: const Text('Item already exists'),
-                action: SnackBarAction(
-                  label: 'OK',
-                  onPressed: () {
-                    ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                  },
-                ),
-              ),
-            );
+            EasyLoading.showToast('Item already exists');
             return;
           }
           store.dispatch(AddTodoAction(controller!.text));
           controller!.clear();
-          ScaffoldMessenger.of(context).clearSnackBars();
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              backgroundColor: Colors.greenAccent,
-              behavior: SnackBarBehavior.floating,
-              duration: const Duration(seconds: 1),
-              content: const Text('Add successfully'),
-              action: SnackBarAction(
-                label: 'OK',
-                onPressed: () {
-                  ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                },
-              ),
-            ),
-          );
+          EasyLoading.showToast('Add successfully');
         };
       },
     );

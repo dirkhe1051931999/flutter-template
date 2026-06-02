@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:oolaf_flutted/components/linked_tab_view/index.dart';
+import 'package:oolaf_flutted/pages/hupu/hupu_home_team_page.dart';
 import 'package:oolaf_flutted/pages/hupu/sports-tabs/nba-news-tab.dart';
 import 'package:oolaf_flutted/pages/hupu/sports-tabs/placeholder-tab.dart';
 
@@ -10,10 +11,7 @@ class HupuSportsTabView extends StatelessWidget {
     LinkedTabItem(
       id: 'home-team-news',
       label: '主队资讯',
-      child: HupuSportsPlaceholderTab(
-        title: '主队资讯',
-        description: '主队资讯页先占位，后续再接实际内容。',
-      ),
+      child: HupuHomeTeamPage(),
     ),
     LinkedTabItem(
       id: 'nba',

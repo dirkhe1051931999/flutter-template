@@ -1,4 +1,5 @@
 export 'feed.dart';
+export 'home_team.dart';
 export 'hot_rank.dart';
 export 'nba_schedule.dart';
 export 'nba_top_tab.dart';

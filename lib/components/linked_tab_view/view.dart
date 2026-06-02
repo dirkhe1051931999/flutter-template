@@ -100,14 +100,27 @@ class _LinkedTabViewState extends State<LinkedTabView> {
 
     final nextIndex = _sanitizeIndex(_currentIndex);
     if (nextIndex != _currentIndex) {
-      _jumpToPage(nextIndex, source: LinkedTabChangeSource.programmatic);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) {
+          return;
+        }
+        _jumpToPage(nextIndex, source: LinkedTabChangeSource.programmatic);
+      });
       return;
     }
 
     if (oldWidget.initialIndex != widget.initialIndex) {
       final targetIndex = _sanitizeIndex(widget.initialIndex);
       if (targetIndex != _currentIndex) {
-        _jumpToPage(targetIndex, source: LinkedTabChangeSource.programmatic);
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) {
+            return;
+          }
+          _jumpToPage(
+            targetIndex,
+            source: LinkedTabChangeSource.programmatic,
+          );
+        });
       }
     }
   }

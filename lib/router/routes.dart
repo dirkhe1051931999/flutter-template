@@ -15,7 +15,12 @@ class Routes {
   static const shortVideo = "/short-video";
   static const profile = "/profile";
   static const scrollableTabs = "/scrollable-tabs";
-  static const scrollableTabsDetail = "/scrollable-tabs-detail";
+  static const networkImageDemo = "/network-image-demo";
+  static const appAssetIconDemo = "/app-asset-icon-demo";
+  static const appSheetDemo = "/app-sheet-demo";
+  static const galleryPreviewDemo = "/gallery-preview-demo";
+  static const routeBottomNavBarDemo = "/route-bottom-nav-bar-demo";
+  static const routePageHeaderDemo = "/route-page-header-demo";
   static const weather = "/weather";
   static const hupu = "/hupu";
   static const hupuPostDetail = "/hupu/post_detail";
@@ -49,8 +54,28 @@ class Routes {
       handler: scrollableTabsRouteHandler,
     );
     router.define(
-      scrollableTabsDetail,
-      handler: scrollableTabsDetailRouteHandler,
+      networkImageDemo,
+      handler: networkImageDemoRouteHandler,
+    );
+    router.define(
+      appAssetIconDemo,
+      handler: appAssetIconDemoRouteHandler,
+    );
+    router.define(
+      appSheetDemo,
+      handler: appSheetDemoRouteHandler,
+    );
+    router.define(
+      galleryPreviewDemo,
+      handler: galleryPreviewDemoRouteHandler,
+    );
+    router.define(
+      routeBottomNavBarDemo,
+      handler: routeBottomNavBarDemoRouteHandler,
+    );
+    router.define(
+      routePageHeaderDemo,
+      handler: routePageHeaderDemoRouteHandler,
     );
     router.define(
       weather,

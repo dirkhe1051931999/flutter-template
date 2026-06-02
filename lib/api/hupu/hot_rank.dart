@@ -10,7 +10,8 @@ Future<HupuHotTagPage> getHupuHotTags({
   final queryParameters = <String, String>{
     'page': '$page',
     'pageSize': '$pageSize',
-    ...createHupuCommonQueryParameters(crt: '${DateTime.now().millisecondsSinceEpoch}'),
+    ...createHupuCommonQueryParameters(
+        crt: '${DateTime.now().millisecondsSinceEpoch}'),
   };
   queryParameters['sign'] = buildHupuSign(queryParameters);
 
@@ -31,7 +32,8 @@ Future<HupuHotTagPage> getHupuHotTags({
 
 Future<List<HupuHotRankCategory>> getHupuHotRankCategories() async {
   final queryParameters = <String, String>{
-    ...createHupuCommonQueryParameters(crt: '${DateTime.now().millisecondsSinceEpoch}'),
+    ...createHupuCommonQueryParameters(
+        crt: '${DateTime.now().millisecondsSinceEpoch}'),
   };
   queryParameters['sign'] = buildHupuSign(queryParameters);
 
@@ -57,7 +59,8 @@ Future<HupuHotRankResponse> getHupuHotRankList({
   final queryParameters = <String, String>{
     'category': '$categoryId',
     'cid': '174865444',
-    ...createHupuCommonQueryParameters(crt: '${DateTime.now().millisecondsSinceEpoch}'),
+    ...createHupuCommonQueryParameters(
+        crt: '${DateTime.now().millisecondsSinceEpoch}'),
   };
   queryParameters['sign'] = buildHupuSign(queryParameters);
 

@@ -120,6 +120,7 @@ flutter:
     - assets/icons/
     - assets/weather/icons/
     - assets/weather/cities.json
+    - lib/pages/scrollable_tabs/mock.json
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware
 

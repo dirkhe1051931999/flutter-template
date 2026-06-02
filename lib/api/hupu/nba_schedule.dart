@@ -161,6 +161,44 @@ Future<HupuNbaRankItem> getHupuNbaSingleDimensionPlayerRank({
   return HupuNbaRankItem.fromJson(Map<String, dynamic>.from(result));
 }
 
+Future<HupuNbaTeamStandingData> getHupuNbaTeamStandingList({
+  required String season,
+  required String competitionStageType,
+}) async {
+  final decoded = await _getGamesJson(
+    '/1/8.0.32/basketballapi/teamStandingList',
+    queryParameters: <String, String>{
+      'offline': 'json',
+      'competitionLeagueType': 'nba',
+      'competitionType': 'nba',
+      'season': season,
+      'competitionStageType': competitionStageType,
+      'client': 'bc9e1ef8570ddf7e',
+    },
+    shouldSign: false,
+  );
+  return HupuNbaTeamStandingData.fromJson(decoded);
+}
+
+Future<HupuNbaTeamRankData> getHupuNbaTeamSeasonRank({
+  required String season,
+  required String competitionStageType,
+}) async {
+  final decoded = await _getGamesJson(
+    '/1/8.0.32/basketballapi/teamSeasonRank',
+    queryParameters: <String, String>{
+      'offline': 'json',
+      'competitionLeagueType': 'nba',
+      'competitionType': 'nba',
+      'season': season,
+      'competitionStageType': competitionStageType,
+      'client': 'bc9e1ef8570ddf7e',
+    },
+    shouldSign: false,
+  );
+  return HupuNbaTeamRankData.fromJson(decoded);
+}
+
 Future<Map<String, dynamic>> _getGamesJson(
   String path, {
   required Map<String, String> queryParameters,

@@ -364,6 +364,113 @@ flutter pub run build_runner build --delete-conflicting-outputs
 flutter build apk
 ```
 
+## 发布打包
+
+如果需要让产物文件名自动带上版本号和时间，并在打包成功后自动执行一次版本自增，请使用仓库脚本，而不是直接执行裸 `flutter build`。
+
+当前版本来源只使用：
+
+- `pubspec.yaml` 的 `version`
+
+### 产物命名规则
+
+产物会输出到：
+
+```text
+dist/releases
+```
+
+命名格式：
+
+```text
+oolaf flutted <version> <yyyyMMdd HH>
+```
+
+示例：
+
+```text
+oolaf flutted 1.0.0 20260601 14.apk
+oolaf flutted 1.0.0 20260601 14
+```
+
+其中：
+
+- `apk` 会输出成单个 `.apk` 文件
+- `windows` 会输出成同名目录，目录内是完整 Windows 发布文件
+- `web` 会输出成同名目录，目录内是完整 Web 发布文件
+
+### 发布命令
+
+构建 Android APK 并在成功后自动升级到下一个 patch 版本：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\tool\release_build.ps1 -Platform apk
+```
+
+构建 Windows：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\tool\release_build.ps1 -Platform windows
+```
+
+构建 Web：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\tool\release_build.ps1 -Platform web
+```
+
+一次构建 `apk + windows + web`：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\tool\release_build.ps1 -Platform all
+```
+
+### 自动版本升级规则
+
+如果当前版本是：
+
+```text
+1.0.0+1
+```
+
+那么脚本成功后会自动更新为：
+
+```text
+1.0.1+2
+```
+
+也就是：
+
+- `pubspec.yaml` 的 `version` 从 `1.0.0+1` 变成 `1.0.1+2`
+
+也可以指定升级策略：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\tool\release_build.ps1 -Platform all -Bump patch
+powershell -ExecutionPolicy Bypass -File .\tool\release_build.ps1 -Platform all -Bump minor
+powershell -ExecutionPolicy Bypass -File .\tool\release_build.ps1 -Platform all -Bump major
+```
+
+规则如下：
+
+- `patch`: `1.2.3` -> `1.2.4`
+- `minor`: `1.2.3` -> `1.3.0`
+- `major`: `1.2.3` -> `2.0.0`
+
+### 调试脚本时可用参数
+
+只验证脚本流程，不执行版本升级：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\tool\release_build.ps1 -Platform apk -SkipVersionBump
+```
+
+如果你已经提前手动执行过 `flutter build`，只做产物复制和命名：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\tool\release_build.ps1 -Platform apk -SkipBuild
+```
+
 ## flutter run 常见问题
 
 ### Gradle 锁被占用
@@ -437,11 +544,283 @@ lib/
 └── utils/                 工具类、DioClient、Cookie 管理等
 ```
 
+## 组件示例与公共组件
+
+首页包含一个“基础示例”分组，当前主要用于单独验证可复用组件和常见交互，不需要先从业务页兜进去。
+
+当前基础示例入口包括：
+
+- `TodoList`
+- `Fluro`
+- `Request`
+- `Profile`
+- `Scrollable Tabs`
+- `Network Img`
+- `App Asset Icon`
+- `App Sheet`
+- `Gallery Preview`
+- `Route Bottom Nav Bar`
+- `Route Page Header`
+
+相关 demo 页面统一放在：
+
+```text
+lib/pages/component_demo/
+```
+
+适合做这些事情：
+
+- 组件回归验证
+- 交互细节单测前的人眼验收
+- 业务接入前先看组件最小行为
+- 桌面端和移动端交互差异排查
+
+### route_page_header
+
+目录：
+
+```text
+lib/components/route_page_header/
+```
+
+作用：
+
+- 通用页面顶部 header
+- 左侧返回按钮
+- 中间标题
+- 头像 + 标题 + 副标题组合
+- follow / more / trailing 扩展区
+
+项目中已经用于：
+
+- 通用 `PageScaffold`
+- Hupu 详情页和部分业务页
+- `component_demo` 示例页
+
+### route_bottom_nav_bar
+
+目录：
+
+```text
+lib/components/route_bottom_nav_bar/
+```
+
+当前结构：
+
+```text
+lib/components/route_bottom_nav_bar/
+├── index.dart
+├── route_bottom_nav_bar_item.dart
+├── route_bottom_nav_bar_item_state.dart
+├── route_bottom_nav_bar_style.dart
+└── route_bottom_nav_bar_tile.dart
+```
+
+这个组件最初来自 `hupu` 的底部导航实现，后来抽成公共组件。现在已经去掉业务命名，只保留通用展示、状态和交互钩子。
+
+#### 当前保留的兼容能力
+
+不改现有调用也能继续工作的基础能力：
+
+- `items`
+- `activeKey`
+- `onTap`
+- 中间主操作按钮 `isCenterAction`
+- `activeIcon`
+- 单个 item 的 `activeColor` / `inactiveColor`
+
+#### 新增的通用扩展能力
+
+- `onReselect`
+  当前 tab 已经激活时再次点击的回调。
+- `respectBottomSafeArea`
+  控制底部安全区 inset 是否算进导航栏高度和 padding。
+- `badgeText`
+  数字提醒，例如未读数。
+- `showDot`
+  纯红点提醒，不展示数字。
+- `enabled`
+  允许临时禁用某个 tab，但不打乱布局。
+- `onLongPress`
+  只透出长按钩子，业务层自己决定是否弹 `bottom sheet` 或别的面板。
+- `onDoubleTap`
+  适合“回顶部”“重新刷新”“重新聚焦当前 tab”这类行为。
+- `itemBuilder`
+  对任意状态下的默认 item 渲染做外层包装或整体替换。
+- `selectedBuilder`
+  只对激活态做定制渲染，不影响普通态。
+- `centerActionChild`
+  中间按钮可以不再是固定加号，由业务传自定义内容。
+- `semanticLabel`
+  用于补充无障碍语义。
+
+#### 样式系统
+
+`RouteBottomNavBarStyle` 负责管理外观参数。当前可调项包括：
+
+- 导航栏高度
+- 内边距
+- 背景色
+- 顶部分割线颜色和宽度
+- 激活 / 非激活 / 禁用颜色
+- icon 大小
+- 文案字号和字重
+- 中间按钮尺寸与配色
+- badge 配色
+- 红点尺寸和偏移
+- 动画开关、时长、曲线、激活缩放比例
+
+#### Cupertino 化版本
+
+当前不是单独维护两套组件，而是在同一个组件上提供两套风格参数：
+
+- `const RouteBottomNavBarStyle()`
+- `const RouteBottomNavBarStyle.cupertino()`
+
+`cupertino()` 更偏 iOS 风格的默认高度、间距、颜色和中心按钮视觉，但仍然走同一套交互和同一套扩展点。
+
+#### builder 能力说明
+
+如果业务只是想加一个角标、额外文案、胶囊态背景，优先用 builder，而不是 fork 一个新底部导航组件。
+
+`itemBuilder` 示例：
+
+```dart
+RouteBottomNavBarItem(
+  key: 'mine',
+  label: '我的',
+  icon: Icons.person_outline,
+  activeIcon: Icons.person,
+  showDot: true,
+  itemBuilder: (context, state, defaultChild) {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        defaultChild,
+        const SizedBox(height: 2),
+        const Text('NEW'),
+      ],
+    );
+  },
+)
+```
+
+`selectedBuilder` 示例：
+
+```dart
+RouteBottomNavBarItem(
+  key: 'explore',
+  label: '探索',
+  icon: Icons.explore_outlined,
+  activeIcon: Icons.explore,
+  selectedBuilder: (context, state, defaultChild) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: const Color(0x141F2329),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        child: defaultChild,
+      ),
+    );
+  },
+)
+```
+
+#### 组件边界
+
+为了保持公共性，下面这些内容不应该内置进 `route_bottom_nav_bar`：
+
+- 业务 `bottom sheet`
+- 发帖逻辑
+- 登录校验
+- 页面切换实现
+- 埋点
+- 业务跳转
+
+组件只负责：
+
+- 渲染
+- 激活态表达
+- 交互事件透出
+
+业务层负责：
+
+- 点击后做什么
+- 长按后弹什么
+- 双击后做什么
+- 当前 activeKey 如何维护
+
+#### 项目内使用点
+
+- 虎扑主页面：
+  `lib/pages/hupu/index.dart`
+- 组件示例页：
+  `lib/pages/component_demo/route_bottom_nav_bar_demo_page.dart`
+
+### gallery_preview
+
+目录：
+
+```text
+lib/components/gallery_preview/
+```
+
+当前公共 API：
+
+- `GalleryPreviewImage`
+- `openGalleryPreview(...)`
+- `wrapWithGalleryPreviewScrollBehavior(...)`
+
+用途：
+
+- 点击缩略图进入全屏图集
+- 左右切图
+- 双击放大
+- 下滑关闭
+- 兼容长图阅读
+- 桌面端鼠标 / 触控板 / 触笔手势兼容
+
+当前实现拆分为：
+
+```text
+lib/components/gallery_preview/
+├── index.dart
+├── gallery_preview_image.dart
+├── gallery_preview_navigation.dart
+├── gallery_preview_page.dart
+└── gallery_zoomable_image.dart
+```
+
+交互细节：
+
+- 普通图默认居中展示
+- 真正长图在未缩放时优先按阅读模式处理
+- 缩放后切回 `InteractiveViewer` 做平移
+- 顶部关闭按钮和底部提示浮层由预览页内部维护
+
+为了兼容旧引用，`lib/pages/video_tabs/short_video_gallery_preview.dart` 仍保留一层 deprecated 转发；新代码应直接引用 `lib/components/gallery_preview/`。
+
 ## 核心能力
 
 ### 状态管理
 
-项目使用 `redux` 和 `flutter_redux` 做全局状态管理。根状态为 `AppState`，内部使用 `Map<String, dynamic>` 存储数据，并提供 `todos`、`userinfo` 等类型化访问方式。业务 reducer 按领域拆分，例如 `userReducer`、`todoListReducer`。
+项目使用 `redux` 和 `flutter_redux` 做全局状态管理。根状态是强类型的 `AppState`，当前主要包含：
+
+- `todos`
+- `userInfo`
+- `oolafMusic`
+- `shortVideo`
+
+状态更新通过 `copyWith` 和分领域 reducer 完成，例如：
+
+- `todoListReducer`
+- `userReducer`
+- `oolafMusicReducer`
+- `shortVideoReducer`
+
+这部分已经不是早期那种 `Map<String, dynamic>` 挂全局数据的模式。
 
 ### 网络请求
 

@@ -1,20 +1,20 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart' show SelectableText;
 import 'package:html/parser.dart' as html_parser;
-import 'package:oolaf_flutted/pages/video_tabs/short_video_gallery_preview.dart';
+import 'package:oolaf_flutted/components/gallery_preview/index.dart';
 
 class ShortVideoArticleBodyNode {
   const ShortVideoArticleBodyNode.text({
     required this.text,
     this.emphasized = false,
-  }) : type = ShortVideoArticleBodyNodeType.text,
-       imageUrl = '';
+  })  : type = ShortVideoArticleBodyNodeType.text,
+        imageUrl = '';
 
   const ShortVideoArticleBodyNode.image({
     required this.imageUrl,
-  }) : type = ShortVideoArticleBodyNodeType.image,
-       text = '',
-       emphasized = false;
+  })  : type = ShortVideoArticleBodyNodeType.image,
+        text = '',
+        emphasized = false;
 
   final ShortVideoArticleBodyNodeType type;
   final String text;
@@ -159,8 +159,10 @@ class ShortVideoArticleBodyHelper {
       }
     }
 
-    final bodyText = document.body?.text ?? document.documentElement?.text ?? '';
-    final plainText = '$title\n${'$source  $updateTime'.trim()}\n\n$bodyText'.trim();
+    final bodyText =
+        document.body?.text ?? document.documentElement?.text ?? '';
+    final plainText =
+        '$title\n${'$source  $updateTime'.trim()}\n\n$bodyText'.trim();
 
     return ShortVideoArticleBodyParseResult(
       imageUrls: List<String>.unmodifiable(imageUrls),
@@ -183,7 +185,7 @@ class ShortVideoArticleBodyHelper {
 
       if (node.type == ShortVideoArticleBodyNodeType.image) {
         widgets.add(
-          ShortVideoGalleryPreviewImage(
+          GalleryPreviewImage(
             imageUrl: node.imageUrl,
             galleryImageUrls: galleryImageUrls,
           ),

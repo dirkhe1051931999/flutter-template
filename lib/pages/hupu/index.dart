@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:oolaf_flutted/components/hupu_bottom_nav/index.dart';
+import 'package:oolaf_flutted/components/route_bottom_nav_bar/index.dart';
 import 'package:oolaf_flutted/pages/hupu/hupu_home_page.dart';
 import 'package:oolaf_flutted/pages/hupu/hupu_zone_page.dart';
 
@@ -17,32 +17,32 @@ class _HupuPageState extends State<HupuPage> {
   static const String discoverTabKey = 'discover';
   static const String mineTabKey = 'mine';
 
-  static const List<HupuBottomNavItem> navItems = <HupuBottomNavItem>[
-    HupuBottomNavItem(
+  static const List<RouteBottomNavBarItem> navItems = <RouteBottomNavBarItem>[
+    RouteBottomNavBarItem(
       key: homeTabKey,
       label: '首页',
       icon: Icons.home_outlined,
       activeIcon: Icons.home,
     ),
-    HupuBottomNavItem(
+    RouteBottomNavBarItem(
       key: zoneTabKey,
       label: '专区',
       icon: Icons.chat_bubble_outline,
       activeIcon: Icons.chat_bubble,
     ),
-    HupuBottomNavItem(
+    RouteBottomNavBarItem(
       key: publishTabKey,
       label: '',
       icon: Icons.add,
       isCenterAction: true,
     ),
-    HupuBottomNavItem(
+    RouteBottomNavBarItem(
       key: discoverTabKey,
       label: '探索',
       icon: Icons.explore_outlined,
       activeIcon: Icons.explore,
     ),
-    HupuBottomNavItem(
+    RouteBottomNavBarItem(
       key: mineTabKey,
       label: '我的',
       icon: Icons.person_outline,
@@ -81,9 +81,10 @@ class _HupuPageState extends State<HupuPage> {
                 ],
               ),
             ),
-            HupuBottomNav(
+            RouteBottomNavBar(
               items: navItems,
               activeKey: activeTabKey,
+              respectBottomSafeArea: true,
               onTap: (key) {
                 setState(() {
                   activeTabKey = key;

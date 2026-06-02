@@ -5,9 +5,9 @@ import 'package:oolaf_flutted/components/article/article_detail_bottom_action_ba
 import 'package:oolaf_flutted/components/article/article_share_sheet.dart';
 import 'package:oolaf_flutted/components/article/doc_comment_section.dart';
 import 'package:oolaf_flutted/components/app_asset_icon/index.dart';
+import 'package:oolaf_flutted/components/gallery_preview/index.dart'
+    show GalleryPreviewImage, wrapWithGalleryPreviewScrollBehavior;
 import 'package:oolaf_flutted/pages/video_tabs/short_video_article_body_helper.dart';
-import 'package:oolaf_flutted/pages/video_tabs/short_video_gallery_preview.dart'
-    show ShortVideoGalleryPreviewImage, galleryWrapWithDesktopFriendlyScrollBehavior;
 import 'package:flutter/services.dart';
 import 'package:oolaf_flutted/api/short_video/comment.dart';
 import 'package:oolaf_flutted/api/short_video/index.dart';
@@ -30,7 +30,7 @@ Future<void> openShortVideoArticleDetailPage(
 }
 
 Widget wrapWithDesktopFriendlyScrollBehavior(Widget child) {
-  return galleryWrapWithDesktopFriendlyScrollBehavior(child);
+  return wrapWithGalleryPreviewScrollBehavior(child);
 }
 
 class ShortVideoArticleDetailPage extends StatefulWidget {
@@ -50,7 +50,8 @@ class ShortVideoArticleDetailPage extends StatefulWidget {
       _ShortVideoArticleDetailPageState();
 }
 
-class _ShortVideoArticleDetailPageState extends State<ShortVideoArticleDetailPage> {
+class _ShortVideoArticleDetailPageState
+    extends State<ShortVideoArticleDetailPage> {
   final ScrollController _scrollController = ScrollController();
   final GlobalKey _commentSectionKey = GlobalKey();
 
@@ -153,7 +154,8 @@ class _ShortVideoArticleDetailPageState extends State<ShortVideoArticleDetailPag
       return;
     }
     setState(() {
-      if (submitted.parentCommentId == null || submitted.parentCommentId!.isEmpty) {
+      if (submitted.parentCommentId == null ||
+          submitted.parentCommentId!.isEmpty) {
         _commentsCount += 1;
       }
       _prependedComment = submitted.comment;
@@ -183,7 +185,6 @@ class _ShortVideoArticleDetailPageState extends State<ShortVideoArticleDetailPag
       ),
     );
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -251,7 +252,8 @@ class _ShortVideoArticleDetailPageState extends State<ShortVideoArticleDetailPag
                               ),
                               const SizedBox(height: 8),
                               SelectableText(
-                                '${widget.detail.source}  ${widget.detail.updateTime}'.trim(),
+                                '${widget.detail.source}  ${widget.detail.updateTime}'
+                                    .trim(),
                                 style: const TextStyle(
                                   color: Color(0xFF8E8E93),
                                   fontSize: 13,
@@ -259,7 +261,7 @@ class _ShortVideoArticleDetailPageState extends State<ShortVideoArticleDetailPag
                               ),
                               if (widget.coverUrl.isNotEmpty) ...[
                                 const SizedBox(height: 14),
-                                ShortVideoGalleryPreviewImage(
+                                GalleryPreviewImage(
                                   imageUrl: widget.coverUrl,
                                   galleryImageUrls: articleBody.imageUrls,
                                 ),
@@ -271,11 +273,13 @@ class _ShortVideoArticleDetailPageState extends State<ShortVideoArticleDetailPag
                               const SizedBox(height: 24),
                               DocCommentSection(
                                 docId: widget.detail.id,
-                                initialCommentsCount: widget.detail.commentsCount,
+                                initialCommentsCount:
+                                    widget.detail.commentsCount,
                                 scrollController: _scrollController,
                                 reloadToken: _commentReloadToken,
                                 prependedComment: _prependedComment,
-                                prependedCommentParentId: _prependedCommentParentId,
+                                prependedCommentParentId:
+                                    _prependedCommentParentId,
                                 sectionKey: _commentSectionKey,
                                 onCommentsCountChanged: (count) {
                                   if (_commentsCount == count || !mounted) {

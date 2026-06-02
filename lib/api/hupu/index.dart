@@ -1,5 +1,6 @@
 export 'common.dart';
 export 'forum_feed.dart';
+export 'home_team.dart';
 export 'hot_rank.dart';
 export 'hot_list.dart';
 export 'nba_schedule.dart';

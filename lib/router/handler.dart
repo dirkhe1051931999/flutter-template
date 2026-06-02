@@ -2,6 +2,12 @@ import 'package:fluro/fluro.dart';
 import 'package:flutter/material.dart';
 import 'package:oolaf_flutted/components/fluro_detail/index.dart';
 import 'package:oolaf_flutted/layouts/app_wrap/index.dart';
+import 'package:oolaf_flutted/pages/component_demo/app_asset_icon_demo_page.dart';
+import 'package:oolaf_flutted/pages/component_demo/app_sheet_demo_page.dart';
+import 'package:oolaf_flutted/pages/component_demo/gallery_preview_demo_page.dart';
+import 'package:oolaf_flutted/pages/component_demo/network_image_demo_page.dart';
+import 'package:oolaf_flutted/pages/component_demo/route_bottom_nav_bar_demo_page.dart';
+import 'package:oolaf_flutted/pages/component_demo/route_page_header_demo_page.dart';
 import 'package:oolaf_flutted/pages/fluro/index.dart';
 import 'package:oolaf_flutted/pages/home/index.dart';
 import 'package:oolaf_flutted/pages/hupu/index.dart';
@@ -9,7 +15,6 @@ import 'package:oolaf_flutted/pages/hupu/hupu_post_detail_page.dart';
 import 'package:oolaf_flutted/pages/oolaf_dynamic_audio/index.dart';
 import 'package:oolaf_flutted/pages/profile/index.dart';
 import 'package:oolaf_flutted/pages/request/index.dart';
-import 'package:oolaf_flutted/pages/scrollable_tabs/detail.dart';
 import 'package:oolaf_flutted/pages/scrollable_tabs/index.dart';
 import 'package:oolaf_flutted/pages/video_tabs/short_video_shell_page.dart';
 import 'package:oolaf_flutted/pages/weather/index.dart';
@@ -150,17 +155,67 @@ var scrollableTabsRouteHandler = Handler(
     return const ScrollableTabsPage();
   },
 );
-var scrollableTabsDetailRouteHandler = Handler(
+var networkImageDemoRouteHandler = Handler(
   handlerFunc: (
     BuildContext? context,
     Map<String, List<String>> params,
   ) {
-    String? title = params["title"]?.first;
-    int? id = int.tryParse(params["id"]?.first ?? '');
-    return ScrollableTabsDetailPage(
-      id: id!,
-      title: title ?? 'Flutter Template',
+    return const PageScaffold(
+      title: 'Network Img',
+      widget: NetworkImageDemoPage(),
     );
+  },
+);
+var appAssetIconDemoRouteHandler = Handler(
+  handlerFunc: (
+    BuildContext? context,
+    Map<String, List<String>> params,
+  ) {
+    return const PageScaffold(
+      title: 'App Asset Icon',
+      widget: AppAssetIconDemoPage(),
+    );
+  },
+);
+var appSheetDemoRouteHandler = Handler(
+  handlerFunc: (
+    BuildContext? context,
+    Map<String, List<String>> params,
+  ) {
+    return const PageScaffold(
+      title: 'App Sheet',
+      widget: AppSheetDemoPage(),
+    );
+  },
+);
+var galleryPreviewDemoRouteHandler = Handler(
+  handlerFunc: (
+    BuildContext? context,
+    Map<String, List<String>> params,
+  ) {
+    return const PageScaffold(
+      title: 'Gallery Preview',
+      widget: GalleryPreviewDemoPage(),
+    );
+  },
+);
+var routeBottomNavBarDemoRouteHandler = Handler(
+  handlerFunc: (
+    BuildContext? context,
+    Map<String, List<String>> params,
+  ) {
+    return const PageScaffold(
+      title: 'Route Bottom Nav Bar',
+      widget: RouteBottomNavBarDemoPage(),
+    );
+  },
+);
+var routePageHeaderDemoRouteHandler = Handler(
+  handlerFunc: (
+    BuildContext? context,
+    Map<String, List<String>> params,
+  ) {
+    return const RoutePageHeaderDemoPage();
   },
 );
 var weatherRouteHandler = Handler(

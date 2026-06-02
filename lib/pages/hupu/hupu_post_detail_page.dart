@@ -1,15 +1,15 @@
-﻿import 'package:flutter/cupertino.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:html/parser.dart' as html_parser;
 import 'dart:async';
 import 'package:oolaf_flutted/api/hupu/index.dart';
 import 'package:oolaf_flutted/components/app_sheet/index.dart';
 import 'package:oolaf_flutted/components/comment/comment_panel_scaffold.dart';
-import 'package:oolaf_flutted/components/hupu_page_header/index.dart';
+import 'package:oolaf_flutted/components/gallery_preview/index.dart';
+import 'package:oolaf_flutted/components/route_page_header/index.dart';
 import 'package:oolaf_flutted/components/network_img/index.dart';
 import 'package:oolaf_flutted/components/short_video/short_video_player_wrapper.dart';
 import 'package:oolaf_flutted/model/hupu/index.dart';
 import 'package:oolaf_flutted/pages/video_tabs/short_video_article_body_helper.dart';
-import 'package:oolaf_flutted/pages/video_tabs/short_video_gallery_preview.dart';
 import 'package:oolaf_flutted/utils/oolaf_video_player_controller.dart';
 
 enum HupuPostCommentSort {
@@ -351,8 +351,9 @@ class _HupuPostDetailPageState extends State<HupuPostDetailPage> {
   ObstructingPreferredSizeWidget _buildNavigationBar() {
     final detail = _detail;
 
-    return HupuPageNavigationBar(
-      title: detail?.authorName.isNotEmpty == true ? detail!.authorName : '帖子详情',
+    return RoutePageNavigationBar(
+      title:
+          detail?.authorName.isNotEmpty == true ? detail!.authorName : '帖子详情',
       subtitle: detail?.authorPublishTime.isNotEmpty == true
           ? detail!.authorPublishTime
           : widget.initialTitle,
@@ -364,6 +365,7 @@ class _HupuPostDetailPageState extends State<HupuPostDetailPage> {
       onTapMore: () {},
     );
   }
+
   Widget _buildErrorView() {
     return Center(
       child: Padding(
@@ -677,7 +679,7 @@ class _HupuPostDetailPageState extends State<HupuPostDetailPage> {
                         runSpacing: 8,
                         children: parsed.imageUrls
                             .map(
-                              (url) => ShortVideoGalleryPreviewImage(
+                              (url) => GalleryPreviewImage(
                                 imageUrl: url,
                                 galleryImageUrls: parsed.imageUrls,
                                 width: 96,
@@ -1217,7 +1219,3 @@ _ParsedCommentBody _parseCommentHtml(String html) {
     imageUrls: List<String>.unmodifiable(imageUrls),
   );
 }
-
-
-
-
