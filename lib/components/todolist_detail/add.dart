@@ -1,6 +1,6 @@
 import 'package:flutter/cupertino.dart';
-import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_redux/flutter_redux.dart';
+import 'package:oolaf_flutted/components/app_toast/index.dart';
 import 'package:oolaf_flutted/store/index.dart';
 import 'package:oolaf_flutted/store/todolist/type.dart';
 
@@ -29,16 +29,16 @@ class AddWidget extends StatelessWidget {
       converter: (store) {
         return () {
           if (controller!.text.isEmpty) {
-            EasyLoading.showToast('Please input something');
+            AppToast.showText('Please input something');
             return;
           }
           if (store.state.todos.contains(controller!.text)) {
-            EasyLoading.showToast('Item already exists');
+            AppToast.showText('Item already exists');
             return;
           }
           store.dispatch(AddTodoAction(controller!.text));
           controller!.clear();
-          EasyLoading.showToast('Add successfully');
+          AppToast.showText('Add successfully');
         };
       },
     );

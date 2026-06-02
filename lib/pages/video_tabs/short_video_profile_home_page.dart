@@ -1,6 +1,6 @@
 import 'package:flutter/cupertino.dart';
-import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:oolaf_flutted/api/short_video/index.dart';
+import 'package:oolaf_flutted/components/app_toast/index.dart';
 import 'package:oolaf_flutted/components/network_img/index.dart';
 import 'package:oolaf_flutted/pages/video_tabs/short_video_article_detail_page.dart';
 import 'package:oolaf_flutted/pages/video_tabs/watch_history_play_page.dart';
@@ -82,7 +82,7 @@ class _ShortVideoProfileHomePageState extends State<ShortVideoProfileHomePage> {
       });
     } catch (_) {
       if (mounted) {
-        EasyLoading.showToast('加载个人主页失败');
+        AppToast.showText('加载个人主页失败');
       }
     } finally {
       if (mounted) {
@@ -119,7 +119,7 @@ class _ShortVideoProfileHomePageState extends State<ShortVideoProfileHomePage> {
       });
     } catch (_) {
       if (mounted) {
-        EasyLoading.showToast('加载更多失败');
+        AppToast.showText('加载更多失败');
       }
     } finally {
       if (mounted) {
@@ -157,7 +157,7 @@ class _ShortVideoProfileHomePageState extends State<ShortVideoProfileHomePage> {
     }
 
     if (!preview.isDoc || preview.detailUrl.trim().isEmpty) {
-      EasyLoading.showToast('当前内容暂时无法打开');
+      AppToast.showText('当前内容暂时无法打开');
       return;
     }
 
@@ -166,7 +166,7 @@ class _ShortVideoProfileHomePageState extends State<ShortVideoProfileHomePage> {
     );
     if (detail == null) {
       if (mounted) {
-        EasyLoading.showToast('图文详情暂时不可用');
+        AppToast.showText('图文详情暂时不可用');
       }
       return;
     }
@@ -284,7 +284,7 @@ class _ShortVideoProfileHomePageState extends State<ShortVideoProfileHomePage> {
                 padding: EdgeInsets.zero,
                 minimumSize: Size.zero,
                 onPressed: () {
-                  EasyLoading.showToast('编辑资料功能开发中');
+                  AppToast.showText('编辑资料功能开发中');
                 },
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),

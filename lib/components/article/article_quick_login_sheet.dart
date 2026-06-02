@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/cupertino.dart';
-import 'package:flutter_easyloading/flutter_easyloading.dart';
+import 'package:oolaf_flutted/components/app_toast/index.dart';
 import 'package:oolaf_flutted/utils/ifeng_auth_flow.dart';
 
 Future<bool> showArticleQuickLoginSheet(BuildContext context) async {
@@ -105,7 +105,7 @@ class _ArticleQuickLoginSheetState extends State<_ArticleQuickLoginSheet> {
     final mobile = _mobileController.text.trim();
     final mobileError = IfengAuthFlow.validateMobile(mobile);
     if (mobileError != null) {
-      EasyLoading.showToast(mobileError);
+      AppToast.showText(mobileError);
       return;
     }
     if (_isSendingSms) {
@@ -121,7 +121,7 @@ class _ArticleQuickLoginSheetState extends State<_ArticleQuickLoginSheet> {
         onSmsSent: _startCountdown,
       );
     } catch (_) {
-      EasyLoading.showToast('发送验证码失败');
+      AppToast.showText('发送验证码失败');
     } finally {
       if (mounted) {
         setState(() {
@@ -136,12 +136,12 @@ class _ArticleQuickLoginSheetState extends State<_ArticleQuickLoginSheet> {
     final smsCode = _smsCodeController.text.trim();
     final mobileError = IfengAuthFlow.validateMobile(mobile);
     if (mobileError != null) {
-      EasyLoading.showToast(mobileError);
+      AppToast.showText(mobileError);
       return;
     }
     final smsError = IfengAuthFlow.validateSmsCode(smsCode);
     if (smsError != null) {
-      EasyLoading.showToast(smsError);
+      AppToast.showText(smsError);
       return;
     }
     if (_isSubmitting) {

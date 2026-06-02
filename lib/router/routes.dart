@@ -17,6 +17,12 @@ class Routes {
   static const scrollableTabs = "/scrollable-tabs";
   static const networkImageDemo = "/network-image-demo";
   static const appAssetIconDemo = "/app-asset-icon-demo";
+  static const appCalendarDemo = "/app-calendar-demo";
+  static const appDatePickerDemo = "/app-date-picker-demo";
+  static const appPickerDemo = "/app-picker-demo";
+  static const appFieldDemo = "/app-field-demo";
+  static const appToastDemo = "/app-toast-demo";
+  static const areaPickDemo = "/area-pick-demo";
   static const appSheetDemo = "/app-sheet-demo";
   static const galleryPreviewDemo = "/gallery-preview-demo";
   static const routeBottomNavBarDemo = "/route-bottom-nav-bar-demo";
@@ -60,6 +66,30 @@ class Routes {
     router.define(
       appAssetIconDemo,
       handler: appAssetIconDemoRouteHandler,
+    );
+    router.define(
+      appCalendarDemo,
+      handler: appCalendarDemoRouteHandler,
+    );
+    router.define(
+      appDatePickerDemo,
+      handler: appDatePickerDemoRouteHandler,
+    );
+    router.define(
+      appPickerDemo,
+      handler: appPickerDemoRouteHandler,
+    );
+    router.define(
+      appFieldDemo,
+      handler: appFieldDemoRouteHandler,
+    );
+    router.define(
+      appToastDemo,
+      handler: appToastDemoRouteHandler,
+    );
+    router.define(
+      areaPickDemo,
+      handler: areaPickDemoRouteHandler,
     );
     router.define(
       appSheetDemo,

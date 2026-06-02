@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_easyloading/flutter_easyloading.dart';
+import 'package:oolaf_flutted/components/app_toast/index.dart';
 import 'package:oolaf_flutted/components/network_img/index.dart';
 
 class LoginCaptchaDialogPayload {
@@ -111,7 +111,7 @@ class _LoginCaptchaDialogState extends State<LoginCaptchaDialog> {
 
   void _handleConfirm() {
     if (_points.length < widget.payload.requiredPointCount) {
-      EasyLoading.showToast('请先完成 ${widget.payload.requiredPointCount} 个点位选择');
+      AppToast.showText('请先完成 ${widget.payload.requiredPointCount} 个点位选择');
       return;
     }
     Navigator.of(context).pop(

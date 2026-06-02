@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:oolaf_flutted/bootstrap.dart';
 import 'package:oolaf_flutted/layouts/index.dart';
@@ -24,6 +25,10 @@ void main() {
 
   runZonedGuarded(() {
     WidgetsFlutterBinding.ensureInitialized();
+    debugPaintBaselinesEnabled = false;
+    debugPaintSizeEnabled = false;
+    debugPaintPointersEnabled = false;
+    debugRepaintRainbowEnabled = false;
     MediaKit.ensureInitialized();
     final bootstrap = createAppBootstrap();
     runApp(

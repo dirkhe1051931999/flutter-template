@@ -2,10 +2,10 @@ import 'package:file_picker/file_picker.dart';
 import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:oolaf_flutted/api/short_video/comment.dart';
 import 'package:oolaf_flutted/components/app_asset_icon/index.dart';
+import 'package:oolaf_flutted/components/app_toast/index.dart';
 import 'package:oolaf_flutted/components/article/article_quick_login_sheet.dart';
 import 'package:oolaf_flutted/utils/helper.dart';
 import 'package:oolaf_flutted/utils/ifeng_auth_storage.dart';
@@ -193,7 +193,7 @@ class _ArticleCommentInputSheetState extends State<_ArticleCommentInputSheet> {
       customLogger.log('pick comment image failed: $error');
       customLogger.log(stackTrace);
       if (mounted) {
-        EasyLoading.showToast('选择图片失败');
+        AppToast.showText('选择图片失败');
       }
     }
   }
@@ -270,11 +270,11 @@ class _ArticleCommentInputSheetState extends State<_ArticleCommentInputSheet> {
           return;
         }
         if (didLogin) {
-          EasyLoading.showToast('登录成功，请再次点击确定发表评论');
+          AppToast.showText('登录成功，请再次点击确定发表评论');
         }
         return;
       }
-      EasyLoading.show(status: '正在发送评论...');
+      AppToast.showLoading('正在发送评论...');
       final result = await submitShortVideoComment(
         request: widget.request.copyWith(
           content: _controller.text.trim(),
@@ -286,11 +286,11 @@ class _ArticleCommentInputSheetState extends State<_ArticleCommentInputSheet> {
                 ),
         ),
       );
-      EasyLoading.dismiss();
+      AppToast.clear();
       if (!mounted) {
         return;
       }
-      EasyLoading.showToast(result.message);
+      AppToast.showText(result.message);
       if (result.isSuccess) {
         Navigator.of(context).pop(
           CommentSubmissionResult(
@@ -327,6 +327,7 @@ class _ArticleCommentInputSheetState extends State<_ArticleCommentInputSheet> {
         );
       }
     } finally {
+      AppToast.clear();
       if (mounted) {
         setState(() {
           _isHandlingSubmit = false;

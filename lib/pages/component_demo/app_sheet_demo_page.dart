@@ -1,6 +1,6 @@
 import 'package:flutter/cupertino.dart';
-import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:oolaf_flutted/components/app_sheet/index.dart';
+import 'package:oolaf_flutted/components/app_toast/index.dart';
 
 class AppSheetDemoPage extends StatelessWidget {
   const AppSheetDemoPage({super.key});
@@ -153,7 +153,7 @@ class AppSheetDemoPage extends StatelessWidget {
               if (!context.mounted || result == null) {
                 return;
               }
-              EasyLoading.showToast('返回值: $result');
+              AppToast.showText('返回值: $result');
             },
           ),
         ),

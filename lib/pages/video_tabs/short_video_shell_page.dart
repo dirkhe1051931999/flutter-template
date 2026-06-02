@@ -1,10 +1,10 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/gestures.dart';
-import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_redux/flutter_redux.dart';
 import 'package:oolaf_flutted/api/ifeng_auth/index.dart';
 import 'package:oolaf_flutted/api/short_video/index.dart';
 import 'package:oolaf_flutted/components/app_asset_icon/index.dart';
+import 'package:oolaf_flutted/components/app_toast/index.dart';
 import 'package:oolaf_flutted/components/short_video/short_video_bottom_tab_bar.dart';
 import 'package:oolaf_flutted/components/video_top_tabs/index.dart';
 import 'package:oolaf_flutted/pages/video_tabs/index.dart';
@@ -425,7 +425,7 @@ class _ShortVideoProfilePageState extends State<_ShortVideoProfilePage> {
       });
     } catch (_) {
       if (mounted) {
-        EasyLoading.showToast('获取用户信息失败');
+        AppToast.showText('获取用户信息失败');
       }
     } finally {
       if (mounted) {
@@ -479,7 +479,7 @@ class _ShortVideoProfilePageState extends State<_ShortVideoProfilePage> {
       _authSession = IfengAuthSession.empty;
       _profileSummary = null;
     });
-    EasyLoading.showToast('已退出登录');
+    AppToast.showText('已退出登录');
   }
 
   Future<void> _handleMyFavorite() async {
@@ -522,7 +522,7 @@ class _ShortVideoProfilePageState extends State<_ShortVideoProfilePage> {
     if (!await _ensureLoggedIn()) {
       return;
     }
-    EasyLoading.showToast('二维码功能开发中');
+    AppToast.showText('二维码功能开发中');
   }
 
   Future<void> _openPersonalHomePage() async {
@@ -535,7 +535,7 @@ class _ShortVideoProfilePageState extends State<_ShortVideoProfilePage> {
     }
     final targetSummary = _profileSummary;
     if (!mounted || targetSummary == null) {
-      EasyLoading.showToast('用户信息加载失败');
+      AppToast.showText('用户信息加载失败');
       return;
     }
     await Navigator.of(context, rootNavigator: true).push(

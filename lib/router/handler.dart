@@ -3,6 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:oolaf_flutted/components/fluro_detail/index.dart';
 import 'package:oolaf_flutted/layouts/app_wrap/index.dart';
 import 'package:oolaf_flutted/pages/component_demo/app_asset_icon_demo_page.dart';
+import 'package:oolaf_flutted/pages/component_demo/app_calendar_demo_page.dart';
+import 'package:oolaf_flutted/pages/component_demo/app_date_picker_demo_page.dart';
+import 'package:oolaf_flutted/pages/component_demo/app_picker_demo_page.dart';
+import 'package:oolaf_flutted/pages/component_demo/app_field_demo_page.dart';
+import 'package:oolaf_flutted/pages/component_demo/app_toast_demo_page.dart';
+import 'package:oolaf_flutted/pages/component_demo/area_pick_demo_page.dart';
 import 'package:oolaf_flutted/pages/component_demo/app_sheet_demo_page.dart';
 import 'package:oolaf_flutted/pages/component_demo/gallery_preview_demo_page.dart';
 import 'package:oolaf_flutted/pages/component_demo/network_image_demo_page.dart';
@@ -174,6 +180,72 @@ var appAssetIconDemoRouteHandler = Handler(
     return const PageScaffold(
       title: 'App Asset Icon',
       widget: AppAssetIconDemoPage(),
+    );
+  },
+);
+var appCalendarDemoRouteHandler = Handler(
+  handlerFunc: (
+    BuildContext? context,
+    Map<String, List<String>> params,
+  ) {
+    return const PageScaffold(
+      title: 'App Calendar',
+      widget: AppCalendarDemoPage(),
+    );
+  },
+);
+var appDatePickerDemoRouteHandler = Handler(
+  handlerFunc: (
+    BuildContext? context,
+    Map<String, List<String>> params,
+  ) {
+    return const PageScaffold(
+      title: 'App Date Picker',
+      widget: AppDatePickerDemoPage(),
+    );
+  },
+);
+var appPickerDemoRouteHandler = Handler(
+  handlerFunc: (
+    BuildContext? context,
+    Map<String, List<String>> params,
+  ) {
+    return const PageScaffold(
+      title: 'App Picker',
+      widget: AppPickerDemoPage(),
+    );
+  },
+);
+var appFieldDemoRouteHandler = Handler(
+  handlerFunc: (
+    BuildContext? context,
+    Map<String, List<String>> params,
+  ) {
+    return const PageScaffold(
+      title: 'App Field',
+      widget: AppFieldDemoPage(),
+    );
+  },
+);
+var appToastDemoRouteHandler = Handler(
+  handlerFunc: (
+    BuildContext? context,
+    Map<String, List<String>> params,
+  ) {
+    return const PageScaffold(
+      title: 'App Toast',
+      widget: AppToastDemoPage(),
+    );
+  },
+);
+var areaPickDemoRouteHandler = Handler(
+  handlerFunc: (
+    BuildContext? context,
+    Map<String, List<String>> params,
+  ) {
+    return const PageScaffold(
+      title: 'Area Pick',
+      widget: AreaPickDemoPage(),
     );
   },
 );

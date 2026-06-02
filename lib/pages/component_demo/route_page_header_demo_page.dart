@@ -1,5 +1,5 @@
 import 'package:flutter/cupertino.dart';
-import 'package:flutter_easyloading/flutter_easyloading.dart';
+import 'package:oolaf_flutted/components/app_toast/index.dart';
 import 'package:oolaf_flutted/components/route_page_header/index.dart';
 import 'package:oolaf_flutted/layouts/app_wrap/index.dart';
 
@@ -22,7 +22,7 @@ class RoutePageHeaderDemoPage extends StatelessWidget {
               title: '帖子详情',
               subtitle: '标题居中，不遮内容',
               onBack: () {
-                EasyLoading.showToast('这里只是示意，不执行返回');
+                AppToast.showText('这里只是示意，不执行返回');
               },
             ),
           ),
@@ -35,7 +35,7 @@ class RoutePageHeaderDemoPage extends StatelessWidget {
               subtitle: '76ers legend',
               avatarUrl: _avatarUrl,
               onBack: () {
-                EasyLoading.showToast('头像标题样式');
+                AppToast.showText('头像标题样式');
               },
             ),
           ),
@@ -49,15 +49,15 @@ class RoutePageHeaderDemoPage extends StatelessWidget {
                   title: '频道详情',
                   subtitle: 'follow + more',
                   onBack: () {
-                    EasyLoading.showToast('follow + more');
+                    AppToast.showText('follow + more');
                   },
                   showFollowButton: true,
                   showMoreButton: true,
                   onTapFollow: () {
-                    EasyLoading.showToast('点击了关注');
+                    AppToast.showText('点击了关注');
                   },
                   onTapMore: () {
-                    EasyLoading.showToast('点击了更多');
+                    AppToast.showText('点击了更多');
                   },
                 ),
                 const SizedBox(height: 10),
@@ -65,7 +65,7 @@ class RoutePageHeaderDemoPage extends StatelessWidget {
                   title: '自定义 trailing',
                   subtitle: '比如状态标签或切换器',
                   onBack: () {
-                    EasyLoading.showToast('自定义 trailing');
+                    AppToast.showText('自定义 trailing');
                   },
                   trailing: Container(
                     padding: const EdgeInsets.symmetric(

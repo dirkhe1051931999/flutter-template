@@ -2,10 +2,10 @@ import 'dart:async';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:oolaf_flutted/api/oolaf/music.dart';
 import 'package:oolaf_flutted/components/app_asset_icon/index.dart';
 import 'package:oolaf_flutted/components/app_sheet/index.dart';
+import 'package:oolaf_flutted/components/app_toast/index.dart';
 import 'package:oolaf_flutted/components/oolaf_music/music_list.dart';
 import 'package:oolaf_flutted/components/oolaf_player/floating_ball.dart';
 import 'package:oolaf_flutted/model/oolaf_music/index.dart';
@@ -419,7 +419,7 @@ class _OolafDynamicAudioPageState extends State<OolafDynamicAudioPage> {
       customLogger.log('play prev oolaf music failed: $error');
       customLogger.log(stackTrace);
       store.dispatch(const OolafSetPlayingAction(false));
-      EasyLoading.showToast('播放上一首失败');
+      AppToast.showText('播放上一首失败');
     }
   }
 
@@ -484,7 +484,7 @@ class _OolafDynamicAudioPageState extends State<OolafDynamicAudioPage> {
       customLogger.log('auto play next oolaf music failed: $error');
       customLogger.log(stackTrace);
       store.dispatch(const OolafSetPlayingAction(false));
-      EasyLoading.showToast('播放下一首失败');
+      AppToast.showText('播放下一首失败');
     }
   }
 
@@ -514,7 +514,7 @@ class _OolafDynamicAudioPageState extends State<OolafDynamicAudioPage> {
     } catch (error, stackTrace) {
       customLogger.log('load oolaf music index failed: $error');
       customLogger.log(stackTrace);
-      EasyLoading.showToast('加载失败');
+      AppToast.showText('加载失败');
     } finally {
       store.dispatch(const OolafSetLoadingAction(false));
     }

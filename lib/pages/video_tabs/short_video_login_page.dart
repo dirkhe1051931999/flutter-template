@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_easyloading/flutter_easyloading.dart';
+import 'package:oolaf_flutted/components/app_toast/index.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:oolaf_flutted/utils/ifeng_auth_flow.dart';
 
@@ -139,7 +139,7 @@ class _ShortVideoLoginPageState extends State<ShortVideoLoginPage>
   Future<void> _handleSendSms() async {
     final mobileError = _validateMobile(_mobileController.text);
     if (mobileError != null) {
-      EasyLoading.showToast(mobileError);
+      AppToast.showText(mobileError);
       return;
     }
     if (_isSendingSms || _isCountingDown) {
@@ -159,7 +159,7 @@ class _ShortVideoLoginPageState extends State<ShortVideoLoginPage>
       );
     } catch (error) {
       debugPrint('short_video_login send sms fatal error: $error');
-      EasyLoading.showToast('发送验证码失败');
+      AppToast.showText('发送验证码失败');
     } finally {
       if (mounted) {
         setState(() {
@@ -199,8 +199,8 @@ class _ShortVideoLoginPageState extends State<ShortVideoLoginPage>
       }
       Navigator.of(context).pop(true);
     } catch (_) {
-      EasyLoading.dismiss();
-      EasyLoading.showToast('登录失败');
+      AppToast.clear();
+      AppToast.showText('登录失败');
     } finally {
       if (mounted) {
         setState(() {
@@ -406,4 +406,3 @@ class _LoginField extends StatelessWidget {
     );
   }
 }
-

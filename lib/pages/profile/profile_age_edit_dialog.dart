@@ -1,6 +1,6 @@
 import 'package:flutter/cupertino.dart';
-import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_redux/flutter_redux.dart';
+import 'package:oolaf_flutted/components/app_toast/index.dart';
 import 'package:oolaf_flutted/store/index.dart';
 import 'package:oolaf_flutted/store/user/type.dart';
 
@@ -31,7 +31,7 @@ Future<void> showProfileAgeEditDialog(BuildContext context) async {
               onPressed: () {
                 final age = int.tryParse(controller.text);
                 if (age == null || age <= 1 || age >= 100) {
-                  EasyLoading.showToast('请输入1-100之间的数字');
+                  AppToast.showText('请输入1-100之间的数字');
                   return;
                 }
 

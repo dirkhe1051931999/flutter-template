@@ -3,13 +3,13 @@ import 'dart:async';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_redux/flutter_redux.dart';
+import 'package:oolaf_flutted/components/app_toast/index.dart';
 import 'package:oolaf_flutted/components/app_asset_icon/index.dart';
 import 'package:oolaf_flutted/model/oolaf_music/index.dart';
 import 'package:oolaf_flutted/store/index.dart';
 import 'package:oolaf_flutted/store/oolaf_music/action.dart';
 import 'package:oolaf_flutted/store/oolaf_music/state.dart';
 import 'package:oolaf_flutted/utils/oolaf_audio_player.dart';
-import 'package:flutter_easyloading/flutter_easyloading.dart';
 
 class OolafMusicListItem {
   const OolafMusicListItem({
@@ -297,7 +297,7 @@ class OolafMusicListState extends State<OolafMusicList> {
       );
     } catch (error) {
       if (requestId == _playRequestId) {
-        EasyLoading.showToast('播放失败');
+        AppToast.showText('播放失败');
       }
     } finally {
       if (requestId == _playRequestId) {

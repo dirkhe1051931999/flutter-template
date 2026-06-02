@@ -73,6 +73,42 @@ class _HomePageState extends State<HomePage> {
         icon: CupertinoIcons.square_grid_2x2,
       ),
       const HomeEntry(
+        title: 'App Calendar',
+        subtitle: 'single/multiple/range、sheet 内日历',
+        routeKey: 'app-calendar-demo',
+        icon: CupertinoIcons.calendar,
+      ),
+      const HomeEntry(
+        title: 'App Date Picker',
+        subtitle: 'year/month/day 列组合、sheet 内选择',
+        routeKey: 'app-date-picker-demo',
+        icon: CupertinoIcons.time,
+      ),
+      const HomeEntry(
+        title: 'App Picker',
+        subtitle: 'single/multiple/cascade、通用选择器',
+        routeKey: 'app-picker-demo',
+        icon: CupertinoIcons.slider_horizontal_3,
+      ),
+      const HomeEntry(
+        title: 'App Field',
+        subtitle: '表单输入、校验、clear、textarea、is-link',
+        routeKey: 'app-field-demo',
+        icon: CupertinoIcons.square_pencil,
+      ),
+      const HomeEntry(
+        title: 'App Toast',
+        subtitle: '轻提示、成功失败、loading、位置控制',
+        routeKey: 'app-toast-demo',
+        icon: CupertinoIcons.bell,
+      ),
+      const HomeEntry(
+        title: 'Area Pick',
+        subtitle: '省市区县镇四级联动、iOS 风格弹层',
+        routeKey: 'area-pick-demo',
+        icon: CupertinoIcons.location_solid,
+      ),
+      const HomeEntry(
         title: 'App Sheet',
         subtitle: '顶部/底部弹层、blur、回调',
         routeKey: 'app-sheet-demo',

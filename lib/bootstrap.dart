@@ -1,6 +1,4 @@
 import 'package:fluro/fluro.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:oolaf_flutted/router/config.dart';
 import 'package:oolaf_flutted/router/routes.dart';
 import 'package:oolaf_flutted/store/action.dart';
@@ -20,7 +18,6 @@ class AppBootstrap {
 AppBootstrap createAppBootstrap() {
   final router = createAppRouter();
   final store = createAppStore();
-  configureEasyLoading();
 
   return AppBootstrap(
     router: router,
@@ -45,21 +42,4 @@ Store<AppState> createAppStore() {
     },
     initialState: AppState.initial(),
   );
-}
-
-void configureEasyLoading() {
-  EasyLoading.instance
-    ..displayDuration = const Duration(milliseconds: 2000)
-    ..indicatorType = EasyLoadingIndicatorType.fadingCircle
-    ..loadingStyle = EasyLoadingStyle.dark
-    ..indicatorSize = 45.0
-    ..toastPosition = EasyLoadingToastPosition.bottom
-    ..radius = 10.0
-    ..progressColor = Colors.yellow
-    ..backgroundColor = Colors.green
-    ..indicatorColor = Colors.yellow
-    ..textColor = Colors.yellow
-    ..maskColor = Colors.blue.withValues(alpha: 0.5)
-    ..userInteractions = true
-    ..dismissOnTap = false;
 }

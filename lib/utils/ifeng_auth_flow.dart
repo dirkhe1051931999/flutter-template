@@ -1,6 +1,6 @@
 import 'package:flutter/cupertino.dart';
-import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:oolaf_flutted/api/ifeng_auth/index.dart';
+import 'package:oolaf_flutted/components/app_toast/index.dart';
 import 'package:oolaf_flutted/components/short_video/login_captcha_dialog.dart';
 import 'package:oolaf_flutted/model/ifeng_auth/index.dart';
 import 'package:oolaf_flutted/utils/ifeng_auth_storage.dart';
@@ -47,11 +47,11 @@ class IfengAuthFlow {
       );
     }
     if (smsResult.likelySmsSent) {
-      EasyLoading.showToast('发送验证码成功');
+      AppToast.showText('发送验证码成功');
       onSmsSent?.call();
       return smsResult;
     }
-    EasyLoading.showToast(
+    AppToast.showText(
       smsResult.message.isNotEmpty ? smsResult.message : '发送验证码失败',
     );
     return smsResult;
@@ -68,11 +68,11 @@ class IfengAuthFlow {
         captcha = await getIfengCaptcha();
       } catch (error) {
         debugPrint('ifeng_auth_flow getCaptcha error: $error');
-        EasyLoading.showToast('获取验证码图片失败');
+        AppToast.showText('获取验证码图片失败');
         return null;
       }
       if (captcha == null) {
-        EasyLoading.showToast('获取验证码图片失败');
+        AppToast.showText('获取验证码图片失败');
         return null;
       }
       if (!context.mounted) {
@@ -101,15 +101,15 @@ class IfengAuthFlow {
         );
       } catch (error) {
         debugPrint('ifeng_auth_flow verify captcha send sms error: $error');
-        EasyLoading.showToast('验证码校验失败，已刷新验证码');
+        AppToast.showText('验证码校验失败，已刷新验证码');
         continue;
       }
       if (verifyResult.likelySmsSent) {
-        EasyLoading.showToast('发送验证码成功');
+        AppToast.showText('发送验证码成功');
         onSmsSent?.call();
         return verifyResult;
       }
-      EasyLoading.showToast(
+      AppToast.showText(
         verifyResult.message.isNotEmpty
             ? '${verifyResult.message}，已刷新验证码'
             : '验证码发送失败，已刷新验证码',
@@ -122,17 +122,17 @@ class IfengAuthFlow {
     required String mobile,
     required String smsCode,
   }) async {
-    EasyLoading.show(status: '校验手机号...');
+    AppToast.showLoading('校验手机号...');
     try {
       String ltoken;
       try {
         ltoken = await checkIfengMobileBeforeLogin(mobile: mobile);
       } catch (_) {
-        EasyLoading.dismiss();
-        EasyLoading.showToast('手机号校验失败，请稍后重试');
+        AppToast.clear();
+        AppToast.showText('手机号校验失败，请稍后重试');
         return false;
       }
-      EasyLoading.show(status: '校验验证码...');
+      AppToast.showLoading('校验验证码...');
       IfengAuthSessionModel? session;
       try {
         session = await loginIfengBySms(
@@ -141,22 +141,22 @@ class IfengAuthFlow {
           ltoken: ltoken,
         );
       } catch (_) {
-        EasyLoading.dismiss();
-        EasyLoading.showToast('短信验证码校验失败，请重试');
+        AppToast.clear();
+        AppToast.showText('短信验证码校验失败，请重试');
         return false;
       }
       if (session == null) {
-        EasyLoading.dismiss();
-        EasyLoading.showToast('短信验证码错误或已失效');
+        AppToast.clear();
+        AppToast.showText('短信验证码错误或已失效');
         return false;
       }
-      EasyLoading.show(status: '同步账号资料...');
+      AppToast.showLoading('同步账号资料...');
       IfengUserProfileModel? completedProfile;
       try {
         completedProfile = await completeIfengLogin(session: session);
       } catch (_) {
-        EasyLoading.dismiss();
-        EasyLoading.showToast('账号登录链路失败，请稍后重试');
+        AppToast.clear();
+        AppToast.showText('账号登录链路失败，请稍后重试');
         return false;
       }
       await IfengAuthStorage.saveSession(
@@ -174,12 +174,12 @@ class IfengAuthFlow {
           smsFastPass: session.smsFastPass,
         ),
       );
-      EasyLoading.dismiss();
-      EasyLoading.showToast('登录成功');
+      AppToast.clear();
+      AppToast.showText('登录成功');
       return true;
     } catch (_) {
-      EasyLoading.dismiss();
-      EasyLoading.showToast('登录失败');
+      AppToast.clear();
+      AppToast.showText('登录失败');
       return false;
     }
   }
