@@ -1,4 +1,5 @@
 import 'package:flutter/cupertino.dart';
+import 'package:oolaf_flutted/components/app_button/index.dart';
 import 'package:oolaf_flutted/components/app_sheet/index.dart';
 import 'package:oolaf_flutted/components/app_toast/index.dart';
 
@@ -223,17 +224,10 @@ class _ActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return CupertinoButton.filled(
-      padding: const EdgeInsets.symmetric(vertical: 14),
-      borderRadius: BorderRadius.circular(18),
+    return AppButton(
+      block: true,
       onPressed: onPressed,
-      child: Text(
-        label,
-        style: const TextStyle(
-          fontSize: 15,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
+      child: Text(label),
     );
   }
 }

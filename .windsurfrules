@@ -1,26 +1,32 @@
 # Flutter/Dart Coding Rules for Vue/TypeScript Developers
 
-本项目的代码风格应尽量贴近高级前端开发者熟悉的 Vue + TypeScript 工程化思维：模块职责清晰、类型显式、单例集中、API 层薄封装、状态不可变、命名语义化。
+This repository uses Flutter and Dart, but the engineering style should stay close to a well-structured Vue + TypeScript project:
 
-## 总原则
+- clear module boundaries
+- explicit types
+- centralized singletons
+- thin API wrappers
+- immutable state
+- semantic naming
 
-- 写 Dart/Flutter 代码时，优先类比 Vue/TS 项目中的 `request.ts`、`api/*.ts`、`store/*.ts`、`types.ts`、`constants.ts` 分层方式。
-- 避免把初始化、副作用、业务逻辑、UI 构建混在同一个 Widget 中。
-- 避免使用 `dynamic`、裸 `Map<String, dynamic>` 作为核心业务模型；优先使用强类型 class/model。
-- 公共实例应集中导出，不要在多个业务文件里重复 `new`。
-- 命名必须有业务语义，不允许长期保留 demo 命名，例如 `path1`、`testPage`、`data1`。
+The goal is not to imitate TS syntax. The goal is to keep the same engineering discipline.
 
-## 网络层规则
+## General Principles
 
-### 错误写法
+- Separate initialization, side effects, business logic, and UI composition.
+- Prefer typed model classes over `dynamic` or long-lived `Map<String, dynamic>`.
+- Export shared instances from centralized infrastructure files instead of repeatedly creating them in feature code.
+- Do not keep placeholder naming such as `path1`, `testPage`, `data1`.
+
+## Network Layer
+
+Bad:
 
 ```dart
-var client = DioClient(baseUrl: 'https://example.com');
+final client = DioClient(baseUrl: 'https://example.com');
 ```
 
-在每个 API 文件中重复创建 client，等价于在多个 Vue API 文件里重复 `axios.create()`，会导致拦截器、baseURL、token、cookie 行为不一致。
-
-### 正确写法
+Good:
 
 ```dart
 import 'package:oolaf_flutted/utils/request.dart';
@@ -28,18 +34,17 @@ import 'package:oolaf_flutted/utils/request.dart';
 final response = await httpClient.get('/guestbook/list');
 ```
 
-统一从 `utils/request.dart` 导入 `httpClient`，类似 Vue/TS 项目中的统一 `request.ts` 实例。
+Rules:
 
-### 规则
+- Do not create `Dio()` or `DioClient()` inside pages, widgets, or business API files.
+- Reuse the centralized request infrastructure from `lib/utils/request.dart`.
+- API files should declare business requests only.
+- Interceptors, token injection, refresh token logic, cookie handling, and request logging belong in the shared client layer.
+- If a new backend domain is needed, add its shared client in the request infrastructure layer instead of instantiating ad hoc clients inside feature files.
 
-- `DioClient` 只能在网络基础设施层创建。
-- API 文件只负责声明业务接口，不负责创建 HTTP client。
-- token 注入、refresh token、错误日志、cookie 管理必须放在 `DioClient` 拦截器中。
-- 不允许在页面 Widget 中直接调用 `Dio()` 或 `DioClient()`。
+## API Layer
 
-## API 层规则
-
-### 错误写法
+Bad:
 
 ```dart
 dynamic commonGetRequest() async {
@@ -48,26 +53,29 @@ dynamic commonGetRequest() async {
 }
 ```
 
-问题：返回类型不明确，调用方不知道数据结构。
-
-### 正确写法
+Good:
 
 ```dart
 Future<ListModel?> getNewsList(Map<String, dynamic> params) async {
-  final response = await httpClient.get('/guestbook/list', queryParameters: params);
+  final response = await httpClient.get(
+    '/guestbook/list',
+    queryParameters: params,
+  );
   return ListModel.fromJson(response.data);
 }
 ```
 
-### 规则
+Rules:
 
-- API 方法必须使用明确返回类型，例如 `Future<UserModel?>`、`Future<List<NewsItem>>`。
-- API 方法名要表达业务含义，例如 `getNewsList`，不要使用 `commonGetRequest` 这类泛化命名。
-- API 层负责把 response 转成 model，不把裸 `response.data` 随意透传到 UI 层。
+- Put new API code under `lib/api/**`.
+- API methods must have explicit return types.
+- API methods should map responses into model classes before returning.
+- Do not pass raw `response.data` through to the UI layer for feature code.
+- API method names must reflect business meaning.
 
-## 类型和 Model 规则
+## Models And Types
 
-### 错误写法
+Bad:
 
 ```dart
 Map<String, dynamic> user = {
@@ -76,9 +84,7 @@ Map<String, dynamic> user = {
 };
 ```
 
-核心业务数据长期使用 Map，类似 TS 里全部写 `any`。
-
-### 正确写法
+Good:
 
 ```dart
 class UserInfo {
@@ -92,16 +98,16 @@ class UserInfo {
 }
 ```
 
-### 规则
+Rules:
 
-- 业务实体必须建 model class。
-- 能不用 `dynamic` 就不用 `dynamic`。
-- `fromJson` / `toJson` 统一放在 model 内。
-- 命名不要使用 TypeScript 接口风格的 `IUserInfo`，Dart 中使用 `UserInfo`。
+- Put new business models under `lib/model/**`.
+- Business entities should use typed classes with semantic field names.
+- `fromJson` and `toJson` belong on the model type.
+- Do not use TypeScript-style `IUserInfo` naming in Dart.
 
-## 状态管理规则
+## State Management
 
-### 错误写法
+Bad:
 
 ```dart
 AppState update(dynamic changes) {
@@ -109,9 +115,7 @@ AppState update(dynamic changes) {
 }
 ```
 
-问题：类似 TS 中用 `any` 改 store，类型不可控。
-
-### 正确写法
+Good:
 
 ```dart
 class AppState {
@@ -135,15 +139,15 @@ class AppState {
 }
 ```
 
-### 规则
+Rules:
 
-- Store state 应使用强类型不可变对象。
-- 修改 state 时使用 `copyWith` 思路，类似前端 immutable update。
-- Reducer/action 必须有明确类型，不要用无约束 `dynamic action`。
+- Store state should be immutable and strongly typed.
+- Prefer `copyWith`-style updates for state transitions.
+- Reducers and actions should stay explicitly typed.
 
-## Widget 组件规则
+## Widget And Page Boundaries
 
-### 错误写法
+Bad:
 
 ```dart
 class Layout extends StatelessWidget {
@@ -155,9 +159,7 @@ class Layout extends StatelessWidget {
 }
 ```
 
-问题：Widget 构造函数里做过多副作用，类似在 Vue render 阶段做应用初始化。
-
-### 正确写法
+Good:
 
 ```dart
 void main() {
@@ -168,41 +170,100 @@ void main() {
 }
 ```
 
-### 规则
+Rules:
 
-- Widget 主要负责 UI composition。
-- 应用启动初始化放在 `main()` 或 bootstrap 文件中。
-- 页面 Widget 不直接承担网络 client、router、store 初始化职责。
-- 可复用 UI 抽成 components，业务页面放 pages。
+- Widgets should primarily handle UI composition.
+- App startup initialization belongs in `main.dart` or `bootstrap.dart`.
+- Pages belong in `lib/pages/**`.
+- Reusable UI belongs in `lib/components/**`.
+- Do not perform request client, router, or store initialization inside page widgets.
 
-## UI 框架与视觉规范（必须）
+## UI Framework And Visual Style
 
-目标：界面风格统一贴近 iOS，避免 Android/Material 视觉混用。
+Goal:
 
-### 规则
+- closer to iOS
+- not Android Material
+- consistent visual language across business UI
 
-- 业务 UI 默认只能使用 Cupertino 体系组件（`Cupertino*`）。
-- 禁止在业务页面和业务组件中引入或使用 Material 风格组件，例如 `Scaffold`、`AppBar`、`Material`、`Card`、`ElevatedButton`、`TextButton`、`FloatingActionButton`、`SnackBar`、`TabBar`、`PopupMenuButton`、`BottomNavigationBar` 等。
-- 禁止 `import 'package:flutter/material.dart'` 作为业务 UI 依赖；已有代码改造时优先替换为 `cupertino.dart`，必要时只保留 `widgets.dart` / `painting.dart` 等基础能力。
-- 交互反馈、弹窗、路由过渡、导航栏样式应优先使用 iOS 语义与动效（例如 `CupertinoPageScaffold`、`CupertinoNavigationBar`、`CupertinoButton`、`CupertinoDialog`、`CupertinoActionSheet`）。
-- 新增页面或重构页面时，视觉细节（间距、圆角、排版、层级、反馈）必须优先对齐 iOS，而不是 Android Material 风格。
+Rules:
 
-### 例外约束
+- Business UI must use Cupertino widgets by default (`Cupertino*`).
+- Do not use Material-style widgets in feature pages/components, including `Scaffold`, `AppBar`, `Material`, `Card`, `ElevatedButton`, `TextButton`, `FloatingActionButton`, `SnackBar`, `TabBar`, `PopupMenuButton`, and `BottomNavigationBar`.
+- Do not rely on `package:flutter/material.dart` for business UI. Prefer `cupertino.dart`, and only keep minimal base Flutter imports when needed.
+- Interaction feedback, dialogs, navigation transitions, and top/bottom bars should follow iOS conventions first.
+- New or refactored UI should visually align closer to iOS, not Android Material.
 
-- 仅在 Flutter/Cupertino 不提供等价能力且明确说明原因时，允许最小范围使用 Material 能力；且不得引入可见的 Material 风格外观。
+## iOS 26 / Glass Effect Supplement
 
-## 命名规则
+Goal:
 
-### 错误写法
+- New UI should default toward an iOS 26-style visual language when appropriate.
+- Favor soft layering, translucency, subtle hierarchy, and restrained depth.
+
+Rules:
+
+- For cards, overlays, search bars, sheets, headers, bottom bars, and floating surfaces, prefer iOS-like frosted or glass-morphism treatment when it improves hierarchy and readability.
+- If you use a glass-like surface, it should include more than a semi-transparent fill. Pair translucency with light borders, controlled highlights, and stable layering.
+- Readability is mandatory. Text, icons, and interactive targets must keep enough contrast over light or colorful backgrounds.
+- Do not overuse blur or glass effects. Reserve them for surfaces, navigation chrome, overlays, and emphasis containers rather than every content block.
+- If real blur is not practical, simulate the effect with translucent fills, subtle borders, and restrained highlights while still preserving an iOS-like result.
+- Avoid heavy Material-style shadows, thick outlines, oversaturated blocks, and bulky card stacking.
+
+## UI Style Exception
+
+- If Cupertino has no equivalent capability, Material usage is allowed only in a minimal, isolated way, and must not expose obvious Material visual style.
+
+## UI Data Rules
+
+- In `lib/pages/**`, do not use `json['xx']` or `response.data['xx']` for direct rendering.
+- Page widgets should consume typed models or page-specific view models only.
+- Keep `build()` pure: no network requests, no dispatch side effects, no storage reads or writes in `build()`.
+
+## Side Effects
+
+- Allowed places for side effects: `initState`, `didChangeDependencies`, user interaction callbacks, or dedicated controller/service abstractions already used by the repo.
+- Do not trigger business side effects during render.
+
+## Singletons And Dependency Creation
+
+- Only create router and store singletons in `main.dart` or `bootstrap.dart`.
+- Only create request clients and similar infrastructure singletons in infrastructure files such as `lib/utils/request.dart`.
+- Feature pages and components must not instantiate `FluroRouter`, `Store`, `Dio`, or `DioClient` directly.
+
+## Import Boundaries
+
+- `lib/model/**` must not import `lib/api/**`, `lib/pages/**`, or `lib/store/**`.
+- `lib/api/**` must not import `lib/pages/**`.
+- `lib/components/**` must not import concrete business pages.
+- Avoid page-to-page mesh dependencies.
+
+## Reusable Component Boundary Supplement
+
+Goal:
+
+- `lib/components/**` should remain reusable inside one project and across multiple projects.
+
+Rules:
+
+- Reusable components must stay business-agnostic.
+- Reusable components must not depend on concrete pages, concrete API shapes, or concrete Redux store fields.
+- Reusable components should solve presentation and interaction only.
+- Reusable components should not embed route jumps, network requests, analytics, login checks, or business branching.
+- If a component API starts carrying business-specific nouns such as `user`, `order`, `product`, or `coupon`, reassess whether it still belongs in `lib/components/**`.
+
+## Naming And Config
+
+Bad:
 
 ```dart
 static String path1 = '/path1';
 static String path2 = '/path2';
 var data1 = {};
-class IUserinfo {}
+class IUserInfo {}
 ```
 
-### 正确写法
+Good:
 
 ```dart
 static const newsDetail = '/news/detail';
@@ -211,175 +272,111 @@ final newsQuery = NewsQuery(...);
 class UserInfo {}
 ```
 
-### 规则
+Rules:
 
-- 类名使用 `UpperCamelCase`。
-- 变量、方法、字段使用 `lowerCamelCase`。
-- 路由名、API 方法名、model 名必须表达业务语义。
-- 不使用 `I` 前缀模拟 TypeScript interface。
+- Classes use `UpperCamelCase`.
+- Variables, fields, and methods use `lowerCamelCase`.
+- Route names, API method names, and model names must reflect business meaning.
+- Config classes should use Dart naming such as `AppConfig`.
+- Prefer `--dart-define` for environment configuration.
 
-## 配置规则
+## Error Handling
 
-### 错误写法
+- Do not use `print` for business logging.
+- Preserve useful error context in catches.
+- Shared network error handling should live in the request infrastructure.
+- UI handles only user-visible feedback and local recovery actions.
 
-```dart
-class APP_CONFIG {
-  static const String BASE_URL = 'https://example.com';
-}
-```
+## Directory Conventions
 
-### 正确写法
+- `lib/utils/`: infrastructure helpers.
+- `lib/api/`: API declaration layer.
+- `lib/model/`: typed business models.
+- `lib/store/`: global state.
+- `lib/pages/`: route entry pages.
+- `lib/components/`: reusable UI components.
+- `lib/router/`: routing.
+- `lib/constants/`: constants and enum-like keys.
 
-```dart
-class AppConfig {
-  static const baseUrl = String.fromEnvironment(
-    'BASE_URL',
-    defaultValue: 'https://example.com',
-  );
-}
-```
+## UI / ViewModel Rules
 
-### 规则
+Goal:
 
-- 配置类使用 Dart 风格命名，例如 `AppConfig`。
-- 环境配置优先考虑 `--dart-define`。
-- 不要为了保留错误命名而添加 lint ignore。
+- Page code should behave like a stable Vue template plus computed mapping layer.
 
-## 错误处理规则
+Rules:
 
-### 错误写法
+- In `lib/pages/**`, do not keep long-lived business data as `Map<String, dynamic>`.
+- In `lib/pages/**`, do not directly render `json['xx']` or `response.data['xx']`.
+- API code must convert raw responses into typed models before the page layer consumes them.
 
-```dart
-try {
-  await request();
-} catch (e) {
-  print(e);
-}
-```
+## Lifecycle And Render Rules
 
-### 正确写法
+Goal:
 
-```dart
-try {
-  await request();
-} catch (error, stackTrace) {
-  customLogger.log('request failed: $error');
-}
-```
+- Avoid render-time side effects.
 
-### 规则
+Rules:
 
-- 不使用 `print` 做业务日志。
-- catch 中优先保留错误上下文。
-- 网络错误统一在 `DioClient` 中做基础日志和转换。
-- UI 层只处理用户可见反馈。
+- `build()` must remain a pure UI render from current state to widget tree.
+- Do not trigger network requests in `build()`.
+- Do not call `store.dispatch(...)` in `build()`.
+- Do not read or write local storage in `build()`.
 
-## 目录结构约定
+## Unified Error Model
 
-目标：让 Flutter 项目像 Vue/TS 项目一样“文件放哪里一眼就知道”。
+Goal:
 
-### 规则
+- Keep UI consumption stable, similar to consuming `Response<T>` in TS.
 
-- `lib/utils/`：基础设施工具（例如 `request.dart`、`logger.dart`、`storage.dart`）。
-- `lib/api/`：API 声明层，只负责声明接口 + 返回强类型 model，不写 UI。
-- `lib/model/`：业务数据结构（entity/DTO），包含 `fromJson/toJson`。
-- `lib/store/`：全局状态（redux 的 state/action/reducer），保持 immutable。
-- `lib/pages/`：页面（路由入口），只做 UI composition，不直接写复杂业务。
-- `lib/components/`：可复用组件（尽量无业务或轻业务）。
-- `lib/router/`：路由与跳转封装（等价 Vue 的 `router/index.ts`）。
-- `lib/constants/`：常量/枚举/配置 key（等价 `constants.ts`）。
+Rules:
 
-## UI / ViewModel 规则
+- API layer should not casually leak third-party exception shapes into the UI layer.
+- Prefer transforming errors in shared infrastructure and keeping project-level error semantics stable.
 
-目标：页面代码保持“像 Vue 的 template + computed”，只消费稳定结构，不直接吃后端原始 JSON。
+## Cross Platform Checks
 
-### 规则
+Goal:
 
-- 页面 Widget（`pages/**`）中不允许出现：
-  - `Map<String, dynamic>` 作为业务数据承载
-  - `json['xx']` 这类 JSON 字段直取
-  - `response.data['xx']` 这类对网络层返回的直连渲染
-- API 层必须把响应转换成 model（你上面已定义），页面层只消费：
-  - model
-  - 或者更进一步：页面专用 ViewModel（推荐用 `xxx_view_model.dart`/`mapper` 负责转换）
+- Features should be judged against Android, iOS, Web, and Windows rather than only one platform.
 
-## 副作用与生命周期规则
+Rules:
 
-目标：避免“渲染期副作用”，等价于 Vue 里禁止在 render/template 执行请求。
+- For each new feature involving networking, media, files, cache, permissions, WebView, or plugins, check whether Android, iOS, Web, and Windows need extra configuration.
+- Do not assume single-platform validation is enough.
+- Network-related changes must consider Android internet and cleartext rules, iOS ATS, Web CORS and mixed content, and Windows proxy or certificate behavior.
+- Media-related changes must verify platform support matrix, HTTPS and Range requirements, format support, and actionable failure logging.
+- If a plugin does not support all target platforms, provide a fallback or block feature entry on unsupported platforms.
 
-### 规则
+## Desktop Interaction Supplement
 
-- `build()` 必须是纯 UI 渲染：给定当前 state -> 返回 widget tree。
-- 不允许在 `build()` 中：
-  - 发起网络请求
-  - `store.dispatch(...)`
-  - 读写本地存储（会导致重复触发、难以追踪）
-- 允许的副作用位置：
-  - `initState` / `didChangeDependencies`
-  - 用户交互回调（`onPressed`/`onTap`）
-  - 业务 controller/service（如果项目引入对应抽象）
+Goal:
 
-## 单例与依赖创建规则
+- Reusable interactive UI must work on desktop, not only on touch devices.
 
-目标：对齐 Vue/TS 的“单例集中创建”，避免到处 `new` 造成行为不一致。
+Rules:
 
-### 规则
+- Any new swipe, drag, carousel, pager, horizontal list, or gesture-heavy component must explicitly consider Windows and Web mouse and trackpad behavior, not just mobile touch behavior.
+- Any new overlay, popover, sheet, or dialog should consider desktop dismissal and focus behavior where reasonable, including outside click and keyboard flow.
+- Any new input, filter, or search component should consider keyboard navigation basics such as focus movement, Enter confirmation, and practical pointer hit targets.
+- Do not assume touch-only interaction for reusable UI that can appear on Windows or Web.
 
-- 只允许在 `main.dart` / `bootstrap.dart` 创建：router、store（全局单例）。
-- 只允许在基础设施层（例如 `utils/request.dart`）创建并导出：`httpClient` / `DioClient` / logger。
-- 业务页面/组件中不允许直接 `new`：
-  - `Dio()` / `DioClient()`
-  - `FluroRouter()`
-  - `Store()`
+## Component Demo Supplement
 
-## 分层 import 规则（禁止倒引用）
+Goal:
 
-目标：像前端工程一样，避免跨层耦合和循环依赖。
+- `lib/pages/component_demo/**` is a real regression surface, not just a screenshot page.
 
-### 规则
+Rules:
 
-- `model/**` 不允许 import：`api/**`、`pages/**`、`store/**`。
-- `api/**` 不允许 import：`pages/**`。
-- `components/**` 不允许 import：具体业务页面（避免组件绑定页面）。
-- `pages/**` 可以组合其它层，但应避免页面之间互相 import 形成网状依赖。
+- New reusable components must ship with a demo page, a router entry, and a home entry.
+- Demo pages must cover at least base usage, one common variant, and one state or edge-case scenario that reflects the component's real behavior.
+- If mobile and desktop interaction differs, the demo must make that difference testable rather than only showing a static visual sample.
+- If a component supports real state switching such as expand/collapse, active switching, or toggle behavior, the demo must allow real interaction instead of static imitation.
 
-## 统一返回与错误模型（建议）
+## Change Process
 
-目标：让调用方像 TS 里消费 `Response<T>` 一样稳定，UI 只处理 success/failure。
-
-### 规则
-
-- API 层不建议把三方异常（例如 Dio 的 error 类型）原样抛给 UI。
-- 建议在网络基础设施层将错误统一转换为项目内错误类型（例如 `RequestError`），并在 API 层对外返回：
-  - `ApiResult<T>`（成功/失败 + message + code + data）
-  - 或明确的 `T?` + 统一异常（两者选一种，项目内保持一致）
-
-## 跨平台兼容性与发布检查规则（必须）
-
-目标：必须保证 Windows / iOS / Android / Web 端：页面正常加载、接口正确请求与响应、video/audio 正常播放。
-
-### 规则
-
-- 每次新增功能（尤其是：网络请求、音视频播放、文件/缓存、权限、WebView、第三方插件）后，必须检查这些平台目录是否需要额外配置，并确保对应能力可用：
-  - `D:\code\flutter-template\android`
-  - `D:\code\flutter-template\ios`
-  - `D:\code\flutter-template\web`
-  - `D:\code\flutter-template\windows`
-- 不允许只在单一平台验证后就合并/提交。
-- 网络相关必须考虑：
-  - Android：`android.permission.INTERNET`、明文 HTTP(需要 `network_security_config`/`usesCleartextTraffic`)、证书/域名兼容。
-  - iOS：ATS（App Transport Security）对 HTTP/证书的限制。
-  - Web：CORS、混合内容（https 页面请求 http 资源）、浏览器缓存策略。
-  - Windows：代理/证书链、插件平台实现（例如音视频插件的 windows 实现包）。
-- 音视频相关必须考虑：
-  - 插件是否覆盖目标平台（例如 `just_audio` 对应的 windows/web 平台实现）。
-  - 资源 URL 是否为 https、是否支持 Range、格式是否被平台解码器支持。
-  - 失败时必须有可定位的错误日志（不要只 toast“失败”）。
-- 所有新引入的第三方插件必须先确认：Android/iOS/Web/Windows 的支持矩阵；不支持的平台要么提供降级方案，要么明确禁止在该平台进入相关功能入口。
-
-## 后续改代码时必须遵守
-
-- 如果要新增 API，先放到 `lib/api/**`，使用统一 `httpClient`。
-- 如果要新增接口返回数据，先建 model，再写 API 方法。
-- 如果发现重复 client、重复 baseURL、重复 token 处理，应优先收敛到基础设施层。
-- 如果 Dart 写法和 Vue/TS 思路冲突，优先选择 Dart 生态推荐写法，但解释时使用 Vue/TS 类比说明。
+- When adding a new API: add API code first, then model, then page consumption.
+- When adding a new response shape: define the model before wiring UI.
+- If repeated client creation, repeated base URLs, or repeated token handling are found, refactor toward the shared infrastructure layer.
+- If Dart best practice differs from a Vue/TypeScript analogy, choose the Dart-idiomatic implementation but explain it using Vue/TypeScript framing when useful.

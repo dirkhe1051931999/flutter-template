@@ -1,0 +1,4 @@
+enum AppSwipeIndicatorPosition {
+  center,
+  right,
+}

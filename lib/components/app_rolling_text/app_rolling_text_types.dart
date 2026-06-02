@@ -1,0 +1,4 @@
+enum AppRollingTextMode {
+  number,
+  text,
+}

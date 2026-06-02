@@ -1,10 +1,11 @@
 import 'package:flutter/cupertino.dart';
+import 'package:oolaf_flutted/components/app_button/index.dart';
 import 'package:oolaf_flutted/components/gallery_preview/index.dart';
 
 class GalleryPreviewDemoPage extends StatelessWidget {
   const GalleryPreviewDemoPage({super.key});
 
-  static const List<String> _galleryImageUrls = <String>[
+  static const List<String> galleryImageUrls = <String>[
     'https://picsum.photos/id/237/1200/800',
     'https://picsum.photos/id/1025/960/1440',
     'https://picsum.photos/id/1062/900/2200',
@@ -22,11 +23,11 @@ class GalleryPreviewDemoPage extends StatelessWidget {
           child: Wrap(
             spacing: 10,
             runSpacing: 10,
-            children: _galleryImageUrls
+            children: galleryImageUrls
                 .map(
                   (url) => GalleryPreviewImage(
                     imageUrl: url,
-                    galleryImageUrls: _galleryImageUrls,
+                    galleryImageUrls: galleryImageUrls,
                     width: 106,
                     height: 126,
                     borderRadius: BorderRadius.circular(18),
@@ -43,8 +44,8 @@ class GalleryPreviewDemoPage extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               GalleryPreviewImage(
-                imageUrl: _galleryImageUrls[2],
-                galleryImageUrls: _galleryImageUrls,
+                imageUrl: galleryImageUrls[2],
+                galleryImageUrls: galleryImageUrls,
                 width: double.infinity,
                 height: 240,
                 fit: BoxFit.cover,
@@ -66,23 +67,16 @@ class GalleryPreviewDemoPage extends StatelessWidget {
         _DemoSection(
           title: '直接打开预览',
           subtitle: '不依赖缩略图，直接从按钮拉起 gallery。',
-          child: CupertinoButton.filled(
-            padding: const EdgeInsets.symmetric(vertical: 14),
-            borderRadius: BorderRadius.circular(18),
+          child: AppButton(
+            block: true,
             onPressed: () {
               openGalleryPreview(
                 context,
-                imageUrls: _galleryImageUrls,
-                initialImageUrl: _galleryImageUrls[1],
+                imageUrls: galleryImageUrls,
+                initialImageUrl: galleryImageUrls[1],
               );
             },
-            child: const Text(
-              '打开 Gallery Preview',
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
+            child: const Text('打开 Gallery Preview'),
           ),
         ),
       ],

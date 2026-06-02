@@ -126,3 +126,29 @@ This repository uses `.windsurfrules` as a source of truth for engineering style
 - When adding a new response shape: define the model before wiring UI.
 - If repeated client creation, repeated base URLs, or repeated token handling are found, refactor toward the shared infrastructure layer.
 - If Dart best practice differs from a Vue/TypeScript analogy, choose the Dart-idiomatic implementation but explain it using Vue/TypeScript framing when useful.
+
+## Visual Supplement
+
+- New or refactored UI should default toward an iOS 26-style visual language when appropriate: soft layering, subtle translucency, light borders, restrained shadows, and clear hierarchy instead of heavy card-based Material styling.
+- For cards, overlays, search bars, sheets, headers, bottom bars, and floating surfaces, prefer iOS-like frosted or glass-morphism treatment when it improves hierarchy and readability.
+- Glass-like effects must preserve readability first. Do not rely on blur alone; pair translucency with contrast, light borders, and stable content hierarchy.
+- Do not overuse glass effects. Keep them focused on surfaces, navigation chrome, overlays, and emphasis containers rather than every content block.
+
+## Desktop Interaction Supplement
+
+- Any new swipe, drag, carousel, pager, horizontal list, or gesture-heavy component must explicitly consider Windows and Web mouse and trackpad behavior, not just mobile touch behavior.
+- Any new overlay, popover, sheet, or dialog should consider desktop dismissal and focus behavior where reasonable, including outside click and keyboard flow.
+- Any new input, filter, or search component should consider keyboard navigation basics such as focus movement, Enter confirmation, and practical pointer hit targets.
+- Do not assume touch-only interaction for reusable UI that can appear on Windows or Web.
+
+## Reusable Component Supplement
+
+- `lib/components/**` should stay business-agnostic. Reusable components must not depend on concrete pages, concrete API shapes, or concrete Redux store fields.
+- Reusable components should solve presentation and interaction only; they should not embed route jumps, network requests, analytics, login checks, or business branching.
+- If a component's public API starts carrying business-specific nouns such as `user`, `order`, `product`, or `coupon`, reassess whether it still belongs in `lib/components/**`.
+
+## Component Demo Supplement
+
+- New reusable components must ship with a demo page under `lib/pages/component_demo/**`, a router entry, and a home entry.
+- Demo pages must cover at least base usage, one common variant, and one state or edge-case scenario that reflects the component's real behavior.
+- If mobile and desktop interaction differs, the demo must make that difference testable rather than only showing a static visual sample.

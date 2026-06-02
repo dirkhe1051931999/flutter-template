@@ -1,22 +1,20 @@
 import 'package:flutter/cupertino.dart';
-import 'package:oolaf_flutted/components/app_button/index.dart';
-import 'package:oolaf_flutted/components/app_date_picker/app_date_picker_types.dart';
-import 'package:oolaf_flutted/components/app_date_picker/app_date_picker_utils.dart';
-import 'package:oolaf_flutted/components/app_date_picker/index.dart';
+import 'package:oolaf_flutted/components/app_radio/app_radio_types.dart';
+import 'package:oolaf_flutted/components/app_radio/index.dart';
+import 'package:oolaf_flutted/components/app_toast/index.dart';
 
-class AppDatePickerDemoPage extends StatefulWidget {
-  const AppDatePickerDemoPage({super.key});
+class AppRadioDemoPage extends StatefulWidget {
+  const AppRadioDemoPage({super.key});
 
   @override
-  State<AppDatePickerDemoPage> createState() => _AppDatePickerDemoPageState();
+  State<AppRadioDemoPage> createState() => _AppRadioDemoPageState();
 }
 
-class _AppDatePickerDemoPageState extends State<AppDatePickerDemoPage> {
-  List<AppDatePickerColumnType> _columnsType = const [
-    AppDatePickerColumnType.year,
-    AppDatePickerColumnType.month,
-  ];
-  AppDatePickerValue _value = const AppDatePickerValue();
+class _AppRadioDemoPageState extends State<AppRadioDemoPage> {
+  AppRadioShape _shape = AppRadioShape.round;
+  AppRadioLabelPosition _labelPosition = AppRadioLabelPosition.right;
+  String? _delivery = 'express';
+  String? _theme = 'glass';
 
   @override
   Widget build(BuildContext context) {
@@ -25,36 +23,25 @@ class _AppDatePickerDemoPageState extends State<AppDatePickerDemoPage> {
       children: [
         const _DemoSection(
           title: '组件说明',
-          subtitle: '参考 Vant DatePicker，当前版本固定放在 App Sheet 内展示。',
+          subtitle: '参考 Vant Radio / RadioGroup，保留单选语义并改成 iOS 风格。',
           child: _FeatureList(),
         ),
         const SizedBox(height: 14),
         _DemoSection(
-          title: '列组合',
-          subtitle: '支持 year、month、year-month、month-day 四种常用组合。',
+          title: '基础示例',
+          subtitle: '支持 shape、label-position、checked-color、disabled 和 group 绑定。',
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const _SegmentTitle(label: 'columnsType'),
-              const SizedBox(height: 10),
-              CupertinoSlidingSegmentedControl<String>(
-                groupValue: _columnsKey,
+              CupertinoSlidingSegmentedControl<AppRadioShape>(
+                groupValue: _shape,
                 children: const {
-                  'year': Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                    child: Text('year'),
+                  AppRadioShape.round: Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    child: Text('round'),
                   ),
-                  'month': Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                    child: Text('month'),
-                  ),
-                  'year-month': Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                    child: Text('year-month'),
-                  ),
-                  'month-day': Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                    child: Text('month-day'),
+                  AppRadioShape.square: Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    child: Text('square'),
                   ),
                 },
                 onValueChanged: (value) {
@@ -62,62 +49,109 @@ class _AppDatePickerDemoPageState extends State<AppDatePickerDemoPage> {
                     return;
                   }
                   setState(() {
-                    _columnsType = _columnsForKey(value);
-                    _value = const AppDatePickerValue();
+                    _shape = value;
+                  });
+                },
+              ),
+              const SizedBox(height: 12),
+              CupertinoSlidingSegmentedControl<AppRadioLabelPosition>(
+                groupValue: _labelPosition,
+                children: const {
+                  AppRadioLabelPosition.right: Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    child: Text('right'),
+                  ),
+                  AppRadioLabelPosition.left: Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    child: Text('left'),
+                  ),
+                },
+                onValueChanged: (value) {
+                  if (value == null) {
+                    return;
+                  }
+                  setState(() {
+                    _labelPosition = value;
                   });
                 },
               ),
               const SizedBox(height: 16),
-              _ActionButton(
-                label: '打开日期选择',
-                onPressed: () async {
-                  final result = await showAppDatePickerSheet(
-                    context: context,
-                    title: 'App Date Picker',
-                    columnsType: _columnsType,
-                    initialValue: _value,
-                    minYear: 2000,
-                    maxYear: 2035,
-                  );
-                  if (result == null) {
-                    return;
-                  }
+              AppRadioGroup<String>(
+                value: _delivery,
+                shape: _shape,
+                labelPosition: _labelPosition,
+                checkedColor: const Color(0xFF2563EB),
+                onChanged: (value) {
                   setState(() {
-                    _value = result;
+                    _delivery = value;
                   });
                 },
+                children: const [
+                  AppRadio<String>(
+                    name: 'express',
+                    title: '极速送达',
+                    subtitle: '30 分钟内送达，适合即时场景',
+                  ),
+                  AppRadio<String>(
+                    name: 'scheduled',
+                    title: '预约配送',
+                    subtitle: '可选择上午、下午或晚间时段',
+                  ),
+                  AppRadio<String>(
+                    name: 'pickup',
+                    title: '到店自取',
+                    subtitle: '适合咖啡、面包和轻量订单',
+                  ),
+                ],
               ),
             ],
           ),
         ),
         const SizedBox(height: 14),
         _DemoSection(
-          title: '结果展示',
-          subtitle: '根据列类型返回结构化的 year / month / day 值。',
+          title: 'Example',
+          subtitle: '一个更偏视觉主题选择的单选示例，适合作为设置页入口。',
+          child: AppRadioGroup<String>(
+            value: _theme,
+            direction: AppRadioDirection.horizontal,
+            checkedColor: const Color(0xFF0EA5E9),
+            onChanged: (value) {
+              setState(() {
+                _theme = value;
+              });
+              AppToast.showText('主题切换为 $value');
+            },
+            children: const [
+              SizedBox(
+                width: 150,
+                child: AppRadio<String>(
+                  name: 'glass',
+                  title: 'Glass',
+                  subtitle: '浅玻璃与薄阴影',
+                ),
+              ),
+              SizedBox(
+                width: 150,
+                child: AppRadio<String>(
+                  name: 'plain',
+                  title: 'Plain',
+                  subtitle: '更克制、更轻量',
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 14),
+        _DemoSection(
+          title: '当前状态',
+          subtitle: '页面只维护选中的 value，符合 RadioGroup 的单值心智模型。',
           child: _ResultCard(
-            columnsType: _columnsType,
-            value: _value,
+            delivery: _delivery,
+            theme: _theme,
           ),
         ),
       ],
     );
-  }
-
-  String get _columnsKey {
-    if (_columnsType.length == 1 &&
-        _columnsType.first == AppDatePickerColumnType.year) {
-      return 'year';
-    }
-    if (_columnsType.length == 1 &&
-        _columnsType.first == AppDatePickerColumnType.month) {
-      return 'month';
-    }
-    if (_columnsType.length == 2 &&
-        _columnsType[0] == AppDatePickerColumnType.year &&
-        _columnsType[1] == AppDatePickerColumnType.month) {
-      return 'year-month';
-    }
-    return 'month-day';
   }
 }
 
@@ -177,9 +211,9 @@ class _FeatureList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const items = [
-      '组件固定运行在 App Sheet 内，使用列滚动选择交互。',
-      '支持 `year`、`month`、`year-month`、`month-day` 四种列组合。',
-      '返回结构化的 `AppDatePickerValue`，而不是原始字符串。',
+      '支持单项和 RadioGroup 两种模式，group 通过单值 value 统一控制。',
+      '支持 round / square、left / right、checkedColor、disabled 和横竖布局。',
+      '视觉上用柔和外圈和内点反馈，保持单选控件更接近 iOS 的轻量质感。',
     ];
 
     return Column(
@@ -219,62 +253,20 @@ class _FeatureList extends StatelessWidget {
   }
 }
 
-class _SegmentTitle extends StatelessWidget {
-  const _SegmentTitle({
-    required this.label,
-  });
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      label,
-      style: const TextStyle(
-        color: Color(0xFF667085),
-        fontSize: 13,
-        fontWeight: FontWeight.w600,
-      ),
-    );
-  }
-}
-
-class _ActionButton extends StatelessWidget {
-  const _ActionButton({
-    required this.label,
-    required this.onPressed,
-  });
-
-  final String label;
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    return AppButton(
-      block: true,
-      onPressed: onPressed,
-      child: Text(label),
-    );
-  }
-}
-
 class _ResultCard extends StatelessWidget {
   const _ResultCard({
-    required this.columnsType,
-    required this.value,
+    required this.delivery,
+    required this.theme,
   });
 
-  final List<AppDatePickerColumnType> columnsType;
-  final AppDatePickerValue value;
+  final String? delivery;
+  final String? theme;
 
   @override
   Widget build(BuildContext context) {
     final rows = <(String, String)>[
-      ('列类型', columnsType.map((item) => item.name).join(' / ')),
-      ('结果', AppDatePickerUtils.summaryText(columnsType, value)),
-      ('year', value.year?.toString() ?? '-'),
-      ('month', value.month?.toString() ?? '-'),
-      ('day', value.day?.toString() ?? '-'),
+      ('delivery', delivery ?? '-'),
+      ('theme', theme ?? '-'),
     ];
 
     return DecoratedBox(
@@ -293,7 +285,7 @@ class _ResultCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       SizedBox(
-                        width: 64,
+                        width: 70,
                         child: Text(
                           row.$1,
                           style: const TextStyle(
@@ -310,7 +302,6 @@ class _ResultCard extends StatelessWidget {
                             color: Color(0xFF202127),
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
-                            height: 1.4,
                           ),
                         ),
                       ),
@@ -323,19 +314,4 @@ class _ResultCard extends StatelessWidget {
       ),
     );
   }
-}
-
-List<AppDatePickerColumnType> _columnsForKey(String key) {
-  return switch (key) {
-    'year' => const [AppDatePickerColumnType.year],
-    'month' => const [AppDatePickerColumnType.month],
-    'year-month' => const [
-        AppDatePickerColumnType.year,
-        AppDatePickerColumnType.month,
-      ],
-    _ => const [
-        AppDatePickerColumnType.month,
-        AppDatePickerColumnType.day,
-      ],
-  };
 }

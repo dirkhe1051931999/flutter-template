@@ -2,6 +2,7 @@ import 'package:fluro/fluro.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:oolaf_flutted/pages/home/widgets/background_orb.dart';
 import 'package:oolaf_flutted/pages/home/widgets/home_entry.dart';
+import 'package:oolaf_flutted/pages/home/widgets/home_entry_group.dart';
 import 'package:oolaf_flutted/pages/home/widgets/home_hero.dart';
 import 'package:oolaf_flutted/pages/home/widgets/home_list_tile.dart';
 import 'package:oolaf_flutted/pages/home/widgets/section_panel.dart';
@@ -17,6 +18,9 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   bool _examplesExpanded = false;
   bool _businessExpanded = true;
+  final Set<String> _expandedExampleGroups = <String>{
+    '基础能力',
+  };
 
   void _openRoute(String key) {
     const transition = TransitionType.inFromRight;
@@ -91,10 +95,130 @@ class _HomePageState extends State<HomePage> {
         icon: CupertinoIcons.slider_horizontal_3,
       ),
       const HomeEntry(
+        title: 'App Checkbox',
+        subtitle: 'Vant Checkbox 参数模型、group、多选与 max',
+        routeKey: 'app-checkbox-demo',
+        icon: CupertinoIcons.check_mark_circled,
+      ),
+      const HomeEntry(
+        title: 'App Button',
+        subtitle: 'Vant Button 参数模型，统一基础示例触发按钮',
+        routeKey: 'app-button-demo',
+        icon: CupertinoIcons.rectangle_fill_on_rectangle_angled_fill,
+      ),
+      const HomeEntry(
+        title: 'App Action Sheet',
+        subtitle: 'Vant ActionSheet 参数模型、动作面板',
+        routeKey: 'app-action-sheet-demo',
+        icon: CupertinoIcons.ellipsis_circle,
+      ),
+      const HomeEntry(
+        title: 'App Switch',
+        subtitle: 'Vant Switch 参数模型、loading、disabled、size',
+        routeKey: 'app-switch-demo',
+        icon: CupertinoIcons.switch_camera,
+      ),
+      const HomeEntry(
+        title: 'App Tag',
+        subtitle: 'Vant Tag 鍙傛暟妯″瀷銆佺┖蹇冦€佸渾瑙掋€佹爣璁板拰鍙叧闂牱寮?',
+        routeKey: 'app-tag-demo',
+        icon: CupertinoIcons.tag,
+      ),
+      const HomeEntry(
+        title: 'App Stepper',
+        subtitle: 'Vant Stepper 参数模型、数量步进与小数',
+        routeKey: 'app-stepper-demo',
+        icon: CupertinoIcons.plus_slash_minus,
+      ),
+      const HomeEntry(
+        title: 'App Steps',
+        subtitle: 'Vant Steps 鍙傛暟妯″瀷銆佹í鍚戜笌绾靛悜姝ラ娴?',
+        routeKey: 'app-steps-demo',
+        icon: CupertinoIcons.list_number,
+      ),
+      const HomeEntry(
+        title: 'App Dialog',
+        subtitle: 'Vant Dialog 参数模型、confirm/cancel 弹窗',
+        routeKey: 'app-dialog-demo',
+        icon: CupertinoIcons.chat_bubble_2,
+      ),
+      const HomeEntry(
+        title: 'App Dropdown Menu',
+        subtitle: 'Vant DropdownMenu 参数模型、顶部筛选菜单',
+        routeKey: 'app-dropdown-menu-demo',
+        icon: CupertinoIcons.chevron_down_square,
+      ),
+      const HomeEntry(
+        title: 'App Index Bar',
+        subtitle: 'Vant IndexBar 分组索引、右侧字母导航和点击跳转',
+        routeKey: 'app-index-bar-demo',
+        icon: CupertinoIcons.textformat_abc,
+      ),
+      const HomeEntry(
+        title: 'App Notice Bar',
+        subtitle: 'Vant NoticeBar 参数模型、垂直滚动和滚动播放',
+        routeKey: 'app-notice-bar-demo',
+        icon: CupertinoIcons.speaker_2,
+      ),
+      const HomeEntry(
         title: 'App Field',
         subtitle: '表单输入、校验、clear、textarea、is-link',
         routeKey: 'app-field-demo',
         icon: CupertinoIcons.square_pencil,
+      ),
+      const HomeEntry(
+        title: 'App Password Input',
+        subtitle: 'Vant PasswordInput 参数模型、支付密码格子',
+        routeKey: 'app-password-input-demo',
+        icon: CupertinoIcons.lock_shield,
+      ),
+      const HomeEntry(
+        title: 'App Popover',
+        subtitle: 'Vant Popover 参数模型、锚点菜单弹层',
+        routeKey: 'app-popover-demo',
+        icon: CupertinoIcons.bubble_left_bubble_right,
+      ),
+      const HomeEntry(
+        title: 'App Radio',
+        subtitle: 'Vant Radio 参数模型、group、单选状态',
+        routeKey: 'app-radio-demo',
+        icon: CupertinoIcons.smallcircle_fill_circle,
+      ),
+      const HomeEntry(
+        title: 'App Search',
+        subtitle: 'Vant Search 参数模型、iOS 26 搜索框、首页 example',
+        routeKey: 'app-search-demo',
+        icon: CupertinoIcons.search,
+      ),
+      const HomeEntry(
+        title: 'App Sidebar',
+        subtitle: 'Vant Sidebar 左侧菜单、激活态、badge 和内容联动',
+        routeKey: 'app-sidebar-demo',
+        icon: CupertinoIcons.sidebar_left,
+      ),
+      const HomeEntry(
+        title: 'App Text Ellipsis',
+        subtitle: 'Vant TextEllipsis 多行省略、展开收起和头中尾截断',
+        routeKey: 'app-text-ellipsis-demo',
+        icon: CupertinoIcons.text_alignleft,
+      ),
+      const HomeEntry(
+        title: 'App Rolling Text',
+        subtitle: 'Vant RollingText 参数模型、数字翻牌与文本轮播',
+        routeKey: 'app-rolling-text-demo',
+        icon: CupertinoIcons.number,
+      ),
+      const HomeEntry(
+        title: 'App Swipe Cell',
+        subtitle: 'Vant SwipeCell 参数模型、左右滑动操作',
+        routeKey: 'app-swipe-cell-demo',
+        icon: CupertinoIcons.arrow_left_right,
+      ),
+      const HomeEntry(
+        title: 'App Swipe',
+        subtitle: 'Vant Swipe 鍙傛暟妯″瀷銆佽疆鎾€佽嚜鍔ㄦ挱鏀惧拰澶氬崱鐗囪绐?',
+        routeKey: 'app-swipe-demo',
+        icon: CupertinoIcons.rectangle_stack,
       ),
       const HomeEntry(
         title: 'App Toast',
@@ -131,6 +255,91 @@ class _HomePageState extends State<HomePage> {
         subtitle: '通用页面头、头像标题、操作区',
         routeKey: 'route-page-header-demo',
         icon: CupertinoIcons.square_list,
+      ),
+    ];
+
+    final exampleGroups = <HomeEntryGroup>[
+      HomeEntryGroup(
+        title: '基础能力',
+        subtitle: '路由、状态、请求、图像与通用结构',
+        items: exampleItems.where((item) {
+          const routeKeys = <String>{
+            'todolist',
+            'fluro',
+            'request',
+            'profile',
+            'scrollable-tabs',
+            'network-image-demo',
+            'gallery-preview-demo',
+            'app-rolling-text-demo',
+            'route-bottom-nav-bar-demo',
+            'route-page-header-demo',
+            'app-asset-icon-demo',
+          };
+          return routeKeys.contains(item.routeKey);
+        }).toList(growable: false),
+      ),
+      HomeEntryGroup(
+        title: '表单输入',
+        subtitle: '输入框、按钮、选择、步进、密码与搜索',
+        items: exampleItems.where((item) {
+          const routeKeys = <String>{
+            'app-button-demo',
+            'app-field-demo',
+            'app-search-demo',
+            'app-sidebar-demo',
+            'app-stepper-demo',
+            'app-steps-demo',
+            'app-switch-demo',
+            'app-tag-demo',
+            'app-text-ellipsis-demo',
+            'app-password-input-demo',
+            'app-checkbox-demo',
+            'app-radio-demo',
+          };
+          return routeKeys.contains(item.routeKey);
+        }).toList(growable: false),
+      ),
+      HomeEntryGroup(
+        title: '弹层反馈',
+        subtitle: '动作面板、对话框、抽屉与轻提示',
+        items: exampleItems.where((item) {
+          const routeKeys = <String>{
+            'app-action-sheet-demo',
+            'app-dialog-demo',
+            'app-sheet-demo',
+            'app-toast-demo',
+            'app-notice-bar-demo',
+            'app-popover-demo',
+          };
+          return routeKeys.contains(item.routeKey);
+        }).toList(growable: false),
+      ),
+      HomeEntryGroup(
+        title: '选择器',
+        subtitle: '日期、级联、地区和顶部筛选菜单',
+        items: exampleItems.where((item) {
+          const routeKeys = <String>{
+            'app-calendar-demo',
+            'app-date-picker-demo',
+            'app-index-bar-demo',
+            'app-picker-demo',
+            'area-pick-demo',
+            'app-dropdown-menu-demo',
+          };
+          return routeKeys.contains(item.routeKey);
+        }).toList(growable: false),
+      ),
+      HomeEntryGroup(
+        title: '列表交互',
+        subtitle: '滑动操作与列表行交互容器',
+        items: exampleItems.where((item) {
+          const routeKeys = <String>{
+            'app-swipe-cell-demo',
+            'app-swipe-demo',
+          };
+          return routeKeys.contains(item.routeKey);
+        }).toList(growable: false),
       ),
     ];
 
@@ -209,11 +418,36 @@ class _HomePageState extends State<HomePage> {
                         _examplesExpanded = !_examplesExpanded;
                       });
                     },
-                    children: exampleItems
+                    children: exampleGroups
                         .map(
-                          (item) => HomeListTile(
-                            item: item,
-                            onTap: () => _openRoute(item.routeKey),
+                          (group) => Padding(
+                            padding: const EdgeInsets.only(bottom: 10),
+                            child: SectionPanel(
+                              title: group.title,
+                              subtitle: group.subtitle,
+                              count: group.items.length,
+                              expanded:
+                                  _expandedExampleGroups.contains(group.title),
+                              onToggle: () {
+                                setState(() {
+                                  if (_expandedExampleGroups.contains(
+                                    group.title,
+                                  )) {
+                                    _expandedExampleGroups.remove(group.title);
+                                  } else {
+                                    _expandedExampleGroups.add(group.title);
+                                  }
+                                });
+                              },
+                              children: group.items
+                                  .map(
+                                    (item) => HomeListTile(
+                                      item: item,
+                                      onTap: () => _openRoute(item.routeKey),
+                                    ),
+                                  )
+                                  .toList(growable: false),
+                            ),
                           ),
                         )
                         .toList(growable: false),

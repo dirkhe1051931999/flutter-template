@@ -17,11 +17,31 @@ class Routes {
   static const scrollableTabs = "/scrollable-tabs";
   static const networkImageDemo = "/network-image-demo";
   static const appAssetIconDemo = "/app-asset-icon-demo";
+  static const appButtonDemo = "/app-button-demo";
+  static const appActionSheetDemo = "/app-action-sheet-demo";
   static const appCalendarDemo = "/app-calendar-demo";
   static const appDatePickerDemo = "/app-date-picker-demo";
+  static const appDialogDemo = "/app-dialog-demo";
+  static const appDropdownMenuDemo = "/app-dropdown-menu-demo";
+  static const appIndexBarDemo = "/app-index-bar-demo";
+  static const appNoticeBarDemo = "/app-notice-bar-demo";
   static const appPickerDemo = "/app-picker-demo";
+  static const appCheckboxDemo = "/app-checkbox-demo";
+  static const appSwitchDemo = "/app-switch-demo";
+  static const appStepperDemo = "/app-stepper-demo";
+  static const appStepsDemo = "/app-steps-demo";
   static const appFieldDemo = "/app-field-demo";
+  static const appPasswordInputDemo = "/app-password-input-demo";
+  static const appPopoverDemo = "/app-popover-demo";
+  static const appRadioDemo = "/app-radio-demo";
+  static const appRollingTextDemo = "/app-rolling-text-demo";
+  static const appSearchDemo = "/app-search-demo";
+  static const appSwipeDemo = "/app-swipe-demo";
+  static const appSwipeCellDemo = "/app-swipe-cell-demo";
+  static const appTagDemo = "/app-tag-demo";
+  static const appTextEllipsisDemo = "/app-text-ellipsis-demo";
   static const appToastDemo = "/app-toast-demo";
+  static const appSidebarDemo = "/app-sidebar-demo";
   static const areaPickDemo = "/area-pick-demo";
   static const appSheetDemo = "/app-sheet-demo";
   static const galleryPreviewDemo = "/gallery-preview-demo";
@@ -68,8 +88,32 @@ class Routes {
       handler: appAssetIconDemoRouteHandler,
     );
     router.define(
+      appButtonDemo,
+      handler: appButtonDemoRouteHandler,
+    );
+    router.define(
+      appActionSheetDemo,
+      handler: appActionSheetDemoRouteHandler,
+    );
+    router.define(
       appCalendarDemo,
       handler: appCalendarDemoRouteHandler,
+    );
+    router.define(
+      appDialogDemo,
+      handler: appDialogDemoRouteHandler,
+    );
+    router.define(
+      appDropdownMenuDemo,
+      handler: appDropdownMenuDemoRouteHandler,
+    );
+    router.define(
+      appIndexBarDemo,
+      handler: appIndexBarDemoRouteHandler,
+    );
+    router.define(
+      appNoticeBarDemo,
+      handler: appNoticeBarDemoRouteHandler,
     );
     router.define(
       appDatePickerDemo,
@@ -80,12 +124,68 @@ class Routes {
       handler: appPickerDemoRouteHandler,
     );
     router.define(
+      appCheckboxDemo,
+      handler: appCheckboxDemoRouteHandler,
+    );
+    router.define(
+      appSwitchDemo,
+      handler: appSwitchDemoRouteHandler,
+    );
+    router.define(
+      appStepperDemo,
+      handler: appStepperDemoRouteHandler,
+    );
+    router.define(
+      appStepsDemo,
+      handler: appStepsDemoRouteHandler,
+    );
+    router.define(
       appFieldDemo,
       handler: appFieldDemoRouteHandler,
     );
     router.define(
+      appPasswordInputDemo,
+      handler: appPasswordInputDemoRouteHandler,
+    );
+    router.define(
+      appPopoverDemo,
+      handler: appPopoverDemoRouteHandler,
+    );
+    router.define(
+      appRadioDemo,
+      handler: appRadioDemoRouteHandler,
+    );
+    router.define(
+      appRollingTextDemo,
+      handler: appRollingTextDemoRouteHandler,
+    );
+    router.define(
+      appSearchDemo,
+      handler: appSearchDemoRouteHandler,
+    );
+    router.define(
+      appSwipeDemo,
+      handler: appSwipeDemoRouteHandler,
+    );
+    router.define(
+      appSwipeCellDemo,
+      handler: appSwipeCellDemoRouteHandler,
+    );
+    router.define(
+      appTagDemo,
+      handler: appTagDemoRouteHandler,
+    );
+    router.define(
+      appTextEllipsisDemo,
+      handler: appTextEllipsisDemoRouteHandler,
+    );
+    router.define(
       appToastDemo,
       handler: appToastDemoRouteHandler,
+    );
+    router.define(
+      appSidebarDemo,
+      handler: appSidebarDemoRouteHandler,
     );
     router.define(
       areaPickDemo,

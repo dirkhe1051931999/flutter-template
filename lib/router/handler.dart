@@ -3,11 +3,31 @@ import 'package:flutter/material.dart';
 import 'package:oolaf_flutted/components/fluro_detail/index.dart';
 import 'package:oolaf_flutted/layouts/app_wrap/index.dart';
 import 'package:oolaf_flutted/pages/component_demo/app_asset_icon_demo_page.dart';
+import 'package:oolaf_flutted/pages/component_demo/app_action_sheet_demo_page.dart';
+import 'package:oolaf_flutted/pages/component_demo/app_button_demo_page.dart';
 import 'package:oolaf_flutted/pages/component_demo/app_calendar_demo_page.dart';
 import 'package:oolaf_flutted/pages/component_demo/app_date_picker_demo_page.dart';
+import 'package:oolaf_flutted/pages/component_demo/app_dialog_demo_page.dart';
+import 'package:oolaf_flutted/pages/component_demo/app_dropdown_menu_demo_page.dart';
+import 'package:oolaf_flutted/pages/component_demo/app_index_bar_demo_page.dart';
+import 'package:oolaf_flutted/pages/component_demo/app_notice_bar_demo_page.dart';
 import 'package:oolaf_flutted/pages/component_demo/app_picker_demo_page.dart';
+import 'package:oolaf_flutted/pages/component_demo/app_checkbox_demo_page.dart';
 import 'package:oolaf_flutted/pages/component_demo/app_field_demo_page.dart';
+import 'package:oolaf_flutted/pages/component_demo/app_password_input_demo_page.dart';
+import 'package:oolaf_flutted/pages/component_demo/app_popover_demo_page.dart';
+import 'package:oolaf_flutted/pages/component_demo/app_radio_demo_page.dart';
+import 'package:oolaf_flutted/pages/component_demo/app_rolling_text_demo_page.dart';
+import 'package:oolaf_flutted/pages/component_demo/app_search_demo_page.dart';
+import 'package:oolaf_flutted/pages/component_demo/app_stepper_demo_page.dart';
+import 'package:oolaf_flutted/pages/component_demo/app_steps_demo_page.dart';
+import 'package:oolaf_flutted/pages/component_demo/app_switch_demo_page.dart';
+import 'package:oolaf_flutted/pages/component_demo/app_swipe_demo_page.dart';
+import 'package:oolaf_flutted/pages/component_demo/app_swipe_cell_demo_page.dart';
+import 'package:oolaf_flutted/pages/component_demo/app_tag_demo_page.dart';
+import 'package:oolaf_flutted/pages/component_demo/app_text_ellipsis_demo_page.dart';
 import 'package:oolaf_flutted/pages/component_demo/app_toast_demo_page.dart';
+import 'package:oolaf_flutted/pages/component_demo/app_sidebar_demo_page.dart';
 import 'package:oolaf_flutted/pages/component_demo/area_pick_demo_page.dart';
 import 'package:oolaf_flutted/pages/component_demo/app_sheet_demo_page.dart';
 import 'package:oolaf_flutted/pages/component_demo/gallery_preview_demo_page.dart';
@@ -183,6 +203,28 @@ var appAssetIconDemoRouteHandler = Handler(
     );
   },
 );
+var appButtonDemoRouteHandler = Handler(
+  handlerFunc: (
+    BuildContext? context,
+    Map<String, List<String>> params,
+  ) {
+    return const PageScaffold(
+      title: 'App Button',
+      widget: AppButtonDemoPage(),
+    );
+  },
+);
+var appActionSheetDemoRouteHandler = Handler(
+  handlerFunc: (
+    BuildContext? context,
+    Map<String, List<String>> params,
+  ) {
+    return const PageScaffold(
+      title: 'App Action Sheet',
+      widget: AppActionSheetDemoPage(),
+    );
+  },
+);
 var appCalendarDemoRouteHandler = Handler(
   handlerFunc: (
     BuildContext? context,
@@ -205,6 +247,50 @@ var appDatePickerDemoRouteHandler = Handler(
     );
   },
 );
+var appDialogDemoRouteHandler = Handler(
+  handlerFunc: (
+    BuildContext? context,
+    Map<String, List<String>> params,
+  ) {
+    return const PageScaffold(
+      title: 'App Dialog',
+      widget: AppDialogDemoPage(),
+    );
+  },
+);
+var appDropdownMenuDemoRouteHandler = Handler(
+  handlerFunc: (
+    BuildContext? context,
+    Map<String, List<String>> params,
+  ) {
+    return const PageScaffold(
+      title: 'App Dropdown Menu',
+      widget: AppDropdownMenuDemoPage(),
+    );
+  },
+);
+var appIndexBarDemoRouteHandler = Handler(
+  handlerFunc: (
+    BuildContext? context,
+    Map<String, List<String>> params,
+  ) {
+    return const PageScaffold(
+      title: 'App Index Bar',
+      widget: AppIndexBarDemoPage(),
+    );
+  },
+);
+var appNoticeBarDemoRouteHandler = Handler(
+  handlerFunc: (
+    BuildContext? context,
+    Map<String, List<String>> params,
+  ) {
+    return const PageScaffold(
+      title: 'App Notice Bar',
+      widget: AppNoticeBarDemoPage(),
+    );
+  },
+);
 var appPickerDemoRouteHandler = Handler(
   handlerFunc: (
     BuildContext? context,
@@ -213,6 +299,61 @@ var appPickerDemoRouteHandler = Handler(
     return const PageScaffold(
       title: 'App Picker',
       widget: AppPickerDemoPage(),
+    );
+  },
+);
+var appCheckboxDemoRouteHandler = Handler(
+  handlerFunc: (
+    BuildContext? context,
+    Map<String, List<String>> params,
+  ) {
+    return const PageScaffold(
+      title: 'App Checkbox',
+      widget: AppCheckboxDemoPage(),
+    );
+  },
+);
+var appSwitchDemoRouteHandler = Handler(
+  handlerFunc: (
+    BuildContext? context,
+    Map<String, List<String>> params,
+  ) {
+    return const PageScaffold(
+      title: 'App Switch',
+      widget: AppSwitchDemoPage(),
+    );
+  },
+);
+var appSwipeCellDemoRouteHandler = Handler(
+  handlerFunc: (
+    BuildContext? context,
+    Map<String, List<String>> params,
+  ) {
+    return const PageScaffold(
+      title: 'App Swipe Cell',
+      widget: AppSwipeCellDemoPage(),
+    );
+  },
+);
+var appStepperDemoRouteHandler = Handler(
+  handlerFunc: (
+    BuildContext? context,
+    Map<String, List<String>> params,
+  ) {
+    return const PageScaffold(
+      title: 'App Stepper',
+      widget: AppStepperDemoPage(),
+    );
+  },
+);
+var appStepsDemoRouteHandler = Handler(
+  handlerFunc: (
+    BuildContext? context,
+    Map<String, List<String>> params,
+  ) {
+    return const PageScaffold(
+      title: 'App Steps',
+      widget: AppStepsDemoPage(),
     );
   },
 );
@@ -227,6 +368,94 @@ var appFieldDemoRouteHandler = Handler(
     );
   },
 );
+var appPasswordInputDemoRouteHandler = Handler(
+  handlerFunc: (
+    BuildContext? context,
+    Map<String, List<String>> params,
+  ) {
+    return const PageScaffold(
+      title: 'App Password Input',
+      widget: AppPasswordInputDemoPage(),
+    );
+  },
+);
+var appPopoverDemoRouteHandler = Handler(
+  handlerFunc: (
+    BuildContext? context,
+    Map<String, List<String>> params,
+  ) {
+    return const PageScaffold(
+      title: 'App Popover',
+      widget: AppPopoverDemoPage(),
+    );
+  },
+);
+var appRadioDemoRouteHandler = Handler(
+  handlerFunc: (
+    BuildContext? context,
+    Map<String, List<String>> params,
+  ) {
+    return const PageScaffold(
+      title: 'App Radio',
+      widget: AppRadioDemoPage(),
+    );
+  },
+);
+var appRollingTextDemoRouteHandler = Handler(
+  handlerFunc: (
+    BuildContext? context,
+    Map<String, List<String>> params,
+  ) {
+    return const PageScaffold(
+      title: 'App Rolling Text',
+      widget: AppRollingTextDemoPage(),
+    );
+  },
+);
+var appSwipeDemoRouteHandler = Handler(
+  handlerFunc: (
+    BuildContext? context,
+    Map<String, List<String>> params,
+  ) {
+    return const PageScaffold(
+      title: 'App Swipe',
+      widget: AppSwipeDemoPage(),
+    );
+  },
+);
+var appSearchDemoRouteHandler = Handler(
+  handlerFunc: (
+    BuildContext? context,
+    Map<String, List<String>> params,
+  ) {
+    return const PageScaffold(
+      title: 'App Search',
+      widget: AppSearchDemoPage(),
+    );
+  },
+);
+var appTagDemoRouteHandler = Handler(
+  handlerFunc: (
+    BuildContext? context,
+    Map<String, List<String>> params,
+  ) {
+    return const PageScaffold(
+      title: 'App Tag',
+      widget: AppTagDemoPage(),
+    );
+  },
+);
+var appTextEllipsisDemoRouteHandler = Handler(
+  handlerFunc: (
+    BuildContext? context,
+    Map<String, List<String>> params,
+  ) {
+    return const PageScaffold(
+      title: 'App Text Ellipsis',
+      widget: AppTextEllipsisDemoPage(),
+    );
+  },
+);
 var appToastDemoRouteHandler = Handler(
   handlerFunc: (
     BuildContext? context,
@@ -235,6 +464,17 @@ var appToastDemoRouteHandler = Handler(
     return const PageScaffold(
       title: 'App Toast',
       widget: AppToastDemoPage(),
+    );
+  },
+);
+var appSidebarDemoRouteHandler = Handler(
+  handlerFunc: (
+    BuildContext? context,
+    Map<String, List<String>> params,
+  ) {
+    return const PageScaffold(
+      title: 'App Sidebar',
+      widget: AppSidebarDemoPage(),
     );
   },
 );
