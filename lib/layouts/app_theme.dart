@@ -9,7 +9,7 @@ class AppTheme {
           bodyMedium: TextStyle(
             fontSize: 14,
             color: Color(ColorHelpers.fromHexString("#323232")),
-            fontWeight: FontWeight.w500,
+            fontWeight: FontWeight.w400,
             height: 1.4,
           ),
         ),

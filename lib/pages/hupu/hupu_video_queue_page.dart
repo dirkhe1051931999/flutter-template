@@ -62,7 +62,7 @@ class HupuVideoQueuePage extends StatefulWidget {
 class _HupuVideoQueuePageState extends State<HupuVideoQueuePage>
     with WidgetsBindingObserver {
   static const String _scope = 'hupu_video_queue';
-  static const int _loadMoreThreshold = 2;
+  static const int _preloadTriggerRemainingCount = 5;
 
   final PageController _pageController = PageController();
   final VideoManager _videoManager = VideoManager();
@@ -99,6 +99,7 @@ class _HupuVideoQueuePageState extends State<HupuVideoQueuePage>
       if (_activeIndex > 0) {
         _pageController.jumpToPage(_activeIndex);
       }
+      await _loadMoreIfNeeded(_activeIndex);
     });
   }
 
@@ -215,7 +216,8 @@ class _HupuVideoQueuePageState extends State<HupuVideoQueuePage>
     if (_isLoadingMore || !widget.hasMoreProvider()) {
       return;
     }
-    if (index < _videoItems.length - _loadMoreThreshold) {
+    final remainingCount = _videoItems.length - index - 1;
+    if (remainingCount > _preloadTriggerRemainingCount) {
       return;
     }
     _isLoadingMore = true;
@@ -239,6 +241,33 @@ class _HupuVideoQueuePageState extends State<HupuVideoQueuePage>
       return;
     }
     await Clipboard.setData(ClipboardData(text: video.videoUrl));
+  }
+
+  Future<void> _showNextVideo() async {
+    final targetIndex = _activeIndex + 1;
+    if (targetIndex >= _videoItems.length) {
+      await _loadMoreIfNeeded(_activeIndex);
+      if (!mounted || targetIndex >= _videoItems.length) {
+        return;
+      }
+    }
+    await _pageController.animateToPage(
+      targetIndex,
+      duration: const Duration(milliseconds: 260),
+      curve: Curves.easeOutCubic,
+    );
+  }
+
+  Future<void> _showPreviousVideo() async {
+    final targetIndex = _activeIndex - 1;
+    if (targetIndex < 0) {
+      return;
+    }
+    await _pageController.animateToPage(
+      targetIndex,
+      duration: const Duration(milliseconds: 260),
+      curve: Curves.easeOutCubic,
+    );
   }
 
   @override
@@ -352,6 +381,8 @@ class _HupuVideoQueuePageState extends State<HupuVideoQueuePage>
                   _detailsExpanded = false;
                 });
               },
+              onSwipeUp: _showNextVideo,
+              onSwipeDown: _showPreviousVideo,
             );
           },
         ),
@@ -541,6 +572,8 @@ class _HupuVideoPageItem extends StatelessWidget {
     required this.onCopyLink,
     required this.onExpandDetails,
     required this.onCollapseDetails,
+    required this.onSwipeUp,
+    required this.onSwipeDown,
   });
 
   final HupuFeedItem item;
@@ -551,6 +584,8 @@ class _HupuVideoPageItem extends StatelessWidget {
   final Future<void> Function() onCopyLink;
   final VoidCallback onExpandDetails;
   final VoidCallback onCollapseDetails;
+  final Future<void> Function() onSwipeUp;
+  final Future<void> Function() onSwipeDown;
 
   @override
   Widget build(BuildContext context) {
@@ -592,10 +627,14 @@ class _HupuVideoPageItem extends StatelessWidget {
           onSingleTap: () {},
           onLongPress: () {},
           onDoubleTap: () {},
-          onSwipeUp: () {},
-          onSwipeDown: () {},
+          onSwipeUp: () {
+            unawaited(onSwipeUp());
+          },
+          onSwipeDown: () {
+            unawaited(onSwipeDown());
+          },
           progressBarBottomOffset: 0,
-          enableVerticalSwipeGestures: false,
+          enableVerticalSwipeGestures: true,
         ),
         SafeArea(
           child: Padding(

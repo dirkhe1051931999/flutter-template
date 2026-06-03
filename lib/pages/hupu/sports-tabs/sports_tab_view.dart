@@ -16,6 +16,7 @@ class HupuSportsTabView extends StatelessWidget {
     LinkedTabItem(
       id: 'nba',
       label: 'NBA',
+      fontSizeScale: 1.1,
       child: HupuSportsNbaNewsTab(),
     ),
     LinkedTabItem(

@@ -47,6 +47,7 @@ class LinkedTabItem {
     this.keepAlive = true,
     this.swipeEnabled = true,
     this.refreshConfig,
+    this.fontSizeScale = 1,
   });
 
   final String id;
@@ -55,4 +56,5 @@ class LinkedTabItem {
   final bool keepAlive;
   final bool swipeEnabled;
   final LinkedTabRefreshConfig? refreshConfig;
+  final double fontSizeScale;
 }

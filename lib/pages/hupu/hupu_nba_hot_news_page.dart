@@ -1,5 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:oolaf_flutted/api/hupu/index.dart';
+import 'package:oolaf_flutted/components/network_img/index.dart';
+import 'package:oolaf_flutted/components/route_page_header/index.dart';
 import 'package:oolaf_flutted/model/hupu/index.dart';
 import 'package:oolaf_flutted/pages/hupu/hupu_post_detail_page.dart';
 
@@ -37,6 +39,12 @@ class _HupuNbaHotNewsPageState extends State<HupuNbaHotNewsPage> {
   Widget build(BuildContext context) {
     return CupertinoPageScaffold(
       backgroundColor: CupertinoColors.white,
+      navigationBar: RoutePageNavigationBar(
+        title: '热门资讯',
+        subtitle: _formatHeaderDate(DateTime.now()),
+        onBack: () => Navigator.of(context).maybePop(),
+        height: 68,
+      ),
       child: SafeArea(
         bottom: false,
         child: FutureBuilder<HupuNbaHotNewsData>(
@@ -45,11 +53,6 @@ class _HupuNbaHotNewsPageState extends State<HupuNbaHotNewsPage> {
             final items = snapshot.data?.items ?? const <HupuNbaNewsItem>[];
             return CustomScrollView(
               slivers: [
-                SliverToBoxAdapter(
-                  child: _HotNewsHeader(
-                    dateText: _formatHeaderDate(DateTime.now()),
-                  ),
-                ),
                 if (snapshot.connectionState == ConnectionState.waiting)
                   const SliverFillRemaining(
                     child:
@@ -77,93 +80,6 @@ class _HupuNbaHotNewsPageState extends State<HupuNbaHotNewsPage> {
             );
           },
         ),
-      ),
-    );
-  }
-}
-
-class _HotNewsHeader extends StatelessWidget {
-  const _HotNewsHeader({required this.dateText});
-
-  final String dateText;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 376,
-      decoration: const BoxDecoration(
-        color: Color(0xFFF20D23),
-        borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(22),
-          bottomRight: Radius.circular(22),
-        ),
-      ),
-      child: Stack(
-        children: [
-          Positioned(
-            top: 18,
-            left: 20,
-            child: CupertinoButton(
-              padding: EdgeInsets.zero,
-              minimumSize: const Size(40, 40),
-              onPressed: () => Navigator.of(context).maybePop(),
-              child: const Icon(
-                CupertinoIcons.chevron_left,
-                color: CupertinoColors.white,
-                size: 34,
-              ),
-            ),
-          ),
-          Positioned(
-            top: 78,
-            left: 36,
-            right: 36,
-            child: Container(
-              height: 82,
-              decoration: BoxDecoration(
-                color: CupertinoColors.white.withValues(alpha: 0.14),
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-          ),
-          const Positioned(
-            top: 168,
-            left: 0,
-            right: 0,
-            child: Column(
-              children: [
-                Text(
-                  '热门资讯',
-                  style: TextStyle(
-                    color: CupertinoColors.white,
-                    fontSize: 40,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                SizedBox(height: 14),
-                Text(
-                  '最新篮坛热门，资讯实时更新',
-                  style: TextStyle(
-                    color: CupertinoColors.white,
-                    fontSize: 17,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Positioned(
-            right: 34,
-            bottom: 18,
-            child: Text(
-              dateText,
-              style: const TextStyle(
-                color: CupertinoColors.white,
-                fontSize: 17,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -203,8 +119,9 @@ class _HotNewsTile extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
                       color: Color(0xFF202127),
-                      fontSize: 21,
+                      fontSize: 17,
                       height: 1.35,
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
                   const SizedBox(height: 14),
@@ -221,11 +138,12 @@ class _HotNewsTile extends StatelessWidget {
             const SizedBox(width: 18),
             ClipRRect(
               borderRadius: BorderRadius.circular(4),
-              child: Image.network(
+              child: CustomNetworkImage(
                 item.imageUrl,
                 width: 118,
                 height: 84,
                 fit: BoxFit.cover,
+                skeletonBorderRadius: BorderRadius.circular(4),
               ),
             ),
           ],

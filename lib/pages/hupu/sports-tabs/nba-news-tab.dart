@@ -5,6 +5,7 @@ import 'dart:ui';
 
 import 'package:flutter/cupertino.dart';
 import 'package:oolaf_flutted/api/hupu/index.dart';
+import 'package:oolaf_flutted/components/network_img/index.dart';
 import 'package:oolaf_flutted/components/linked_tab_view/index.dart';
 import 'package:oolaf_flutted/model/hupu/index.dart';
 import 'package:oolaf_flutted/pages/hupu/hupu_home_team_page.dart';
@@ -494,7 +495,7 @@ class _MatchTeam extends StatelessWidget {
         style: const TextStyle(fontSize: 16, color: Color(0xFF202127)),
       ),
     );
-    final logo = Image.network(
+    final logo = CustomNetworkImage(
       logoUrl,
       width: 34,
       height: 34,
@@ -590,7 +591,10 @@ class _ShortcutItem extends StatelessWidget {
                   ),
                   child: Padding(
                     padding: const EdgeInsets.all(10),
-                    child: Image.network(displayIcon, fit: BoxFit.contain),
+                    child: CustomNetworkImage(
+                      displayIcon,
+                      fit: BoxFit.contain,
+                    ),
                   ),
                 ),
                 if (item.name == '2K手游')
@@ -765,7 +769,7 @@ class _NbaArticleTile extends StatelessWidget {
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
-                      fontSize: 14,
+                      fontSize: 17,
                       height: 1.3,
                       color: Color(0xFF202127),
                     ),
@@ -793,11 +797,12 @@ class _NbaArticleTile extends StatelessWidget {
             const SizedBox(width: 10),
             ClipRRect(
               borderRadius: BorderRadius.circular(4),
-              child: Image.network(
+              child: CustomNetworkImage(
                 article.imageUrl,
                 width: 96,
                 height: 68,
                 fit: BoxFit.cover,
+                skeletonBorderRadius: BorderRadius.circular(4),
               ),
             ),
           ],

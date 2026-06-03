@@ -674,6 +674,7 @@ class _HupuPostDetailPageState extends State<HupuPostDetailPage> {
                         color: Color(0xFF1C1C1E),
                         fontSize: 16,
                         height: 1.55,
+                        fontWeight: FontWeight.w400,
                       ),
                       actionStyle: const TextStyle(
                         color: Color(0xFF1C63B7),

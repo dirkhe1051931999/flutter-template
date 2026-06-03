@@ -39,6 +39,7 @@ class Layout extends StatelessWidget {
                 style: const TextStyle(
                   decoration: TextDecoration.none,
                   decorationColor: Color(0x00000000),
+                  fontWeight: FontWeight.w400,
                 ),
                 child: child ?? const SizedBox.shrink(),
               );

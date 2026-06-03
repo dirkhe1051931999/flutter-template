@@ -4,6 +4,7 @@ import 'dart:ui';
 import 'package:flutter/cupertino.dart';
 import 'package:oolaf_flutted/api/hupu/index.dart';
 import 'package:oolaf_flutted/components/linked_tab_view/index.dart';
+import 'package:oolaf_flutted/components/network_img/index.dart';
 import 'package:oolaf_flutted/components/route_page_header/index.dart';
 import 'package:oolaf_flutted/model/hupu/index.dart';
 import 'package:oolaf_flutted/pages/hupu/widgets/hupu_refresh_indicator.dart';
@@ -834,7 +835,7 @@ class _TeamLine extends StatelessWidget {
     final suffix = bigScore == null ? '' : '($bigScore)';
     return Row(
       children: [
-        Image.network(
+        CustomNetworkImage(
           logoUrl,
           width: 24,
           height: 24,
@@ -1440,7 +1441,7 @@ class _BracketTeamBadgeV2 extends StatelessWidget {
               ? const SizedBox.shrink()
               : Padding(
                   padding: const EdgeInsets.all(2),
-                  child: Image.network(logoUrl, fit: BoxFit.contain),
+                  child: CustomNetworkImage(logoUrl, fit: BoxFit.contain),
                 ),
         ),
         if (rank > 0)
@@ -1554,7 +1555,7 @@ class _BracketTeamBadge extends StatelessWidget {
               ? const SizedBox.shrink()
               : Padding(
                   padding: const EdgeInsets.all(3),
-                  child: Image.network(logoUrl, fit: BoxFit.contain),
+                  child: CustomNetworkImage(logoUrl, fit: BoxFit.contain),
                 ),
         ),
         if (rank > 0)
@@ -1816,7 +1817,11 @@ class _SeriesMatchTile extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 10),
-          Image.network(match.homeTeamLogo, width: 42, height: 42),
+          CustomNetworkImage(
+            match.homeTeamLogo,
+            width: 42,
+            height: 42,
+          ),
           const SizedBox(width: 12),
           SizedBox(
             width: 88,
@@ -1845,7 +1850,11 @@ class _SeriesMatchTile extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 12),
-          Image.network(match.awayTeamLogo, width: 42, height: 42),
+          CustomNetworkImage(
+            match.awayTeamLogo,
+            width: 42,
+            height: 42,
+          ),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
@@ -1902,7 +1911,11 @@ class _SeriesMatchTileV2 extends StatelessWidget {
           const SizedBox(width: 8),
           Opacity(
             opacity: awayWon ? 0.46 : 1,
-            child: Image.network(match.homeTeamLogo, width: 38, height: 38),
+            child: CustomNetworkImage(
+              match.homeTeamLogo,
+              width: 38,
+              height: 38,
+            ),
           ),
           const SizedBox(width: 10),
           SizedBox(
@@ -1964,7 +1977,11 @@ class _SeriesMatchTileV2 extends StatelessWidget {
           const SizedBox(width: 10),
           Opacity(
             opacity: homeWon ? 0.46 : 1,
-            child: Image.network(match.awayTeamLogo, width: 38, height: 38),
+            child: CustomNetworkImage(
+              match.awayTeamLogo,
+              width: 38,
+              height: 38,
+            ),
           ),
           const SizedBox(width: 8),
           Expanded(
@@ -3233,7 +3250,7 @@ class _ConferenceRow extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 4),
-                Image.network(
+                CustomNetworkImage(
                   row.logoLink,
                   width: isCompact ? 22 : 26,
                   height: isCompact ? 22 : 26,
@@ -3389,7 +3406,7 @@ class _DivisionRow extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 4),
-                Image.network(
+                CustomNetworkImage(
                   row.logoLink,
                   width: isCompact ? 22 : 26,
                   height: isCompact ? 22 : 26,
@@ -3519,7 +3536,7 @@ class _MetricRow extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 4),
-                Image.network(
+                CustomNetworkImage(
                   row.logoUrl,
                   width: isCompact ? 22 : 26,
                   height: isCompact ? 22 : 26,
@@ -3641,7 +3658,7 @@ class _RankPlayerTile extends StatelessWidget {
               ),
             ),
           ),
-          Image.network(
+          CustomNetworkImage(
             player.photo,
             width: isCompact ? 44 : 52,
             height: isCompact ? 44 : 52,

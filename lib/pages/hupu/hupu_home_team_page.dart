@@ -1763,7 +1763,7 @@ class _HomeTeamScheduleTeamLine extends StatelessWidget {
     final suffix = bigScore == null ? '' : '($bigScore)';
     return Row(
       children: [
-        Image.network(
+        CustomNetworkImage(
           logoUrl,
           width: 24,
           height: 24,

@@ -233,6 +233,13 @@ class _LinkedTabViewState extends State<LinkedTabView> {
         widget.inactiveFontSize;
   }
 
+  double _resolveItemFontSize(
+    LinkedTabItem item,
+    double activation,
+  ) {
+    return _resolveFontSize(activation) * item.fontSizeScale;
+  }
+
   @override
   Widget build(BuildContext context) {
     return DecoratedBox(
@@ -300,7 +307,10 @@ class _LinkedTabViewState extends State<LinkedTabView> {
                                   widget.activeTabColor,
                                   activation,
                                 ),
-                                fontSize: _resolveFontSize(activation),
+                                fontSize: _resolveItemFontSize(
+                                  item,
+                                  activation,
+                                ),
                                 fontWeight: _resolveFontWeight(activation),
                               ),
                             ),
