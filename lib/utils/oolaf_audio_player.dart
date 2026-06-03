@@ -55,6 +55,8 @@ class OolafAudioPlayer {
   bool _pausedByFocus = false;
   ProcessingState _lastProcessingState = ProcessingState.idle;
   OolafPlaybackState _lastPlaybackState = OolafPlaybackState.idle;
+  String? _currentUrl;
+  int _playbackIntentVersion = 0;
 
   Stream<PlayerState> get playerStateStream => _player.playerStateStream;
   Stream<bool> get playingStream => _player.playingStream;
@@ -64,6 +66,9 @@ class OolafAudioPlayer {
   OolafPlaybackState get playbackState => _lastPlaybackState;
   Stream<Duration> get positionStream => _player.positionStream;
   Stream<Duration?> get durationStream => _player.durationStream;
+  Duration get position => _player.position;
+  String? get currentUrl => _currentUrl;
+  int get playbackIntentVersion => _playbackIntentVersion;
   Stream<void> get completedStream => _player.playerStateStream.where((s) {
         final isCompleted = s.processingState == ProcessingState.completed;
         final isNewCompleted =
@@ -71,6 +76,10 @@ class OolafAudioPlayer {
         _lastProcessingState = s.processingState;
         return isNewCompleted;
       }).map((_) {});
+
+  void markPlaybackIntent() {
+    _playbackIntentVersion += 1;
+  }
 
   Future<void> _ensureAudioSession() async {
     if (!(Platform.isAndroid || Platform.isIOS || Platform.isMacOS)) {
@@ -221,6 +230,7 @@ class OolafAudioPlayer {
     await _ensureAudioCacheProxy();
     _lastProcessingState = ProcessingState.idle;
     _hasStarted = false;
+    _currentUrl = url;
 
     if (Platform.isAndroid || Platform.isIOS || Platform.isMacOS) {
       try {
@@ -251,19 +261,25 @@ class OolafAudioPlayer {
 
   Future<void> playUrl(String url) async {
     await setUrl(url);
-    _hasStarted = true;
-    await _player.play();
+    await play();
   }
 
   Future<void> play() {
     _hasStarted = true;
-    return _player.play();
+    unawaited(
+      _player.play().catchError((Object error, StackTrace stackTrace) {
+        customLogger.log('audio play failed: $error');
+        customLogger.log(stackTrace);
+      }),
+    );
+    return Future<void>.value();
   }
 
   Future<void> pause() => _player.pause();
 
   Future<void> stop() {
     _hasStarted = false;
+    _currentUrl = null;
     return _player.stop();
   }
 
@@ -285,6 +301,7 @@ class OolafAudioPlayer {
 
   Future<void> dispose() async {
     _isDisposed = true;
+    _currentUrl = null;
     _emitPlaybackState(OolafPlaybackState.disposed);
     await _playerStateSub?.cancel();
     await _interruptionSub?.cancel();

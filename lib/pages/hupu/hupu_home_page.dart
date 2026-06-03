@@ -1,7 +1,10 @@
+import 'package:fluro/fluro.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:oolaf_flutted/pages/hupu/hupu_search_page.dart';
 import 'package:oolaf_flutted/pages/hupu/recommend-tabs/recommend_tab_view.dart';
 import 'package:oolaf_flutted/pages/hupu/sports-tabs/sports_tab_view.dart';
+import 'package:oolaf_flutted/router/config.dart';
+import 'package:oolaf_flutted/router/routes.dart';
 
 class HupuHomePage extends StatefulWidget {
   const HupuHomePage({super.key});
@@ -28,6 +31,15 @@ class _HupuHomePageState extends State<HupuHomePage> {
               setState(() {
                 _activeTopTabIndex = index;
               });
+            },
+            onDoubleTapLogo: () {
+              Application.router.navigateTo(
+                context,
+                Routes.root,
+                clearStack: true,
+                replace: true,
+                transition: TransitionType.inFromLeft,
+              );
             },
             onTapSearch: () {
               Navigator.of(context).push<void>(
@@ -66,12 +78,14 @@ class _HupuHomeHeader extends StatelessWidget {
     required this.tabs,
     required this.activeIndex,
     required this.onTapTab,
+    required this.onDoubleTapLogo,
     required this.onTapSearch,
   });
 
   final List<String> tabs;
   final int activeIndex;
   final ValueChanged<int> onTapTab;
+  final VoidCallback onDoubleTapLogo;
   final VoidCallback onTapSearch;
 
   @override
@@ -90,15 +104,19 @@ class _HupuHomeHeader extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const Padding(
-            padding: EdgeInsets.only(left: 2, right: 12),
-            child: Text(
-              '虎扑',
-              style: TextStyle(
-                color: Color(0xFFE31B23),
-                fontSize: 28,
-                fontWeight: FontWeight.w800,
-                height: 1,
+          GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onDoubleTap: onDoubleTapLogo,
+            child: const Padding(
+              padding: EdgeInsets.only(left: 2, right: 12),
+              child: Text(
+                '虎扑',
+                style: TextStyle(
+                  color: Color(0xFFE31B23),
+                  fontSize: 28,
+                  fontWeight: FontWeight.w800,
+                  height: 1,
+                ),
               ),
             ),
           ),

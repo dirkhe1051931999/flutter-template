@@ -1,4 +1,6 @@
 import 'package:flutter/cupertino.dart';
+import 'package:oolaf_flutted/components/app_search/app_search_types.dart';
+import 'package:oolaf_flutted/components/app_search/index.dart';
 import 'package:oolaf_flutted/components/search_view/types.dart';
 
 class SharedSearchHomeView extends StatelessWidget {
@@ -139,10 +141,21 @@ class SharedSearchBar extends StatelessWidget {
             ),
           ),
           Expanded(
-            child: CupertinoSearchTextField(
+            child: AppSearch(
               controller: controller,
               focusNode: focusNode,
+              shape: AppSearchShape.round,
               placeholder: placeholder,
+              background: const Color(0xFFF7F8FA),
+              showAction: false,
+              outerPadding: const EdgeInsets.fromLTRB(10, 7, 10, 7),
+              fieldPadding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 8,
+              ),
+              borderRadius: 20,
+              fieldBorderRadius: 18,
+              onSearch: (value) => onSubmit(value),
               onSubmitted: (value) => onSubmit(value),
             ),
           ),

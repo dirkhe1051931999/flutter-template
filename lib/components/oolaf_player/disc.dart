@@ -1,6 +1,6 @@
 import 'dart:math' as math;
 
-import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 
 class OolafRotatingDisc extends StatefulWidget {
   const OolafRotatingDisc({
@@ -86,7 +86,7 @@ class _OolafRotatingDiscState extends State<OolafRotatingDisc>
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withAlpha(18),
+                    color: const Color(0x12000000),
                     blurRadius: s * 0.08,
                     offset: Offset(0, s * 0.04),
                   ),
@@ -102,7 +102,7 @@ class _OolafRotatingDiscState extends State<OolafRotatingDisc>
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         border: Border.all(
-                          color: Colors.white.withAlpha(8),
+                          color: const Color(0x14FFFFFF),
                           width: 1,
                         ),
                       ),
@@ -122,7 +122,7 @@ class _OolafRotatingDiscState extends State<OolafRotatingDisc>
                       overflow: TextOverflow.ellipsis,
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        color: Colors.white,
+                        color: CupertinoColors.white,
                         fontSize: s * 0.055,
                         height: 1.1,
                         fontWeight: FontWeight.w600,
@@ -155,54 +155,54 @@ class _OolafRotatingDiscState extends State<OolafRotatingDisc>
       child: Stack(
         clipBehavior: Clip.none,
         children: [
-          Positioned(left: 0, bottom: 0, child: disc),
+          Positioned(left: s * 0.02, bottom: 0, child: disc),
           AnimatedPositioned(
             duration: const Duration(milliseconds: 360),
             curve: Curves.easeOutCubic,
-            right: s * 0.06,
-            top: widget.isPlaying ? s * 0.06 : -s * 0.01,
+            right: s * 0.08,
+            top: widget.isPlaying ? s * 0.055 : 0,
             child: AnimatedRotation(
               duration: const Duration(milliseconds: 360),
               curve: Curves.easeOutCubic,
-              turns: widget.isPlaying ? 0.06 : -0.02,
+              turns: widget.isPlaying ? 0.055 : -0.015,
               alignment: Alignment.topRight,
               child: SizedBox(
-                width: s * 0.38,
-                height: s * 0.62,
+                width: s * 0.34,
+                height: s * 0.58,
                 child: Stack(
                   alignment: Alignment.topRight,
                   children: [
                     Container(
-                      width: s * 0.16,
-                      height: s * 0.16,
+                      width: s * 0.14,
+                      height: s * 0.14,
                       decoration: const BoxDecoration(
                         shape: BoxShape.circle,
                         color: Color(0xFF3A3A3A),
                       ),
                     ),
                     Positioned(
-                      right: s * 0.07,
-                      top: s * 0.08,
+                      right: s * 0.062,
+                      top: s * 0.07,
                       child: Container(
-                        width: s * 0.045,
-                        height: s * 0.44,
+                        width: s * 0.032,
+                        height: s * 0.42,
                         decoration: BoxDecoration(
-                          color: const Color(0xFF8A8A8A),
+                          color: const Color(0xFF9A9A9A),
                           borderRadius: BorderRadius.circular(99),
                         ),
                       ),
                     ),
                     Positioned(
-                      right: s * 0.02,
+                      right: s * 0.015,
                       bottom: 0,
                       child: Transform.rotate(
                         angle: -0.5,
                         child: Container(
-                          width: s * 0.12,
-                          height: s * 0.07,
+                          width: s * 0.105,
+                          height: s * 0.055,
                           decoration: BoxDecoration(
                             color: const Color(0xFF2D2D2D),
-                            borderRadius: BorderRadius.circular(4),
+                            borderRadius: BorderRadius.circular(3),
                           ),
                         ),
                       ),

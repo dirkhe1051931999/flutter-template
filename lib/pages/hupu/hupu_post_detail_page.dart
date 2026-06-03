@@ -3,6 +3,7 @@ import 'package:html/parser.dart' as html_parser;
 import 'dart:async';
 import 'package:oolaf_flutted/api/hupu/index.dart';
 import 'package:oolaf_flutted/components/app_sheet/index.dart';
+import 'package:oolaf_flutted/components/app_text_ellipsis/index.dart';
 import 'package:oolaf_flutted/components/comment/comment_panel_scaffold.dart';
 import 'package:oolaf_flutted/components/gallery_preview/index.dart';
 import 'package:oolaf_flutted/components/route_page_header/index.dart';
@@ -178,7 +179,9 @@ class _HupuPostDetailPageState extends State<HupuPostDetailPage> {
     }
 
     final controller = await OolafVideoPlayerController.fromUrl(videoUrl);
+    await controller.initialize();
     await controller.setLooping(false);
+    await controller.play();
     return controller;
   }
 
@@ -664,12 +667,18 @@ class _HupuPostDetailPageState extends State<HupuPostDetailPage> {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    Text(
-                      parsed.text,
-                      style: const TextStyle(
+                    AppTextEllipsis(
+                      text: parsed.text,
+                      rows: 4,
+                      textStyle: const TextStyle(
                         color: Color(0xFF1C1C1E),
                         fontSize: 16,
                         height: 1.55,
+                      ),
+                      actionStyle: const TextStyle(
+                        color: Color(0xFF1C63B7),
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                     if (parsed.imageUrls.isNotEmpty) ...[
@@ -991,16 +1000,16 @@ class _HupuCheckReplySheetState extends State<_HupuCheckReplySheet> {
   Widget build(BuildContext context) {
     return CommentPanelScaffold(
       header: Padding(
-        padding: const EdgeInsets.fromLTRB(8, 2, 8, 10),
+        padding: const EdgeInsets.fromLTRB(10, 6, 10, 8),
         child: Row(
           children: [
             GestureDetector(
               onTap: () => Navigator.of(context).pop(),
               child: const Padding(
-                padding: EdgeInsets.all(4),
+                padding: EdgeInsets.all(6),
                 child: Icon(
                   CupertinoIcons.clear_thick,
-                  size: 21,
+                  size: 18,
                   color: Color(0xFF1C1C1E),
                 ),
               ),
@@ -1011,13 +1020,13 @@ class _HupuCheckReplySheetState extends State<_HupuCheckReplySheet> {
                   '查看回复',
                   style: TextStyle(
                     color: Color(0xFF1C1C1E),
-                    fontSize: 21,
+                    fontSize: 17,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
             ),
-            const SizedBox(width: 29),
+            const SizedBox(width: 30),
           ],
         ),
       ),
@@ -1079,7 +1088,7 @@ class _HupuCheckReplySheetState extends State<_HupuCheckReplySheet> {
                     ),
                     SliverToBoxAdapter(
                       child: Container(
-                        color: const Color(0xFFF5F6F8),
+                        color: const Color(0xFFF6F7FA),
                         padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
                         child: Row(
                           children: [
@@ -1087,7 +1096,7 @@ class _HupuCheckReplySheetState extends State<_HupuCheckReplySheet> {
                               '全部回复',
                               style: TextStyle(
                                 color: Color(0xFF1C1C1E),
-                                fontSize: 28,
+                                fontSize: 17,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -1148,7 +1157,7 @@ class _HupuCheckReplySheetState extends State<_HupuCheckReplySheet> {
                       ),
                   ],
                 ),
-    );
+        );
   }
 
   Widget _buildSortButton({
@@ -1159,10 +1168,10 @@ class _HupuCheckReplySheetState extends State<_HupuCheckReplySheet> {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
         decoration: BoxDecoration(
           color: active ? const Color(0xFFFFFFFF) : const Color(0xFFF0F1F4),
-          borderRadius: BorderRadius.circular(2),
+          borderRadius: BorderRadius.circular(6),
           border: Border.all(
             color: active ? const Color(0xFFE2E3E7) : const Color(0xFFF0F1F4),
             width: 0.5,
@@ -1172,7 +1181,7 @@ class _HupuCheckReplySheetState extends State<_HupuCheckReplySheet> {
           label,
           style: TextStyle(
             color: const Color(0xFF5F6368),
-            fontSize: 14,
+            fontSize: 12,
             fontWeight: active ? FontWeight.w600 : FontWeight.w500,
           ),
         ),

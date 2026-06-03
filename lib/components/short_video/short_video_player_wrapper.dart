@@ -182,27 +182,43 @@ class _ShortVideoPlayerWrapperState extends State<ShortVideoPlayerWrapper> {
                         },
                       ),
                       ValueListenableBuilder<bool>(
-                        valueListenable: controller.isPlaying,
-                        builder: (context, isPlaying, __) {
-                          if (isPlaying) {
-                            return const SizedBox.shrink();
-                          }
-                          return Center(
-                            child: GestureDetector(
-                              behavior: HitTestBehavior.opaque,
-                              onTap: () async {
-                                await controller.play();
-                              },
-                              child: const Padding(
-                                padding: EdgeInsets.all(12),
-                                child: AppAssetIcon(
-                                  assetName: 'play',
-                                  color: Color(0x33FFFFFF),
-                                  size: 76,
-                                  fallbackIcon: CupertinoIcons.play_fill,
-                                ),
-                              ),
-                            ),
+                        valueListenable: controller.isInitialized,
+                        builder: (context, isInitialized, __) {
+                          return ValueListenableBuilder<OolafVideoOutputStatus>(
+                            valueListenable: controller.videoOutputStatus,
+                            builder: (context, status, ___) {
+                              return ValueListenableBuilder<bool>(
+                                valueListenable: controller.isPlaying,
+                                builder: (context, isPlaying, ____) {
+                                  final shouldShowPlayIcon =
+                                      isInitialized &&
+                                      !isPlaying &&
+                                      status ==
+                                          OolafVideoOutputStatus.normal;
+                                  if (!shouldShowPlayIcon) {
+                                    return const SizedBox.shrink();
+                                  }
+                                  return Center(
+                                    child: GestureDetector(
+                                      behavior: HitTestBehavior.opaque,
+                                      onTap: () async {
+                                        await controller.play();
+                                      },
+                                      child: const Padding(
+                                        padding: EdgeInsets.all(12),
+                                        child: AppAssetIcon(
+                                          assetName: 'play',
+                                          color: Color(0x33FFFFFF),
+                                          size: 76,
+                                          fallbackIcon:
+                                              CupertinoIcons.play_fill,
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                },
+                              );
+                            },
                           );
                         },
                       ),

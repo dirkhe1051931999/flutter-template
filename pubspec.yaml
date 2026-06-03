@@ -153,7 +153,7 @@ flutter:
           weight: 900 # 对应 Black 的权重
         - asset: assets/fonts/NotoSansSC-Bold.otf
           weight: 700 # 对应 Bold 的权重
-        - asset: assets/fonts/NotoSansSC-Medium.otf
+        - asset: assets/fonts/regular.otf
           weight: 500 # 对应 Medium 的权重
         - asset: assets/fonts/regular.otf
           weight: 400 # 对应 Regular 的权重

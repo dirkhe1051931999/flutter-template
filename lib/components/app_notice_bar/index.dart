@@ -19,6 +19,10 @@ class AppNoticeBar extends StatefulWidget {
     this.verticalItems = const <String>[],
     this.verticalStepDuration = const Duration(milliseconds: 2200),
     this.verticalVisibleCount = 1,
+    this.padding = const EdgeInsets.fromLTRB(14, 12, 14, 12),
+    this.borderRadius = const BorderRadius.all(Radius.circular(20)),
+    this.iconSize = 18,
+    this.textStyle,
     this.onTap,
     this.onClose,
   });
@@ -36,6 +40,10 @@ class AppNoticeBar extends StatefulWidget {
   final List<String> verticalItems;
   final Duration verticalStepDuration;
   final int verticalVisibleCount;
+  final EdgeInsetsGeometry padding;
+  final BorderRadius borderRadius;
+  final double iconSize;
+  final TextStyle? textStyle;
   final VoidCallback? onTap;
   final VoidCallback? onClose;
 
@@ -45,10 +53,17 @@ class AppNoticeBar extends StatefulWidget {
 
 class _AppNoticeBarState extends State<AppNoticeBar> {
   final ScrollController _scrollController = ScrollController();
+  final GlobalKey _marqueeTextKey = GlobalKey();
   Timer? _marqueeStarter;
   Timer? _verticalTimer;
   bool _visible = true;
+  bool _horizontalMarqueeRunning = false;
+  bool _horizontalLoopEnabled = false;
   int _verticalIndex = 0;
+  double? _lastHorizontalWidth;
+  double _horizontalTextWidth = 0;
+  int _horizontalLayoutVersion = 0;
+  static const double _marqueeGap = 36;
 
   @override
   void initState() {
@@ -63,6 +78,9 @@ class _AppNoticeBarState extends State<AppNoticeBar> {
         oldWidget.direction != widget.direction ||
         oldWidget.verticalItems != widget.verticalItems) {
       _cancelTimers();
+      if (_scrollController.hasClients) {
+        _scrollController.jumpTo(0);
+      }
       _setupAnimation();
     }
   }
@@ -79,7 +97,7 @@ class _AppNoticeBarState extends State<AppNoticeBar> {
       if (!widget.scrollable) {
         return;
       }
-      _marqueeStarter = Timer(widget.delay, _startHorizontalMarquee);
+      _scheduleHorizontalMarquee();
       return;
     }
 
@@ -99,34 +117,121 @@ class _AppNoticeBarState extends State<AppNoticeBar> {
   void _cancelTimers() {
     _marqueeStarter?.cancel();
     _verticalTimer?.cancel();
+    _marqueeStarter = null;
+    _verticalTimer = null;
+  }
+
+  void _scheduleHorizontalMarquee() {
+    _marqueeStarter?.cancel();
+    if (!widget.scrollable ||
+        widget.direction != AppNoticeBarDirection.horizontal ||
+        widget.wrapable) {
+      return;
+    }
+    _marqueeStarter = Timer(widget.delay, _startHorizontalMarquee);
+  }
+
+  void _syncHorizontalMarqueeForLayout(double width) {
+    if (!widget.scrollable ||
+        widget.direction != AppNoticeBarDirection.horizontal ||
+        widget.wrapable) {
+      return;
+    }
+    if (_lastHorizontalWidth == width) {
+      return;
+    }
+    _lastHorizontalWidth = width;
+    _horizontalLayoutVersion += 1;
+    final layoutVersion = _horizontalLayoutVersion;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_scrollController.hasClients) {
+        return;
+      }
+      if (layoutVersion != _horizontalLayoutVersion) {
+        return;
+      }
+      final textWidth =
+          _marqueeTextKey.currentContext?.size?.width ?? _horizontalTextWidth;
+      _horizontalTextWidth = textWidth;
+      if (textWidth <= width) {
+        if (_horizontalLoopEnabled) {
+          setState(() {
+            _horizontalLoopEnabled = false;
+          });
+        }
+        _marqueeStarter?.cancel();
+        if (_scrollController.offset != 0) {
+          _scrollController.jumpTo(0);
+        }
+        return;
+      }
+      if (!_horizontalLoopEnabled) {
+        setState(() {
+          _horizontalLoopEnabled = true;
+        });
+      }
+      if (!_horizontalMarqueeRunning) {
+        if (_scrollController.offset != 0) {
+          _scrollController.jumpTo(0);
+        }
+        _scheduleHorizontalMarquee();
+      }
+    });
   }
 
   Future<void> _startHorizontalMarquee() async {
-    if (!mounted || !_scrollController.hasClients) {
+    if (!mounted || !_scrollController.hasClients || _horizontalMarqueeRunning) {
       return;
     }
+    _horizontalMarqueeRunning = true;
+    final layoutVersion = _horizontalLayoutVersion;
 
-    while (mounted &&
-        widget.direction == AppNoticeBarDirection.horizontal &&
-        widget.scrollable) {
-      final maxExtent = _scrollController.position.maxScrollExtent;
-      if (maxExtent <= 0) {
-        return;
+    try {
+      while (mounted &&
+          widget.direction == AppNoticeBarDirection.horizontal &&
+          widget.scrollable) {
+        if (layoutVersion != _horizontalLayoutVersion) {
+          return;
+        }
+        final textWidth = _horizontalTextWidth;
+        final distance = textWidth + _marqueeGap;
+        if (textWidth <= 0) {
+          return;
+        }
+        if (textWidth <= (_lastHorizontalWidth ?? 0)) {
+          if (_scrollController.offset != 0) {
+            _scrollController.jumpTo(0);
+          }
+          return;
+        }
+        final remaining = distance - _scrollController.offset;
+        final duration = Duration(
+          milliseconds: (remaining / widget.speed * 1000).round(),
+        );
+        await _scrollController.animateTo(
+          distance,
+          duration: duration,
+          curve: Curves.linear,
+        );
+        if (!mounted) {
+          return;
+        }
+        if (layoutVersion != _horizontalLayoutVersion) {
+          return;
+        }
+        _scrollController.jumpTo(0);
+        await Future<void>.delayed(widget.delay);
       }
-      final remaining = maxExtent - _scrollController.offset;
-      final duration = Duration(
-        milliseconds: (remaining / widget.speed * 1000).round(),
-      );
-      await _scrollController.animateTo(
-        maxExtent,
-        duration: duration,
-        curve: Curves.linear,
-      );
-      if (!mounted) {
-        return;
-      }
-      _scrollController.jumpTo(0);
-      await Future<void>.delayed(widget.delay);
+    } finally {
+      _horizontalMarqueeRunning = false;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || !_scrollController.hasClients) {
+          return;
+        }
+        if (_horizontalTextWidth > (_lastHorizontalWidth ?? 0)) {
+          _scheduleHorizontalMarquee();
+        }
+      });
     }
   }
 
@@ -142,19 +247,19 @@ class _AppNoticeBarState extends State<AppNoticeBar> {
       child: DecoratedBox(
         decoration: BoxDecoration(
           color: widget.backgroundColor,
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: widget.borderRadius,
           border: Border.all(color: const Color(0x10B45309)),
         ),
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+          padding: widget.padding,
           child: Row(
             children: [
               Icon(
                 widget.leftIcon,
-                size: 18,
+                size: widget.iconSize,
                 color: widget.color,
               ),
-              const SizedBox(width: 10),
+              SizedBox(width: widget.iconSize <= 14 ? 6 : 10),
               Expanded(
                 child: widget.direction == AppNoticeBarDirection.vertical
                     ? _buildVerticalContent()
@@ -192,31 +297,58 @@ class _AppNoticeBarState extends State<AppNoticeBar> {
 
   Widget _buildHorizontalContent() {
     final text = widget.text ?? '';
+    final textStyle =
+        widget.textStyle ??
+        TextStyle(
+          color: widget.color,
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
+        );
+
     if (widget.wrapable) {
       return Text(
         text,
-        style: TextStyle(
-          color: widget.color,
-          fontSize: 14,
-          fontWeight: FontWeight.w600,
-          height: 1.35,
-        ),
+        style: textStyle.copyWith(height: 1.35),
       );
     }
 
-    return SingleChildScrollView(
-      controller: _scrollController,
-      scrollDirection: Axis.horizontal,
-      physics: const NeverScrollableScrollPhysics(),
-      child: Text(
+    if (!widget.scrollable) {
+      return Text(
         text,
         maxLines: 1,
-        style: TextStyle(
-          color: widget.color,
-          fontSize: 14,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
+        overflow: TextOverflow.ellipsis,
+        style: textStyle,
+      );
+    }
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        _syncHorizontalMarqueeForLayout(constraints.maxWidth);
+        return SingleChildScrollView(
+          controller: _scrollController,
+          scrollDirection: Axis.horizontal,
+          physics: const NeverScrollableScrollPhysics(),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                text,
+                key: _marqueeTextKey,
+                maxLines: 1,
+                style: textStyle,
+              ),
+              if (_horizontalLoopEnabled) ...[
+                const SizedBox(width: _marqueeGap),
+                Text(
+                  text,
+                  maxLines: 1,
+                  style: textStyle,
+                ),
+              ],
+            ],
+          ),
+        );
+      },
     );
   }
 

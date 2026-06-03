@@ -59,7 +59,6 @@ AppState oolafMusicReducer(AppState state, AppAction action) {
     return state.copyWith(
       oolafMusic: current.copyWith(
         nowPlaying: OolafNowPlaying(title: action.title, cdnUrl: action.cdnUrl),
-        isPlaying: true,
         queue: action.queue,
         queueIndex: action.queueIndex,
         queueGroupKey: action.queueGroupKey,
@@ -72,6 +71,7 @@ AppState oolafMusicReducer(AppState state, AppAction action) {
       oolafMusic: current.copyWith(
         nowPlaying: OolafNowPlaying(title: action.title, cdnUrl: action.cdnUrl),
         isPlaying: false,
+        playbackState: OolafPlaybackState.buffering,
         queue: action.queue,
         queueIndex: action.queueIndex,
         queueGroupKey: action.queueGroupKey,
@@ -118,20 +118,39 @@ AppState oolafMusicReducer(AppState state, AppAction action) {
       oolafMusic: current.copyWith(
         nowPlaying: OolafNowPlaying(title: track.title, cdnUrl: track.cdnUrl),
         queueIndex: index,
-        isPlaying: true,
       ),
     );
   }
 
   if (action is OolafSetPlayingAction) {
+    final nextPlaybackState = action.isPlaying
+        ? OolafPlaybackState.playing
+        : current.playbackState == OolafPlaybackState.playing
+            ? OolafPlaybackState.paused
+            : current.playbackState;
     return state.copyWith(
-      oolafMusic: current.copyWith(isPlaying: action.isPlaying),
+      oolafMusic: current.copyWith(
+        isPlaying: action.isPlaying,
+        playbackState: nextPlaybackState,
+      ),
     );
   }
 
   if (action is OolafSetPlaybackStateAction) {
+    final incoming = action.playbackState;
+    final nextIsPlaying = incoming == OolafPlaybackState.playing
+        ? true
+        : incoming == OolafPlaybackState.paused ||
+                incoming == OolafPlaybackState.completed ||
+                incoming == OolafPlaybackState.idle ||
+                incoming == OolafPlaybackState.disposed
+            ? false
+            : current.isPlaying;
     return state.copyWith(
-      oolafMusic: current.copyWith(playbackState: action.playbackState),
+      oolafMusic: current.copyWith(
+        isPlaying: nextIsPlaying,
+        playbackState: incoming,
+      ),
     );
   }
 

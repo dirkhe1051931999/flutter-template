@@ -72,6 +72,81 @@ Future<HupuSearchPostPage> searchHupuPosts({
   return HupuSearchPostPage.fromJson(decodeHupuJson(response.data));
 }
 
+Future<HupuSearchPostListPage> searchHupuPostList({
+  required String keyword,
+  int page = 1,
+  String postSort = 'general',
+}) async {
+  final body = _buildSearchRequestBody(
+    keyword: keyword,
+    page: page,
+    type: 'posts',
+    extra: <String, String>{
+      'fid': '0',
+      'topic_id': '0',
+      'postSort': postSort,
+    },
+  );
+  final response = await hupuGamesClient.post(
+    '/1/8.0.32/search/list',
+    data: body,
+    options: Options(
+      responseType: ResponseType.bytes,
+      headers: const <String, String>{
+        'Accept': 'application/json',
+      },
+    ),
+  );
+
+  return HupuSearchPostListPage.fromJson(decodeHupuJson(response.data));
+}
+
+Future<HupuSearchTopicListPage> searchHupuTopicList({
+  required String keyword,
+  int page = 1,
+}) async {
+  final body = _buildSearchRequestBody(
+    keyword: keyword,
+    page: page,
+    type: 'bbsTag',
+  );
+  final response = await hupuGamesClient.post(
+    '/1/8.0.32/search/list',
+    data: body,
+    options: Options(
+      responseType: ResponseType.bytes,
+      headers: const <String, String>{
+        'Accept': 'application/json',
+      },
+    ),
+  );
+
+  return HupuSearchTopicListPage.fromJson(decodeHupuJson(response.data));
+}
+
+Future<HupuSearchUserListPage> searchHupuUserList({
+  required String keyword,
+  int page = 1,
+}) async {
+  final body = _buildSearchRequestBody(
+    keyword: keyword,
+    page: page,
+    type: 'users',
+  );
+  final response = await hupuGamesClient.post(
+    '/1/8.0.32/search/list',
+    data: body,
+    options: Options(
+      responseType: ResponseType.bytes,
+      headers: const <String, String>{
+        'Accept': 'application/json',
+      },
+    ),
+  );
+
+  return HupuSearchUserListPage.fromJson(decodeHupuJson(response.data));
+}
+
 Future<HupuSearchUserPage> searchHupuUsers({
   required String keyword,
   required int page,
@@ -99,6 +174,7 @@ Map<String, dynamic> _buildSearchRequestBody({
   required String keyword,
   int? page,
   String? type,
+  Map<String, String>? extra,
 }) {
   final body = <String, String>{
     'puid': '0',
@@ -112,6 +188,9 @@ Map<String, dynamic> _buildSearchRequestBody({
   }
   if (type != null && type.trim().isNotEmpty) {
     body['type'] = type;
+  }
+  if (extra != null && extra.isNotEmpty) {
+    body.addAll(extra);
   }
   body['sign'] = buildHupuSign(body);
   return body;

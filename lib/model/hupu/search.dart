@@ -43,54 +43,141 @@ class HupuSearchNavItem {
 class HupuSearchResponse {
   const HupuSearchResponse({
     required this.navItems,
-    required this.posts,
-    required this.users,
-    required this.postTotalPage,
-    required this.userTotalPage,
-    required this.hasMorePosts,
-    required this.hasMoreUsers,
+    required this.postSection,
+    required this.userSection,
+    required this.topicSection,
+    required this.matchSection,
   });
 
   final List<HupuSearchNavItem> navItems;
-  final List<HupuSearchPostItem> posts;
-  final List<HupuSearchUserItem> users;
-  final int postTotalPage;
-  final int userTotalPage;
-  final bool hasMorePosts;
-  final bool hasMoreUsers;
+  final HupuSearchPostSection postSection;
+  final HupuSearchUserSection userSection;
+  final HupuSearchTopicSection topicSection;
+  final HupuSearchMatchSection matchSection;
+
+  List<HupuSearchPostItem> get posts => postSection.items;
+  List<HupuSearchUserItem> get users => userSection.items;
+  int get postTotalPage => postSection.totalPage;
+  int get userTotalPage => userSection.totalPage;
+  bool get hasMorePosts => postSection.hasNextPage;
+  bool get hasMoreUsers => userSection.hasNextPage;
 
   factory HupuSearchResponse.fromJson(Map<String, dynamic> json) {
-    final result = json['result'];
-    if (result is! Map<String, dynamic>) {
-      throw StateError('Unexpected Hupu search payload');
-    }
-
-    final sections = result['result'];
-    final sectionList = sections is List ? sections : const <dynamic>[];
-    Map<String, dynamic>? postsSection;
-    Map<String, dynamic>? usersSection;
-
-    for (final section in sectionList) {
-      if (section is! Map) {
-        continue;
-      }
-      final typedSection = Map<String, dynamic>.from(section);
-      final type = typedSection['type']?.toString() ?? '';
-      if (type == 'posts') {
-        postsSection = typedSection;
-      } else if (type == 'users') {
-        usersSection = typedSection;
-      }
-    }
+    final postsSection = _findSearchSection(json, 'posts');
+    final usersSection = _findSearchSection(json, 'users');
+    final topicsSection = _findSearchSection(json, 'bbsTag');
+    final matchSection = _findSearchSection(json, 'match');
 
     return HupuSearchResponse(
-      navItems: _parseSearchNavItems(result['search_nav_list']),
-      posts: _parseSearchPostItems(postsSection?['data']),
-      users: _parseSearchUserItems(usersSection?['data']),
-      postTotalPage: _parseInt(postsSection?['totalPage']),
-      userTotalPage: _parseInt(usersSection?['totalPage']),
-      hasMorePosts: _parseInt(postsSection?['hasNextPage']) == 1,
-      hasMoreUsers: _parseInt(usersSection?['hasNextPage']) == 1,
+      navItems: _parseSearchNavItems(json['search_nav_list']),
+      postSection: HupuSearchPostSection.fromSection(postsSection),
+      userSection: HupuSearchUserSection.fromSection(usersSection),
+      topicSection: HupuSearchTopicSection.fromSection(topicsSection),
+      matchSection: HupuSearchMatchSection.fromSection(matchSection),
+    );
+  }
+}
+
+class HupuSearchPostSection {
+  const HupuSearchPostSection({
+    required this.title,
+    required this.moreTitle,
+    required this.items,
+    required this.totalPage,
+    required this.hasNextPage,
+  });
+
+  final String title;
+  final String moreTitle;
+  final List<HupuSearchPostItem> items;
+  final int totalPage;
+  final bool hasNextPage;
+
+  factory HupuSearchPostSection.fromSection(Map<String, dynamic>? section) {
+    return HupuSearchPostSection(
+      title: section?['search_title']?.toString() ?? '帖子',
+      moreTitle: section?['moreTitle']?.toString() ?? '查看更多',
+      items: _parseSearchPostItems(section?['data']),
+      totalPage: _parseInt(section?['totalPage']),
+      hasNextPage: _parseInt(section?['hasNextPage']) == 1,
+    );
+  }
+}
+
+class HupuSearchUserSection {
+  const HupuSearchUserSection({
+    required this.title,
+    required this.moreTitle,
+    required this.items,
+    required this.totalPage,
+    required this.hasNextPage,
+  });
+
+  final String title;
+  final String moreTitle;
+  final List<HupuSearchUserItem> items;
+  final int totalPage;
+  final bool hasNextPage;
+
+  factory HupuSearchUserSection.fromSection(Map<String, dynamic>? section) {
+    return HupuSearchUserSection(
+      title: section?['search_title']?.toString() ?? '用户',
+      moreTitle: section?['moreTitle']?.toString() ?? '查看更多',
+      items: _parseSearchUserItems(section?['data']),
+      totalPage: _parseInt(section?['totalPage']),
+      hasNextPage: _parseInt(section?['hasNextPage']) == 1,
+    );
+  }
+}
+
+class HupuSearchTopicSection {
+  const HupuSearchTopicSection({
+    required this.title,
+    required this.moreTitle,
+    required this.items,
+    required this.totalPage,
+    required this.hasNextPage,
+  });
+
+  final String title;
+  final String moreTitle;
+  final List<HupuSearchTopicItem> items;
+  final int totalPage;
+  final bool hasNextPage;
+
+  factory HupuSearchTopicSection.fromSection(Map<String, dynamic>? section) {
+    return HupuSearchTopicSection(
+      title: section?['search_title']?.toString() ?? '话题',
+      moreTitle: section?['moreTitle']?.toString() ?? '查看更多',
+      items: _parseSearchTopicItems(section?['data']),
+      totalPage: _parseInt(section?['totalPage']),
+      hasNextPage: _parseInt(section?['hasNextPage']) == 1,
+    );
+  }
+}
+
+class HupuSearchMatchSection {
+  const HupuSearchMatchSection({
+    required this.title,
+    required this.moreTitle,
+    required this.items,
+    required this.totalPage,
+    required this.hasNextPage,
+  });
+
+  final String title;
+  final String moreTitle;
+  final List<HupuSearchMatchDay> items;
+  final int totalPage;
+  final bool hasNextPage;
+
+  factory HupuSearchMatchSection.fromSection(Map<String, dynamic>? section) {
+    return HupuSearchMatchSection(
+      title: section?['search_title']?.toString() ?? '赛程',
+      moreTitle: section?['moreTitle']?.toString() ?? '查看更多',
+      items: _parseSearchMatchDays(section?['data']),
+      totalPage: _parseInt(section?['totalPage']),
+      hasNextPage: _parseInt(section?['hasNextPage']) == 1,
     );
   }
 }
@@ -107,12 +194,7 @@ class HupuSearchPostPage {
   final bool hasNextPage;
 
   factory HupuSearchPostPage.fromJson(Map<String, dynamic> json) {
-    final result = json['result'];
-    if (result is! Map<String, dynamic>) {
-      throw StateError('Unexpected Hupu post search payload');
-    }
-
-    final section = _findSearchSection(result, 'posts');
+    final section = _findSearchSection(json, 'posts');
     return HupuSearchPostPage(
       items: _parseSearchPostItems(section?['data']),
       totalPage: _parseInt(section?['totalPage']),
@@ -133,12 +215,7 @@ class HupuSearchUserPage {
   final bool hasNextPage;
 
   factory HupuSearchUserPage.fromJson(Map<String, dynamic> json) {
-    final result = json['result'];
-    if (result is! Map<String, dynamic>) {
-      throw StateError('Unexpected Hupu user search payload');
-    }
-
-    final section = _findSearchSection(result, 'users');
+    final section = _findSearchSection(json, 'users');
     return HupuSearchUserPage(
       items: _parseSearchUserItems(section?['data']),
       totalPage: _parseInt(section?['totalPage']),
@@ -254,11 +331,225 @@ class HupuSearchUserItem {
   }
 }
 
+class HupuSearchPostSortItem {
+  const HupuSearchPostSortItem({
+    required this.name,
+    required this.postSort,
+  });
+
+  final String name;
+  final String postSort;
+
+  factory HupuSearchPostSortItem.fromJson(Map<String, dynamic> json) {
+    return HupuSearchPostSortItem(
+      name: json['name']?.toString() ?? '',
+      postSort: json['postSort']?.toString() ?? '',
+    );
+  }
+}
+
+class HupuSearchPostListPage {
+  const HupuSearchPostListPage({
+    required this.section,
+    required this.sortItems,
+  });
+
+  final HupuSearchPostSection section;
+  final List<HupuSearchPostSortItem> sortItems;
+
+  factory HupuSearchPostListPage.fromJson(Map<String, dynamic> json) {
+    final result = json['result'];
+    final section = result is Map<String, dynamic>
+        ? HupuSearchPostSection.fromSection(result)
+        : result is Map
+            ? HupuSearchPostSection.fromSection(
+                Map<String, dynamic>.from(result),
+              )
+            : HupuSearchPostSection.fromSection(null);
+    return HupuSearchPostListPage(
+      section: section,
+      sortItems: _parseSearchPostSortItems(json['postSortList']),
+    );
+  }
+}
+
+class HupuSearchTopicListPage {
+  const HupuSearchTopicListPage({
+    required this.section,
+  });
+
+  final HupuSearchTopicSection section;
+
+  factory HupuSearchTopicListPage.fromJson(Map<String, dynamic> json) {
+    final result = json['result'];
+    final section = result is Map<String, dynamic>
+        ? HupuSearchTopicSection.fromSection(result)
+        : result is Map
+            ? HupuSearchTopicSection.fromSection(
+                Map<String, dynamic>.from(result),
+              )
+            : HupuSearchTopicSection.fromSection(null);
+    return HupuSearchTopicListPage(section: section);
+  }
+}
+
+class HupuSearchUserListPage {
+  const HupuSearchUserListPage({
+    required this.section,
+  });
+
+  final HupuSearchUserSection section;
+
+  factory HupuSearchUserListPage.fromJson(Map<String, dynamic> json) {
+    final result = json['result'];
+    final section = result is Map<String, dynamic>
+        ? HupuSearchUserSection.fromSection(result)
+        : result is Map
+            ? HupuSearchUserSection.fromSection(
+                Map<String, dynamic>.from(result),
+              )
+            : HupuSearchUserSection.fromSection(null);
+    return HupuSearchUserListPage(section: section);
+  }
+}
+
+class HupuSearchTopicItem {
+  const HupuSearchTopicItem({
+    required this.id,
+    required this.name,
+    required this.info,
+    required this.discussNum,
+    required this.icon,
+    required this.schema,
+    required this.itemId,
+  });
+
+  final String id;
+  final String name;
+  final String info;
+  final String discussNum;
+  final String icon;
+  final String schema;
+  final String itemId;
+
+  factory HupuSearchTopicItem.fromJson(Map<String, dynamic> json) {
+    return HupuSearchTopicItem(
+      id: json['id']?.toString() ?? '',
+      name: json['name']?.toString() ?? '',
+      info: json['info']?.toString() ?? json['bbsTagInfo']?.toString() ?? '',
+      discussNum: json['discussNum']?.toString() ?? '',
+      icon: json['icon']?.toString() ?? '',
+      schema: json['schema']?.toString() ?? '',
+      itemId: json['itemid']?.toString() ?? '',
+    );
+  }
+}
+
+class HupuSearchMatchDay {
+  const HupuSearchMatchDay({
+    required this.day,
+    required this.dayBlock,
+    required this.matches,
+  });
+
+  final String day;
+  final String dayBlock;
+  final List<HupuSearchMatchItem> matches;
+
+  factory HupuSearchMatchDay.fromJson(Map<String, dynamic> json) {
+    return HupuSearchMatchDay(
+      day: json['day']?.toString() ?? '',
+      dayBlock: json['dayBlock']?.toString() ?? '',
+      matches: _parseSearchMatchItems(json['matchList']),
+    );
+  }
+}
+
+class HupuSearchMatchItem {
+  const HupuSearchMatchItem({
+    required this.matchId,
+    required this.matchTime,
+    required this.matchStatusChinese,
+    required this.homeTeamName,
+    required this.homeTeamLogo,
+    required this.homeScoreString,
+    required this.awayTeamName,
+    required this.awayTeamLogo,
+    required this.awayScoreString,
+    required this.pv,
+    required this.playerScore,
+  });
+
+  final String matchId;
+  final String matchTime;
+  final String matchStatusChinese;
+  final String homeTeamName;
+  final String homeTeamLogo;
+  final String homeScoreString;
+  final String awayTeamName;
+  final String awayTeamLogo;
+  final String awayScoreString;
+  final String pv;
+  final HupuSearchMatchPlayerScore? playerScore;
+
+  factory HupuSearchMatchItem.fromJson(Map<String, dynamic> json) {
+    final playerScoreJson = json['playerScore'];
+    return HupuSearchMatchItem(
+      matchId: json['matchId']?.toString() ?? '',
+      matchTime: json['matchTime']?.toString() ?? '',
+      matchStatusChinese: json['matchStatusChinese']?.toString() ?? '',
+      homeTeamName: json['homeTeamName']?.toString() ?? '',
+      homeTeamLogo: json['homeTeamLogo']?.toString() ?? '',
+      homeScoreString: json['homeScoreString']?.toString() ?? '',
+      awayTeamName: json['awayTeamName']?.toString() ?? '',
+      awayTeamLogo: json['awayTeamLogo']?.toString() ?? '',
+      awayScoreString: json['awayScoreString']?.toString() ?? '',
+      pv: json['pv']?.toString() ?? '',
+      playerScore: playerScoreJson is Map<String, dynamic>
+          ? HupuSearchMatchPlayerScore.fromJson(playerScoreJson)
+          : playerScoreJson is Map
+              ? HupuSearchMatchPlayerScore.fromJson(
+                  Map<String, dynamic>.from(playerScoreJson),
+                )
+              : null,
+    );
+  }
+}
+
+class HupuSearchMatchPlayerScore {
+  const HupuSearchMatchPlayerScore({
+    required this.playerName,
+    required this.playerLogo,
+    required this.playerTeamLogo,
+    required this.hotComment,
+    required this.playerScoreCount,
+    required this.playerScore,
+  });
+
+  final String playerName;
+  final String playerLogo;
+  final String playerTeamLogo;
+  final String hotComment;
+  final String playerScoreCount;
+  final double playerScore;
+
+  factory HupuSearchMatchPlayerScore.fromJson(Map<String, dynamic> json) {
+    return HupuSearchMatchPlayerScore(
+      playerName: json['playerName']?.toString() ?? '',
+      playerLogo: json['playerLogo']?.toString() ?? '',
+      playerTeamLogo: json['playerTeamLogo']?.toString() ?? '',
+      hotComment: json['hotComment']?.toString() ?? '',
+      playerScoreCount: json['playerScoreCount']?.toString() ?? '',
+      playerScore: _parseDouble(json['playerScore']),
+    );
+  }
+}
+
 Map<String, dynamic>? _findSearchSection(
-  Map<String, dynamic> result,
+  Map<String, dynamic> json,
   String type,
 ) {
-  final sections = result['result'];
+  final sections = json['result'];
   if (sections is! List) {
     return null;
   }
@@ -283,6 +574,16 @@ int _parseInt(dynamic value) {
     return value.toInt();
   }
   return int.tryParse(value?.toString() ?? '') ?? 0;
+}
+
+double _parseDouble(dynamic value) {
+  if (value is double) {
+    return value;
+  }
+  if (value is num) {
+    return value.toDouble();
+  }
+  return double.tryParse(value?.toString() ?? '') ?? 0;
 }
 
 List<HupuSearchHotKeyword> parseHupuSearchHotKeywords(dynamic rawItems) {
@@ -333,6 +634,59 @@ List<HupuSearchUserItem> _parseSearchUserItems(dynamic rawItems) {
       .whereType<Map>()
       .map(
         (item) => HupuSearchUserItem.fromJson(Map<String, dynamic>.from(item)),
+      )
+      .toList(growable: false);
+}
+
+List<HupuSearchTopicItem> _parseSearchTopicItems(dynamic rawItems) {
+  if (rawItems is! List) {
+    return const <HupuSearchTopicItem>[];
+  }
+
+  return rawItems
+      .whereType<Map>()
+      .map(
+        (item) => HupuSearchTopicItem.fromJson(Map<String, dynamic>.from(item)),
+      )
+      .toList(growable: false);
+}
+
+List<HupuSearchMatchDay> _parseSearchMatchDays(dynamic rawItems) {
+  if (rawItems is! List) {
+    return const <HupuSearchMatchDay>[];
+  }
+
+  return rawItems
+      .whereType<Map>()
+      .map(
+        (item) => HupuSearchMatchDay.fromJson(Map<String, dynamic>.from(item)),
+      )
+      .toList(growable: false);
+}
+
+List<HupuSearchMatchItem> _parseSearchMatchItems(dynamic rawItems) {
+  if (rawItems is! List) {
+    return const <HupuSearchMatchItem>[];
+  }
+
+  return rawItems
+      .whereType<Map>()
+      .map(
+        (item) => HupuSearchMatchItem.fromJson(Map<String, dynamic>.from(item)),
+      )
+      .toList(growable: false);
+}
+
+List<HupuSearchPostSortItem> _parseSearchPostSortItems(dynamic rawItems) {
+  if (rawItems is! List) {
+    return const <HupuSearchPostSortItem>[];
+  }
+
+  return rawItems
+      .whereType<Map>()
+      .map(
+        (item) =>
+            HupuSearchPostSortItem.fromJson(Map<String, dynamic>.from(item)),
       )
       .toList(growable: false);
 }

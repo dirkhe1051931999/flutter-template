@@ -11,7 +11,7 @@ class HupuSportsTabView extends StatelessWidget {
     LinkedTabItem(
       id: 'home-team-news',
       label: '主队资讯',
-      child: HupuHomeTeamPage(),
+      child: HupuHomeTeamPage(showPageHeader: false),
     ),
     LinkedTabItem(
       id: 'nba',

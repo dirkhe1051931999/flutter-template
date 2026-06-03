@@ -1,5 +1,8 @@
 import 'package:fluro/fluro.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter_redux/flutter_redux.dart';
+import 'package:oolaf_flutted/components/app_notice_bar/app_notice_bar_types.dart';
+import 'package:oolaf_flutted/components/app_notice_bar/index.dart';
 import 'package:oolaf_flutted/pages/home/widgets/background_orb.dart';
 import 'package:oolaf_flutted/pages/home/widgets/home_entry.dart';
 import 'package:oolaf_flutted/pages/home/widgets/home_entry_group.dart';
@@ -7,6 +10,8 @@ import 'package:oolaf_flutted/pages/home/widgets/home_hero.dart';
 import 'package:oolaf_flutted/pages/home/widgets/home_list_tile.dart';
 import 'package:oolaf_flutted/pages/home/widgets/section_panel.dart';
 import 'package:oolaf_flutted/router/config.dart';
+import 'package:oolaf_flutted/store/index.dart';
+import 'package:oolaf_flutted/store/oolaf_music/state.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -463,14 +468,16 @@ class _HomePageState extends State<HomePage> {
                         _businessExpanded = !_businessExpanded;
                       });
                     },
-                    children: businessItems
-                        .map(
-                          (item) => HomeListTile(
-                            item: item,
-                            onTap: () => _openRoute(item.routeKey),
-                          ),
-                        )
-                        .toList(growable: false),
+                    children: [
+                      for (final item in businessItems) ...[
+                        if (item.routeKey == 'oolaf-dynamic-audio')
+                          const _OolafDynamicAudioNowPlayingBanner(),
+                        HomeListTile(
+                          item: item,
+                          onTap: () => _openRoute(item.routeKey),
+                        ),
+                      ],
+                    ],
                   ),
                 ],
               ),
@@ -478,6 +485,92 @@ class _HomePageState extends State<HomePage> {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _OolafDynamicAudioNowPlayingVm {
+  const _OolafDynamicAudioNowPlayingVm({
+    required this.trackTitle,
+    required this.nextTrackTitle,
+    required this.isPlaying,
+  });
+
+  final String? trackTitle;
+  final String? nextTrackTitle;
+  final bool isPlaying;
+
+  @override
+  bool operator ==(Object other) {
+    return other is _OolafDynamicAudioNowPlayingVm &&
+        other.trackTitle == trackTitle &&
+        other.nextTrackTitle == nextTrackTitle &&
+        other.isPlaying == isPlaying;
+  }
+
+  @override
+  int get hashCode => Object.hash(trackTitle, nextTrackTitle, isPlaying);
+}
+
+class _OolafDynamicAudioNowPlayingBanner extends StatelessWidget {
+  const _OolafDynamicAudioNowPlayingBanner();
+
+  @override
+  Widget build(BuildContext context) {
+    return StoreConnector<AppState, _OolafDynamicAudioNowPlayingVm>(
+      distinct: true,
+      converter: (store) {
+        final music = store.state.oolafMusic;
+        String? nextTrackTitle;
+        final queue = music.queue;
+        final currentIndex = music.queueIndex;
+        if (queue.isNotEmpty && currentIndex >= 0 && currentIndex < queue.length) {
+          final nextIndex = currentIndex + 1;
+          if (nextIndex < queue.length) {
+            nextTrackTitle = queue[nextIndex].title;
+          } else if (music.loopMode == OolafLoopMode.all) {
+            nextTrackTitle = queue.first.title;
+          }
+        }
+        return _OolafDynamicAudioNowPlayingVm(
+          trackTitle: music.nowPlaying?.title,
+          nextTrackTitle: nextTrackTitle,
+          isPlaying: music.isPlaying,
+        );
+      },
+      builder: (context, vm) {
+        final trackTitle = vm.trackTitle?.trim() ?? '';
+        if (trackTitle.isEmpty) {
+          return const SizedBox.shrink();
+        }
+        final nextTrackTitle = vm.nextTrackTitle?.trim() ?? '';
+        final noticeText = nextTrackTitle.isEmpty
+            ? '正在播放：$trackTitle'
+            : '正在播放：$trackTitle    下一首：$nextTrackTitle';
+
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(0, 0, 0, 8),
+          child: SizedBox(
+            height: 18,
+            child: AppNoticeBar(
+              text: noticeText,
+              scrollable: true,
+              mode: AppNoticeBarMode.none,
+              leftIcon: CupertinoIcons.music_note,
+              color: const Color(0xFFB06A12),
+              backgroundColor: const Color(0xFFFFF6E6),
+              padding: const EdgeInsets.fromLTRB(10, 1, 10, 1),
+              borderRadius: const BorderRadius.all(Radius.circular(999)),
+              iconSize: 12,
+              textStyle: const TextStyle(
+                color: Color(0xFFB06A12),
+                fontSize: 11,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }

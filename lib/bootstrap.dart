@@ -1,4 +1,5 @@
 import 'package:fluro/fluro.dart';
+import 'package:oolaf_flutted/pages/oolaf_dynamic_audio/controllers/oolaf_audio_playback_controller.dart';
 import 'package:oolaf_flutted/router/config.dart';
 import 'package:oolaf_flutted/router/routes.dart';
 import 'package:oolaf_flutted/store/action.dart';
@@ -18,6 +19,7 @@ class AppBootstrap {
 AppBootstrap createAppBootstrap() {
   final router = createAppRouter();
   final store = createAppStore();
+  oolafAudioPlaybackController.bindStore(store);
 
   return AppBootstrap(
     router: router,

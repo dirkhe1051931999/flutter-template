@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/cupertino.dart';
 import 'package:oolaf_flutted/api/hupu/index.dart';
-import 'package:oolaf_flutted/components/route_page_header/index.dart';
 import 'package:oolaf_flutted/components/linked_tab_view/index.dart';
 import 'package:oolaf_flutted/components/network_img/index.dart';
 import 'package:oolaf_flutted/model/hupu/index.dart';
@@ -18,10 +17,12 @@ const String _homeTeamDefaultTagName = '独行侠专区';
 class HupuHomeTeamPage extends StatefulWidget {
   const HupuHomeTeamPage({
     this.teamId,
+    this.showPageHeader = true,
     super.key,
   });
 
   final String? teamId;
+  final bool showPageHeader;
 
   @override
   State<HupuHomeTeamPage> createState() => _HupuHomeTeamPageState();
@@ -244,43 +245,50 @@ class _HupuHomeTeamPageState extends State<HupuHomeTeamPage> {
   @override
   Widget build(BuildContext context) {
     final tabs = _displayTabs;
+    final body = _isLoading
+        ? const Center(child: CupertinoActivityIndicator(radius: 14))
+        : _errorMessage != null && _team == null
+            ? HupuStatusView(
+                message: '主队加载失败',
+                detail: _errorMessage,
+                onRetry: _loadInitial,
+              )
+            : LinkedTabView(
+                items: tabs
+                    .map(
+                      (item) => LinkedTabItem(
+                        id: item.key,
+                        label: item.name,
+                        child: _buildTabChild(item),
+                      ),
+                    )
+                    .toList(growable: false),
+                initialIndex: _resolveInitialTabIndex(tabs),
+                tabBarHeight: 44,
+                tabBarPadding: const EdgeInsets.symmetric(horizontal: 12),
+                tabSpacing: 28,
+                activeTabColor: const Color(0xFF202127),
+                inactiveTabColor: const Color(0xFF9398A5),
+                activeIndicatorColor: const Color(0xFFE5484D),
+                activeFontSize: 17,
+                inactiveFontSize: 17,
+              );
+
+    if (!widget.showPageHeader) {
+      return ColoredBox(
+        color: const Color(0xFFFFFFFF),
+        child: body,
+      );
+    }
 
     return CupertinoPageScaffold(
       backgroundColor: const Color(0xFFFFFFFF),
-      navigationBar: RoutePageNavigationBar(
-        title: '我的主队',
-        onBack: () => Navigator.of(context).pop(),
+      navigationBar: const CupertinoNavigationBar(
+        middle: Text('我的主队'),
       ),
       child: SafeArea(
         bottom: false,
-        child: _isLoading
-            ? const Center(child: CupertinoActivityIndicator(radius: 14))
-            : _errorMessage != null && _team == null
-                ? HupuStatusView(
-                    message: '主队加载失败',
-                    detail: _errorMessage,
-                    onRetry: _loadInitial,
-                  )
-                : LinkedTabView(
-                    items: tabs
-                        .map(
-                          (item) => LinkedTabItem(
-                            id: item.key,
-                            label: item.name,
-                            child: _buildTabChild(item),
-                          ),
-                        )
-                        .toList(growable: false),
-                    initialIndex: _resolveInitialTabIndex(tabs),
-                    tabBarHeight: 44,
-                    tabBarPadding: const EdgeInsets.symmetric(horizontal: 12),
-                    tabSpacing: 28,
-                    activeTabColor: const Color(0xFF202127),
-                    inactiveTabColor: const Color(0xFF9398A5),
-                    activeIndicatorColor: const Color(0xFFE5484D),
-                    activeFontSize: 17,
-                    inactiveFontSize: 17,
-                  ),
+        child: body,
       ),
     );
   }

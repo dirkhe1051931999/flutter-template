@@ -1,5 +1,6 @@
+import 'dart:math' as math;
+
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_redux/flutter_redux.dart';
 import 'package:oolaf_flutted/components/app_asset_icon/index.dart';
 import 'package:oolaf_flutted/components/oolaf_player/player_sheet.dart';
@@ -433,7 +434,7 @@ class _CollapsedBall extends StatelessWidget {
               height: ballSize,
               decoration: const BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.white,
+                color: CupertinoColors.white,
                 boxShadow: [
                   BoxShadow(
                     color: Color(0x33000000),
@@ -477,16 +478,9 @@ class _CollapsedBall extends StatelessWidget {
                     final ratio = totalMs <= 0
                         ? 0.0
                         : (position.inMilliseconds / totalMs).clamp(0.0, 1.0);
-                    return SizedBox(
-                      width: ballSize,
-                      height: ballSize,
-                      child: CircularProgressIndicator(
-                        value: ratio,
-                        strokeWidth: 3,
-                        backgroundColor: const Color(0x22000000),
-                        valueColor:
-                            const AlwaysStoppedAnimation<Color>(_themeColor),
-                      ),
+                    return CustomPaint(
+                      size: const Size.square(ballSize),
+                      painter: _CollapsedBallProgressPainter(progress: ratio),
                     );
                   },
                 );
@@ -503,7 +497,7 @@ class _CollapsedBall extends StatelessWidget {
                 alignment: Alignment.center,
                 child: const CupertinoActivityIndicator(
                   radius: 10,
-                  color: Colors.white,
+                  color: CupertinoColors.white,
                 ),
               ),
             if (!isBuffering && !state.isPlaying)
@@ -512,7 +506,7 @@ class _CollapsedBall extends StatelessWidget {
                 bottom: 4,
                 child: DecoratedBox(
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: CupertinoColors.white,
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
@@ -537,5 +531,47 @@ class _CollapsedBall extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+class _CollapsedBallProgressPainter extends CustomPainter {
+  const _CollapsedBallProgressPainter({
+    required this.progress,
+  });
+
+  final double progress;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = (math.min(size.width, size.height) - 5) / 2;
+    final rect = Rect.fromCircle(center: center, radius: radius);
+    final trackPaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.4
+      ..strokeCap = StrokeCap.round
+      ..color = const Color(0x1F3C3C43);
+    final progressPaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.8
+      ..strokeCap = StrokeCap.round
+      ..color = _themeColor;
+
+    canvas.drawCircle(center, radius, trackPaint);
+    if (progress <= 0) {
+      return;
+    }
+    canvas.drawArc(
+      rect,
+      -math.pi / 2,
+      math.pi * 2 * progress.clamp(0.0, 1.0),
+      false,
+      progressPaint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _CollapsedBallProgressPainter oldDelegate) {
+    return oldDelegate.progress != progress;
   }
 }

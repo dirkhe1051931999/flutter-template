@@ -6,6 +6,8 @@ class AppSearch extends StatefulWidget {
   const AppSearch({
     super.key,
     this.value = '',
+    this.controller,
+    this.focusNode,
     this.label,
     this.name,
     this.shape = AppSearchShape.square,
@@ -37,9 +39,18 @@ class AppSearch extends StatefulWidget {
     this.onTapInput,
     this.onTapLeftIcon,
     this.onTapRightIcon,
+    this.outerPadding = const EdgeInsets.fromLTRB(12, 10, 12, 10),
+    this.fieldPadding = const EdgeInsets.symmetric(
+      horizontal: 14,
+      vertical: 12,
+    ),
+    this.borderRadius,
+    this.fieldBorderRadius,
   });
 
   final String value;
+  final TextEditingController? controller;
+  final FocusNode? focusNode;
   final String? label;
   final String? name;
   final AppSearchShape shape;
@@ -71,6 +82,10 @@ class AppSearch extends StatefulWidget {
   final VoidCallback? onTapInput;
   final VoidCallback? onTapLeftIcon;
   final VoidCallback? onTapRightIcon;
+  final EdgeInsetsGeometry outerPadding;
+  final EdgeInsetsGeometry fieldPadding;
+  final double? borderRadius;
+  final double? fieldBorderRadius;
 
   @override
   State<AppSearch> createState() => _AppSearchState();
@@ -79,6 +94,8 @@ class AppSearch extends StatefulWidget {
 class _AppSearchState extends State<AppSearch> {
   late final TextEditingController _textController;
   late final FocusNode _focusNode;
+  late final bool _ownsTextController;
+  late final bool _ownsFocusNode;
   bool _isFocused = false;
 
   bool get _showClear {
@@ -92,16 +109,23 @@ class _AppSearchState extends State<AppSearch> {
   @override
   void initState() {
     super.initState();
-    _textController = TextEditingController(text: widget.value);
-    _focusNode = FocusNode();
+    _ownsTextController = widget.controller == null;
+    _ownsFocusNode = widget.focusNode == null;
+    _textController =
+        widget.controller ?? TextEditingController(text: widget.value);
+    _focusNode = widget.focusNode ?? FocusNode();
     _focusNode.addListener(_handleFocusChange);
+    _isFocused = _focusNode.hasFocus;
   }
 
   @override
   void didUpdateWidget(covariant AppSearch oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.value != widget.value &&
-        widget.value != _textController.text) {
+    final shouldSyncFromValue =
+        widget.controller == null &&
+        oldWidget.value != widget.value &&
+        widget.value != _textController.text;
+    if (shouldSyncFromValue) {
       _textController.value = _textController.value.copyWith(
         text: widget.value,
         selection: TextSelection.collapsed(offset: widget.value.length),
@@ -112,10 +136,13 @@ class _AppSearchState extends State<AppSearch> {
 
   @override
   void dispose() {
-    _focusNode
-      ..removeListener(_handleFocusChange)
-      ..dispose();
-    _textController.dispose();
+    _focusNode.removeListener(_handleFocusChange);
+    if (_ownsFocusNode) {
+      _focusNode.dispose();
+    }
+    if (_ownsTextController) {
+      _textController.dispose();
+    }
     super.dispose();
   }
 
@@ -180,12 +207,15 @@ class _AppSearchState extends State<AppSearch> {
 
   @override
   Widget build(BuildContext context) {
-    final fieldRadius = widget.shape == AppSearchShape.round ? 999.0 : 22.0;
+    final fieldRadius = widget.fieldBorderRadius ??
+        (widget.shape == AppSearchShape.round ? 999.0 : 22.0);
+    final outerRadius = widget.borderRadius ?? 24.0;
     final fieldBorderColor = widget.error
         ? const Color(0x33FF3B30)
         : _isFocused
             ? const Color(0x333A7BFF)
             : const Color(0x10000000);
+    final hasTrailingSlot = widget.clearable || widget.rightIcon != null;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -193,10 +223,10 @@ class _AppSearchState extends State<AppSearch> {
         AnimatedContainer(
           duration: const Duration(milliseconds: 180),
           curve: Curves.easeOutCubic,
-          padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+          padding: widget.outerPadding,
           decoration: BoxDecoration(
             color: widget.background,
-            borderRadius: BorderRadius.circular(24),
+            borderRadius: BorderRadius.circular(outerRadius),
           ),
           child: Row(
             children: [
@@ -228,10 +258,7 @@ class _AppSearchState extends State<AppSearch> {
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 180),
                     curve: Curves.easeOutCubic,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 12,
-                    ),
+                    padding: widget.fieldPadding,
                     decoration: BoxDecoration(
                       color: widget.disabled
                           ? const Color(0x99FFFFFF)
@@ -261,7 +288,7 @@ class _AppSearchState extends State<AppSearch> {
                           onTap: widget.onTapLeftIcon,
                           child: Icon(
                             widget.leftIcon,
-                            size: 18,
+                            size: 16,
                             color: widget.disabled
                                 ? const Color(0xFFB6BDC9)
                                 : const Color(0xFF7A869A),
@@ -285,13 +312,13 @@ class _AppSearchState extends State<AppSearch> {
                               color: widget.disabled
                                   ? const Color(0xFFB6BDC9)
                                   : const Color(0xFF111827),
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
                               height: 1.2,
                             ),
                             placeholderStyle: const TextStyle(
                               color: Color(0xFF9AA3B2),
-                              fontSize: 15,
+                              fontSize: 14,
                               fontWeight: FontWeight.w500,
                             ),
                             padding: EdgeInsets.zero,
@@ -307,26 +334,41 @@ class _AppSearchState extends State<AppSearch> {
                                   ],
                           ),
                         ),
-                        if (_showClear) ...[
+                        if (hasTrailingSlot) ...[
                           const SizedBox(width: 8),
-                          GestureDetector(
-                            behavior: HitTestBehavior.opaque,
-                            onTap: _handleClear,
-                            child: Icon(
-                              widget.clearIcon,
-                              size: 18,
-                              color: const Color(0xFF98A2B3),
-                            ),
+                          SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: _showClear
+                                ? GestureDetector(
+                                    behavior: HitTestBehavior.opaque,
+                                    onTap: _handleClear,
+                                    child: Icon(
+                                      widget.clearIcon,
+                                      size: 16,
+                                      color: const Color(0xFF98A2B3),
+                                    ),
+                                  )
+                                : widget.rightIcon != null
+                                    ? GestureDetector(
+                                        behavior: HitTestBehavior.opaque,
+                                        onTap: widget.onTapRightIcon,
+                                        child: Icon(
+                                          widget.rightIcon,
+                                          size: 16,
+                                          color: const Color(0xFF667085),
+                                        ),
+                                      )
+                                    : const SizedBox.shrink(),
                           ),
-                        ],
-                        if (widget.rightIcon != null) ...[
+                        ] else if (widget.rightIcon != null) ...[
                           const SizedBox(width: 8),
                           GestureDetector(
                             behavior: HitTestBehavior.opaque,
                             onTap: widget.onTapRightIcon,
                             child: Icon(
                               widget.rightIcon,
-                              size: 18,
+                              size: 16,
                               color: const Color(0xFF667085),
                             ),
                           ),

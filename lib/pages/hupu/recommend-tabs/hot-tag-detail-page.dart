@@ -12,6 +12,8 @@ import 'package:oolaf_flutted/pages/hupu/widgets/hupu_feed_card.dart';
 import 'package:oolaf_flutted/pages/hupu/widgets/hupu_load_more_footer.dart';
 import 'package:oolaf_flutted/pages/hupu/widgets/hupu_status_view.dart';
 
+const double _hotTagHeroHeight = 212;
+
 class HupuHotTagDetailPage extends StatefulWidget {
   const HupuHotTagDetailPage({
     required this.tagId,
@@ -30,6 +32,26 @@ class _HupuHotTagDetailPageState extends State<HupuHotTagDetailPage> {
   HupuTagDetail? _detail;
   bool _isLoading = true;
   String? _errorMessage;
+  int _activeTabIndex = 0;
+  final Map<int, double> _tabScrollOffsets = <int, double>{};
+
+  bool get _isHeroCollapsed {
+    final detail = _detail;
+    if (detail == null) {
+      return false;
+    }
+    final tabs = detail.tabs.isEmpty
+        ? const <HupuTagDetailTab>[
+            HupuTagDetailTab(name: '推荐', enName: 'hot', tabType: 1),
+            HupuTagDetailTab(name: '实时', enName: 'latest', tabType: 2),
+          ]
+        : detail.tabs;
+    if (_activeTabIndex < 0 || _activeTabIndex >= tabs.length) {
+      return false;
+    }
+    final tabType = tabs[_activeTabIndex].tabType;
+    return (_tabScrollOffsets[tabType] ?? 0) >= _hotTagHeroHeight;
+  }
 
   @override
   void initState() {
@@ -111,6 +133,9 @@ class _HupuHotTagDetailPageState extends State<HupuHotTagDetailPage> {
           ]
         : detail.tabs;
     final initialIndex = _resolveInitialIndex(detail);
+    if (_activeTabIndex != initialIndex) {
+      _activeTabIndex = initialIndex;
+    }
 
     return CupertinoPageScaffold(
       backgroundColor: const Color(0xFFF5F6F8),
@@ -118,13 +143,32 @@ class _HupuHotTagDetailPageState extends State<HupuHotTagDetailPage> {
         bottom: false,
         child: Column(
           children: [
-            _HotTagDetailHero(
-              detail: detail,
-              fallbackTitle: widget.initialTitle,
+            ClipRect(
+              child: AnimatedAlign(
+                duration: const Duration(milliseconds: 180),
+                curve: Curves.easeOutCubic,
+                alignment: Alignment.topCenter,
+                heightFactor: _isHeroCollapsed ? 0 : 1,
+                child: SizedBox(
+                  height: _hotTagHeroHeight,
+                  child: _HotTagDetailHero(
+                    detail: detail,
+                    fallbackTitle: widget.initialTitle,
+                  ),
+                ),
+              ),
             ),
             Expanded(
               child: LinkedTabView(
                 initialIndex: initialIndex,
+                onIndexChanged: (index, _) {
+                  if (_activeTabIndex == index) {
+                    return;
+                  }
+                  setState(() {
+                    _activeTabIndex = index;
+                  });
+                },
                 tabBarHeight: 48,
                 tabBarPadding: const EdgeInsets.symmetric(horizontal: 16),
                 tabSpacing: 26,
@@ -137,6 +181,18 @@ class _HupuHotTagDetailPageState extends State<HupuHotTagDetailPage> {
                           tagId: detail.tagId,
                           tabType: tab.tabType,
                           onOpenPost: _openPostDetail,
+                          onScrollOffsetChanged: (offset) {
+                            final previous = _tabScrollOffsets[tab.tabType];
+                            if (previous == offset) {
+                              return;
+                            }
+                            if (!mounted) {
+                              return;
+                            }
+                            setState(() {
+                              _tabScrollOffsets[tab.tabType] = offset;
+                            });
+                          },
                         ),
                       ),
                     )
@@ -307,11 +363,13 @@ class _HotTagThreadListTab extends StatefulWidget {
     required this.tagId,
     required this.tabType,
     required this.onOpenPost,
+    required this.onScrollOffsetChanged,
   });
 
   final int tagId;
   final int tabType;
   final Future<void> Function(HupuTagThreadItem item) onOpenPost;
+  final ValueChanged<double> onScrollOffsetChanged;
 
   @override
   State<_HotTagThreadListTab> createState() => _HotTagThreadListTabState();
@@ -338,6 +396,12 @@ class _HotTagThreadListTabState extends State<_HotTagThreadListTab>
   void initState() {
     super.initState();
     _scrollController.addListener(_handleScroll);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+      widget.onScrollOffsetChanged(0);
+    });
     _loadInitial();
   }
 
@@ -350,6 +414,9 @@ class _HotTagThreadListTabState extends State<_HotTagThreadListTab>
   }
 
   void _handleScroll() {
+    widget.onScrollOffsetChanged(
+      _scrollController.hasClients ? _scrollController.offset : 0,
+    );
     if (!_scrollController.hasClients ||
         _isInitialLoading ||
         _isLoadingMore ||

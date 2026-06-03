@@ -110,7 +110,7 @@ class _HupuZonePageState extends State<HupuZonePage> {
     return Row(
       children: [
         Container(
-          width: 96,
+          width: 88,
           color: const Color(0xFFF7F8FB),
           child: ListView.builder(
             itemCount: _categories.length,
@@ -132,8 +132,8 @@ class _HupuZonePageState extends State<HupuZonePage> {
                   });
                 },
                 child: Container(
-                  height: 56,
-                  padding: const EdgeInsets.symmetric(horizontal: 14),
+                  height: 50,
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
                   decoration: BoxDecoration(
                     color: isActive ? Colors.white : Colors.transparent,
                     border: Border(
@@ -154,7 +154,7 @@ class _HupuZonePageState extends State<HupuZonePage> {
                       color: isActive
                           ? const Color(0xFF202127)
                           : const Color(0xFF7F838C),
-                      fontSize: 16,
+                      fontSize: 14,
                       fontWeight:
                           isActive ? FontWeight.w700 : FontWeight.w500,
                     ),
@@ -166,32 +166,32 @@ class _HupuZonePageState extends State<HupuZonePage> {
         ),
         Expanded(
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
+            padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _HupuZoneLoginBanner(
                   categoryName: activeCategory.name,
                 ),
-                const SizedBox(height: 18),
+                const SizedBox(height: 12),
                 Text(
                   activeCategory.name,
                   style: const TextStyle(
                     color: Color(0xFF202127),
-                    fontSize: 18,
+                    fontSize: 16,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 12),
                 Expanded(
                   child: GridView.builder(
                     controller: _topicGridScrollController,
                     gridDelegate:
                         const SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 3,
-                      crossAxisSpacing: 12,
-                      mainAxisSpacing: 18,
-                      childAspectRatio: 0.68,
+                      crossAxisSpacing: 8,
+                      mainAxisSpacing: 12,
+                      childAspectRatio: 0.72,
                     ),
                     itemCount: activeCategory.topics.length,
                     itemBuilder: (context, index) {
@@ -351,16 +351,16 @@ class _HupuTopicGridItem extends StatelessWidget {
     return Column(
       children: [
         ClipRRect(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(10),
           child: CustomNetworkImage(
             topic.logo,
-            width: 56,
-            height: 56,
+            width: 44,
+            height: 44,
             fit: BoxFit.cover,
-            skeletonBorderRadius: BorderRadius.circular(12),
+            skeletonBorderRadius: BorderRadius.circular(10),
           ),
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: 8),
         Text(
           topic.name,
           maxLines: 2,
@@ -368,19 +368,19 @@ class _HupuTopicGridItem extends StatelessWidget {
           textAlign: TextAlign.center,
           style: const TextStyle(
             color: Color(0xFF202127),
-            fontSize: 15,
+            fontSize: 13,
             fontWeight: FontWeight.w500,
-            height: 1.25,
+            height: 1.2,
           ),
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: 2),
         Text(
           topic.countText,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: const TextStyle(
             color: Color(0xFFB0B3BB),
-            fontSize: 13,
+            fontSize: 11,
           ),
         ),
       ],

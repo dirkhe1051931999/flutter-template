@@ -10,6 +10,8 @@ class OolafPlaybackSnapshot {
     required this.queueGroupKey,
     required this.loopMode,
     required this.nowPlaying,
+    required this.positionMillis,
+    required this.wasPlaying,
   });
 
   final List<OolafTrack> queue;
@@ -17,6 +19,8 @@ class OolafPlaybackSnapshot {
   final String queueGroupKey;
   final OolafLoopMode loopMode;
   final OolafNowPlaying? nowPlaying;
+  final int positionMillis;
+  final bool wasPlaying;
 }
 
 class OolafPlaybackPersistence {
@@ -30,6 +34,8 @@ class OolafPlaybackPersistence {
     required String queueGroupKey,
     required OolafLoopMode loopMode,
     required OolafNowPlaying? nowPlaying,
+    required int positionMillis,
+    required bool wasPlaying,
   }) async {
     final prefs = await SharedPreferences.getInstance();
     final data = <String, dynamic>{
@@ -42,6 +48,8 @@ class OolafPlaybackPersistence {
       'queueIndex': queueIndex,
       'queueGroupKey': queueGroupKey,
       'loopMode': loopMode.name,
+      'positionMillis': positionMillis,
+      'wasPlaying': wasPlaying,
       'nowPlaying': nowPlaying == null
           ? null
           : <String, dynamic>{
@@ -99,6 +107,11 @@ class OolafPlaybackPersistence {
       final queueIndex = queueIndexRaw is num ? queueIndexRaw.toInt() : -1;
       final groupKeyRaw = decoded['queueGroupKey'];
       final queueGroupKey = groupKeyRaw is String ? groupKeyRaw : '';
+      final positionMillisRaw = decoded['positionMillis'];
+      final positionMillis =
+          positionMillisRaw is num ? positionMillisRaw.toInt() : 0;
+      final wasPlayingRaw = decoded['wasPlaying'];
+      final wasPlaying = wasPlayingRaw is bool ? wasPlayingRaw : false;
 
       return OolafPlaybackSnapshot(
         queue: queue,
@@ -106,6 +119,8 @@ class OolafPlaybackPersistence {
         queueGroupKey: queueGroupKey,
         loopMode: loopMode,
         nowPlaying: nowPlaying,
+        positionMillis: positionMillis < 0 ? 0 : positionMillis,
+        wasPlaying: wasPlaying,
       );
     } catch (_) {
       return null;

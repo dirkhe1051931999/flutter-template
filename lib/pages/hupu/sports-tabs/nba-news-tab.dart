@@ -304,7 +304,7 @@ class _HupuSportsNbaNewsTabState extends State<HupuSportsNbaNewsTab>
           slivers: [
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(18, 8, 18, 0),
+                padding: const EdgeInsets.fromLTRB(12, 6, 12, 0),
                 child: Column(
                   children: [
                     if (_recommendedMatch != null)
@@ -312,13 +312,13 @@ class _HupuSportsNbaNewsTabState extends State<HupuSportsNbaNewsTab>
                         match: _recommendedMatch!,
                         onTapSchedule: _openSchedulePage,
                       ),
-                    if (_recommendedMatch != null) const SizedBox(height: 30),
+                    if (_recommendedMatch != null) const SizedBox(height: 18),
                     if (_shortcuts.isNotEmpty)
                       _NbaShortcutRow(
                         items: _shortcuts,
                         onTapItem: _handleShortcutTap,
                       ),
-                    const SizedBox(height: 26),
+                    const SizedBox(height: 14),
                   ],
                 ),
               ),
@@ -329,7 +329,7 @@ class _HupuSportsNbaNewsTabState extends State<HupuSportsNbaNewsTab>
                 itemBuilder: (context, index) {
                   final item = _news[index];
                   return Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 18),
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
                     child: _NbaArticleTile(
                       article: item,
                       onTap: () => _openPostDetail(item),
@@ -350,7 +350,7 @@ class _HupuSportsNbaNewsTabState extends State<HupuSportsNbaNewsTab>
               itemBuilder: (context, index) {
                 final item = _news[index + _topNewsCount];
                 return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 18),
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
                   child: _NbaArticleTile(
                     article: item,
                     onTap: () => _openPostDetail(item),
@@ -385,7 +385,7 @@ class _NbaMatchCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(16, 22, 16, 0),
+      padding: const EdgeInsets.fromLTRB(12, 14, 12, 0),
       decoration: BoxDecoration(
         color: CupertinoColors.white,
         borderRadius: BorderRadius.circular(4),
@@ -410,9 +410,9 @@ class _NbaMatchCard extends StatelessWidget {
                   alignRight: true,
                 ),
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: 8),
               _MatchTime(match: match),
-              const SizedBox(width: 10),
+              const SizedBox(width: 8),
               Expanded(
                 child: _MatchTeam(
                   rank: '[${match.homeBigScore}]',
@@ -422,27 +422,27 @@ class _NbaMatchCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 18),
+          const SizedBox(height: 12),
           Container(height: 1, color: const Color(0xFFEDEEF2)),
           GestureDetector(
             behavior: HitTestBehavior.opaque,
             onTap: onTapSchedule,
             child: SizedBox(
-              height: 56,
+              height: 42,
               child: Row(
                 children: [
                   Text(
                     match.dateText,
                     style: const TextStyle(
-                      fontSize: 16,
+                      fontSize: 13,
                       color: Color(0xFF202127),
                     ),
                   ),
-                  const SizedBox(width: 16),
+                  const SizedBox(width: 10),
                   Text(
                     match.matchTitle,
                     style: const TextStyle(
-                      fontSize: 16,
+                      fontSize: 13,
                       color: Color(0xFF202127),
                     ),
                   ),
@@ -450,14 +450,14 @@ class _NbaMatchCard extends StatelessWidget {
                   Text(
                     match.matchCountText,
                     style: const TextStyle(
-                      fontSize: 16,
+                      fontSize: 13,
                       color: Color(0xFF202127),
                     ),
                   ),
-                  const SizedBox(width: 6),
+                  const SizedBox(width: 4),
                   const Icon(
                     CupertinoIcons.chevron_right,
-                    size: 18,
+                    size: 15,
                     color: Color(0xFF707682),
                   ),
                 ],
@@ -496,8 +496,8 @@ class _MatchTeam extends StatelessWidget {
     );
     final logo = Image.network(
       logoUrl,
-      width: 42,
-      height: 42,
+      width: 34,
+      height: 34,
       fit: BoxFit.contain,
     );
     return Row(
@@ -523,15 +523,15 @@ class _MatchTime extends StatelessWidget {
         Text(
           match.statusText,
           style: const TextStyle(
-            fontSize: 18,
+            fontSize: 15,
             fontWeight: FontWeight.w700,
             color: Color(0xFF202127),
           ),
         ),
-        const SizedBox(height: 3),
+        const SizedBox(height: 2),
         Text(
           match.iconText,
-          style: const TextStyle(fontSize: 14, color: Color(0xFF8F96A3)),
+          style: const TextStyle(fontSize: 11, color: Color(0xFF8F96A3)),
         ),
       ],
     );
@@ -575,21 +575,21 @@ class _ShortcutItem extends StatelessWidget {
       behavior: HitTestBehavior.opaque,
       onTap: onTap,
       child: SizedBox(
-        width: 68,
+        width: 58,
         child: Column(
           children: [
             Stack(
               clipBehavior: Clip.none,
               children: [
                 Container(
-                  width: 64,
-                  height: 64,
+                  width: 52,
+                  height: 52,
                   decoration: const BoxDecoration(
                     shape: BoxShape.circle,
                     color: Color(0xFFF7F7FB),
                   ),
                   child: Padding(
-                    padding: const EdgeInsets.all(12),
+                    padding: const EdgeInsets.all(10),
                     child: Image.network(displayIcon, fit: BoxFit.contain),
                   ),
                 ),
@@ -616,11 +616,11 @@ class _ShortcutItem extends StatelessWidget {
                   ),
               ],
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 7),
             Text(
               item.name,
               maxLines: 1,
-              style: const TextStyle(fontSize: 16, color: Color(0xFF202127)),
+              style: const TextStyle(fontSize: 13, color: Color(0xFF202127)),
             ),
           ],
         ),
@@ -643,23 +643,23 @@ class _NbaHotNewsSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.only(top: 6, bottom: 0),
+      margin: const EdgeInsets.only(top: 4, bottom: 0),
       decoration: const BoxDecoration(
         color: CupertinoColors.white,
         border: Border(
-          top: BorderSide(color: Color(0xFFF3F4F7), width: 8),
-          bottom: BorderSide(color: Color(0xFFF3F4F7), width: 8),
+          top: BorderSide(color: Color(0xFFF3F4F7), width: 6),
+          bottom: BorderSide(color: Color(0xFFF3F4F7), width: 6),
         ),
       ),
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(18, 24, 18, 0),
+        padding: const EdgeInsets.fromLTRB(12, 14, 12, 0),
         child: Column(
           children: [
             const _SectionTitle(
               title: '热门资讯',
               subtitle: '实时更新热门资讯',
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 2),
             ...items.map(
               (item) => _NbaArticleTile(
                 article: item,
@@ -670,21 +670,21 @@ class _NbaHotNewsSection extends StatelessWidget {
               behavior: HitTestBehavior.opaque,
               onTap: onTapMore,
               child: const SizedBox(
-                height: 64,
+                height: 44,
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
                       '查看更多',
                       style: TextStyle(
-                        fontSize: 16,
+                        fontSize: 13,
                         color: Color(0xFF4F5663),
                       ),
                     ),
                     SizedBox(width: 4),
                     Icon(
                       CupertinoIcons.chevron_right,
-                      size: 17,
+                      size: 14,
                       color: Color(0xFF8B92A0),
                     ),
                   ],
@@ -715,16 +715,16 @@ class _SectionTitle extends StatelessWidget {
           title,
           style: const TextStyle(
             color: Color(0xFF202127),
-            fontSize: 21,
+            fontSize: 16,
             fontWeight: FontWeight.w700,
           ),
         ),
-        const SizedBox(width: 12),
+        const SizedBox(width: 8),
         Text(
           subtitle,
           style: const TextStyle(
             color: Color(0xFF9AA1AE),
-            fontSize: 15,
+            fontSize: 12,
           ),
         ),
       ],
@@ -747,7 +747,7 @@ class _NbaArticleTile extends StatelessWidget {
       behavior: HitTestBehavior.opaque,
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 16),
+        padding: const EdgeInsets.symmetric(vertical: 10),
         decoration: const BoxDecoration(
           border: Border(
             bottom: BorderSide(color: Color(0xFFEDEEF2), width: 1),
@@ -765,12 +765,12 @@ class _NbaArticleTile extends StatelessWidget {
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
-                      fontSize: 20,
-                      height: 1.35,
+                      fontSize: 14,
+                      height: 1.3,
                       color: Color(0xFF202127),
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 8),
                   Row(
                     children: [
                       Expanded(
@@ -779,7 +779,7 @@ class _NbaArticleTile extends StatelessWidget {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
-                            fontSize: 15,
+                            fontSize: 11,
                             color: Color(0xFF7D8491),
                           ),
                         ),
@@ -790,13 +790,13 @@ class _NbaArticleTile extends StatelessWidget {
                 ],
               ),
             ),
-            const SizedBox(width: 16),
+            const SizedBox(width: 10),
             ClipRRect(
               borderRadius: BorderRadius.circular(4),
               child: Image.network(
                 article.imageUrl,
-                width: 118,
-                height: 84,
+                width: 96,
+                height: 68,
                 fit: BoxFit.cover,
               ),
             ),
@@ -813,12 +813,12 @@ class _PinnedBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
       color: const Color(0xFFFFECEC),
       child: const Text(
         '置顶',
         style: TextStyle(
-          fontSize: 15,
+          fontSize: 11,
           color: Color(0xFFFF453A),
           fontWeight: FontWeight.w600,
         ),

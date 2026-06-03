@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_redux/flutter_redux.dart';
 import 'package:oolaf_flutted/components/app_toast/index.dart';
 import 'package:oolaf_flutted/components/app_asset_icon/index.dart';
@@ -9,6 +8,7 @@ import 'package:oolaf_flutted/model/oolaf_music/index.dart';
 import 'package:oolaf_flutted/store/index.dart';
 import 'package:oolaf_flutted/store/oolaf_music/action.dart';
 import 'package:oolaf_flutted/store/oolaf_music/state.dart';
+import 'package:oolaf_flutted/utils/helper.dart';
 import 'package:oolaf_flutted/utils/oolaf_audio_player.dart';
 
 class OolafMusicListItem {
@@ -263,6 +263,7 @@ class OolafMusicListState extends State<OolafMusicList> {
     final queueIndex = queue.indexWhere((item) => item.cdnUrl == track.cdnUrl);
 
     try {
+      oolafAudioPlayer.markPlaybackIntent();
       store.dispatch(const OolafClearTrackLoadingAction());
       store.dispatch(
         OolafSetTrackLoadingAction(cdnUrl: track.cdnUrl, isLoading: true),
@@ -295,8 +296,11 @@ class OolafMusicListState extends State<OolafMusicList> {
           queueGroupKey: track.parentKey,
         ),
       );
-    } catch (error) {
+    } catch (error, stackTrace) {
       if (requestId == _playRequestId) {
+        customLogger.log('play oolaf music failed: $error');
+        customLogger.log(stackTrace);
+        store.dispatch(const OolafResetPlaybackAction());
         AppToast.showText('播放失败');
       }
     } finally {
@@ -364,8 +368,9 @@ class OolafMusicListState extends State<OolafMusicList> {
                 item.isFile && vm.playingUrl == item.entry.cdnUri.toString();
             final isRowLoading = item.isFile &&
                 vm.loadingUrls.contains(item.entry.cdnUri.toString());
-            final isBuffering =
-                isActive && vm.playbackState == OolafPlaybackState.buffering;
+            final isBuffering = isActive &&
+                (vm.playbackState == OolafPlaybackState.buffering ||
+                    isRowLoading);
 
             return KeyedSubtree(
               key: rowKey,
@@ -467,7 +472,7 @@ class _OolafMusicListRowState extends State<_OolafMusicListRow> {
         ? const Color(0xFFFFF2F2)
         : _isPressed
             ? const Color(0x0A000000)
-            : Colors.white;
+            : CupertinoColors.white;
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
@@ -509,7 +514,7 @@ class _OolafMusicListRowState extends State<_OolafMusicListRow> {
                 assetName:
                     widget.isExpanded ? 'chevron-down' : 'chevron-forward',
                 size: 18,
-                color: Colors.black54,
+                color: const Color(0x8A000000),
                 fallbackIcon: widget.isExpanded
                     ? CupertinoIcons.chevron_down
                     : CupertinoIcons.chevron_right,

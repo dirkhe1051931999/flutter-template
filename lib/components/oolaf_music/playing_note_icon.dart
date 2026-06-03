@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 
 class OolafPlayingNoteIcon extends StatefulWidget {
   const OolafPlayingNoteIcon({
@@ -48,7 +48,7 @@ class _OolafPlayingNoteIconState extends State<OolafPlayingNoteIcon>
             child: Transform.translate(
               offset: Offset(0, -1.5 * t),
               child: Icon(
-                Icons.music_note,
+                CupertinoIcons.music_note,
                 size: widget.size,
                 color: widget.color,
               ),
