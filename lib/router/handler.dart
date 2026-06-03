@@ -36,6 +36,7 @@ import 'package:oolaf_flutted/pages/component_demo/route_bottom_nav_bar_demo_pag
 import 'package:oolaf_flutted/pages/component_demo/route_page_header_demo_page.dart';
 import 'package:oolaf_flutted/pages/fluro/index.dart';
 import 'package:oolaf_flutted/pages/home/index.dart';
+import 'package:oolaf_flutted/pages/tetris_game/index.dart';
 import 'package:oolaf_flutted/pages/hupu/index.dart';
 import 'package:oolaf_flutted/pages/hupu/hupu_post_detail_page.dart';
 import 'package:oolaf_flutted/pages/oolaf_dynamic_audio/index.dart';
@@ -544,6 +545,17 @@ var hupuRouteHandler = Handler(
     Map<String, List<String>> params,
   ) {
     return const HupuPage();
+  },
+);
+var tetrisRouteHandler = Handler(
+  handlerFunc: (
+    BuildContext? context,
+    Map<String, List<String>> params,
+  ) {
+    return const PageScaffold(
+      title: '俄罗斯方块',
+      widget: TetrisGamePage(),
+    );
   },
 );
 var hupuPostDetailRouteHandler = Handler(

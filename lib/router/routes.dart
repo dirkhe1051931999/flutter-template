@@ -49,6 +49,7 @@ class Routes {
   static const routePageHeaderDemo = "/route-page-header-demo";
   static const weather = "/weather";
   static const hupu = "/hupu";
+  static const tetris = "/tetris";
   static const hupuPostDetail = "/hupu/post_detail";
 
   static void configureRoutes(FluroRouter router) {
@@ -214,6 +215,10 @@ class Routes {
     router.define(
       hupu,
       handler: hupuRouteHandler,
+    );
+    router.define(
+      tetris,
+      handler: tetrisRouteHandler,
     );
     router.define(
       hupuPostDetail,

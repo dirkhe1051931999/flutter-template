@@ -28,17 +28,22 @@ class AppSidebar extends StatelessWidget {
       ),
       child: SizedBox(
         width: width,
-        child: Column(
-          children: List<Widget>.generate(items.length, (index) {
-            final item = items[index];
-            final active = index == activeKey;
-            return _SidebarItem(
-              item: item,
-              active: active,
-              activeColor: activeColor,
-              onTap: item.disabled ? null : () => onChange(index),
-            );
-          }),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(24),
+          child: ListView.builder(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            itemCount: items.length,
+            itemBuilder: (context, index) {
+              final item = items[index];
+              final active = index == activeKey;
+              return _SidebarItem(
+                item: item,
+                active: active,
+                activeColor: activeColor,
+                onTap: item.disabled ? null : () => onChange(index),
+              );
+            },
+          ),
         ),
       ),
     );
@@ -94,7 +99,8 @@ class _SidebarItem extends StatelessWidget {
                         style: TextStyle(
                           color: titleColor,
                           fontSize: 14,
-                          fontWeight: active ? FontWeight.w700 : FontWeight.w600,
+                          fontWeight:
+                              active ? FontWeight.w700 : FontWeight.w600,
                         ),
                       ),
                     ),
@@ -109,7 +115,8 @@ class _SidebarItem extends StatelessWidget {
                       )
                     else if (item.badge != null)
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
                           color: active ? activeColor : const Color(0xFFE8ECF4),
                           borderRadius: BorderRadius.circular(999),
@@ -117,7 +124,9 @@ class _SidebarItem extends StatelessWidget {
                         child: Text(
                           item.badge!,
                           style: TextStyle(
-                            color: active ? const Color(0xFFFFFFFF) : const Color(0xFF667085),
+                            color: active
+                                ? const Color(0xFFFFFFFF)
+                                : const Color(0xFF667085),
                             fontSize: 11,
                             fontWeight: FontWeight.w700,
                           ),

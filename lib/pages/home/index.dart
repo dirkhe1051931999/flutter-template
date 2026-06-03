@@ -373,6 +373,12 @@ class _HomePageState extends State<HomePage> {
         routeKey: 'oolaf-dynamic-audio',
         icon: CupertinoIcons.music_note_list,
       ),
+      const HomeEntry(
+        title: '俄罗斯方块',
+        subtitle: '键盘控制、消行计分、完整单机玩法',
+        routeKey: 'tetris',
+        icon: CupertinoIcons.game_controller,
+      ),
     ];
 
     return CupertinoPageScaffold(
@@ -524,7 +530,9 @@ class _OolafDynamicAudioNowPlayingBanner extends StatelessWidget {
         String? nextTrackTitle;
         final queue = music.queue;
         final currentIndex = music.queueIndex;
-        if (queue.isNotEmpty && currentIndex >= 0 && currentIndex < queue.length) {
+        if (queue.isNotEmpty &&
+            currentIndex >= 0 &&
+            currentIndex < queue.length) {
           final nextIndex = currentIndex + 1;
           if (nextIndex < queue.length) {
             nextTrackTitle = queue[nextIndex].title;
