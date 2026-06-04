@@ -24,6 +24,7 @@ import 'package:oolaf_flutted/pages/component_demo/app_steps_demo_page.dart';
 import 'package:oolaf_flutted/pages/component_demo/app_switch_demo_page.dart';
 import 'package:oolaf_flutted/pages/component_demo/app_swipe_demo_page.dart';
 import 'package:oolaf_flutted/pages/component_demo/app_swipe_cell_demo_page.dart';
+import 'package:oolaf_flutted/pages/component_demo/app_tab_demo_page.dart';
 import 'package:oolaf_flutted/pages/component_demo/app_tag_demo_page.dart';
 import 'package:oolaf_flutted/pages/component_demo/app_text_ellipsis_demo_page.dart';
 import 'package:oolaf_flutted/pages/component_demo/app_toast_demo_page.dart';
@@ -355,6 +356,17 @@ var appStepsDemoRouteHandler = Handler(
     return const PageScaffold(
       title: 'App Steps',
       widget: AppStepsDemoPage(),
+    );
+  },
+);
+var appTabDemoRouteHandler = Handler(
+  handlerFunc: (
+    BuildContext? context,
+    Map<String, List<String>> params,
+  ) {
+    return const PageScaffold(
+      title: 'App Tab',
+      widget: AppTabDemoPage(),
     );
   },
 );

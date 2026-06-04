@@ -101,6 +101,7 @@ class HupuNbaScheduleMatch {
     required this.homeBigScore,
     required this.awayBigScore,
     required this.matchTime,
+    required this.scoreBizId,
   });
 
   final String matchId;
@@ -118,6 +119,7 @@ class HupuNbaScheduleMatch {
   final int? homeBigScore;
   final int? awayBigScore;
   final String matchTime;
+  final String scoreBizId;
 
   bool get isCompleted => matchStatus == 'COMPLETED';
 
@@ -151,6 +153,7 @@ class HupuNbaScheduleMatch {
       homeBigScore: _nullableInt(json['homeBigScore']),
       awayBigScore: _nullableInt(json['awayBigScore']),
       matchTime: _stringValue(json['matchTime']),
+      scoreBizId: _resolveScoreBizId(json),
     );
   }
 }
@@ -717,6 +720,26 @@ Map<String, dynamic> _asMap(dynamic value) {
 }
 
 String _stringValue(dynamic value) => value?.toString() ?? '';
+
+String _resolveScoreBizId(Map<String, dynamic> match) {
+  final scoreItemKey = _asMap(match['scoreItemKey']);
+  final scoreItemKeyBizId = _stringValue(scoreItemKey['outBizNo']);
+  if (scoreItemKeyBizId.isNotEmpty && scoreItemKeyBizId != 'null') {
+    return scoreItemKeyBizId;
+  }
+  for (final key in const <String>[
+    'scoreBizId',
+    'scoreId',
+    'scoreNumber',
+    'outBizNo',
+  ]) {
+    final value = _stringValue(match[key]);
+    if (value.isNotEmpty && value != 'null') {
+      return value;
+    }
+  }
+  return '';
+}
 
 int? _nullableInt(dynamic value) {
   if (value == null) {

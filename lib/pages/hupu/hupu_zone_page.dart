@@ -6,6 +6,7 @@ import 'package:oolaf_flutted/components/app_sidebar/app_sidebar_types.dart';
 import 'package:oolaf_flutted/components/app_sidebar/index.dart';
 import 'package:oolaf_flutted/components/network_img/index.dart';
 import 'package:oolaf_flutted/model/hupu/index.dart';
+import 'package:oolaf_flutted/pages/hupu/hupu_topic_detail_page.dart';
 import 'package:oolaf_flutted/pages/hupu/hupu_search_page.dart';
 import 'package:oolaf_flutted/pages/hupu/widgets/hupu_status_view.dart';
 
@@ -295,7 +296,19 @@ class _HupuZoneContentPanel extends StatelessWidget {
                 itemCount: category.topics.length,
                 itemBuilder: (context, index) {
                   final topic = category.topics[index];
-                  return _HupuTopicGridItem(topic: topic);
+                  return _HupuTopicGridItem(
+                    topic: topic,
+                    onTap: () {
+                      Navigator.of(context).push<void>(
+                        CupertinoPageRoute<void>(
+                          builder: (_) => HupuTopicDetailPage(
+                            topicId: topic.topicId,
+                            initialTitle: topic.name,
+                          ),
+                        ),
+                      );
+                    },
+                  );
                 },
               ),
             ),
@@ -377,67 +390,73 @@ class _HupuZoneLoginBanner extends StatelessWidget {
 class _HupuTopicGridItem extends StatelessWidget {
   const _HupuTopicGridItem({
     required this.topic,
+    required this.onTap,
   });
 
   final HupuTopicItem topic;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: const Color(0xFFFFFFFF).withValues(alpha: 0.74),
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(
-          color: const Color(0xFFEEF1F6),
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: const Color(0xFFFFFFFF).withValues(alpha: 0.74),
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(
+            color: const Color(0xFFEEF1F6),
+          ),
         ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(10, 14, 10, 12),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.start,
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(14),
-              child: CustomNetworkImage(
-                topic.logo,
-                width: 48,
-                height: 48,
-                fit: BoxFit.cover,
-                skeletonBorderRadius: BorderRadius.circular(14),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(10, 14, 10, 12),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(14),
+                child: CustomNetworkImage(
+                  topic.logo,
+                  width: 48,
+                  height: 48,
+                  fit: BoxFit.cover,
+                  skeletonBorderRadius: BorderRadius.circular(14),
+                ),
               ),
-            ),
-            const SizedBox(height: 10),
-            Expanded(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    topic.name,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      color: Color(0xFF202127),
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      height: 1.25,
+              const SizedBox(height: 10),
+              Expanded(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      topic.name,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Color(0xFF202127),
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        height: 1.25,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    topic.countText,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: Color(0xFFB0B3BB),
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
+                    const SizedBox(height: 6),
+                    Text(
+                      topic.countText,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Color(0xFFB0B3BB),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

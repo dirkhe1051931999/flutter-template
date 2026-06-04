@@ -4,35 +4,96 @@ import 'package:oolaf_flutted/model/hupu/index.dart';
 import 'package:oolaf_flutted/utils/request.dart';
 
 Future<HupuTopicCategoryResponse> getHupuTopicCategories() async {
-  final queryParameters = <String, String>{
-    'all': '1',
-    'tV2': '1',
-    'clientId': '174865444',
-    'crt': '1780020064798',
-    'night': '0',
-    'channel': 'wandoujia',
-    'client': 'bc9e1ef8570ddf7e',
-    '_ssid': 'PHVua25vd24gc3NpZD4=',
-    '_imei': 'bc9e1ef8570ddf7e',
-    'android_id': 'bc9e1ef8570ddf7e',
-    'time_zone': 'Asia/Shanghai',
-    'deviceId':
-        'BmLkUBaY8opLqljaY53mMP+BoqL4DdwyctGkpZAji8F1Fa0qGi/rF6jaNUzSdMcR6Ubbfhk2Xql0u737uOY3eRQ==',
-  };
+  final queryParameters = createHupuCommonQueryParameters(
+    crt: DateTime.now().millisecondsSinceEpoch.toString(),
+  )..addAll(<String, String>{
+      'all': '1',
+      'tV2': '1',
+    });
 
   queryParameters['sign'] = buildHupuSign(queryParameters);
 
-  final response = await hupuBbsClient.get(
+  final decoded = await _getBbsJson(
     '/1/8.0.32/topics',
+    queryParameters: queryParameters,
+  );
+  return HupuTopicCategoryResponse.fromJson(decoded);
+}
+
+Future<HupuTopicAdminResponse> getHupuTopicAdmins({
+  required int topicId,
+}) async {
+  final queryParameters = createHupuCommonQueryParameters(
+    crt: DateTime.now().millisecondsSinceEpoch.toString(),
+  )..addAll(<String, String>{
+      'topicId': '$topicId',
+    });
+  queryParameters['sign'] = buildHupuSign(queryParameters);
+
+  final decoded = await _getBbsJson(
+    '/1/8.0.32/bbsadmin/v1/data/listAdmins',
+    queryParameters: queryParameters,
+  );
+  return HupuTopicAdminResponse.fromJson(decoded);
+}
+
+Future<HupuTopicDetailResponse> getHupuTopicDetail({
+  required int topicId,
+}) async {
+  final queryParameters = createHupuCommonQueryParameters(
+    crt: DateTime.now().millisecondsSinceEpoch.toString(),
+  );
+  queryParameters['sign'] = buildHupuSign(queryParameters);
+
+  final decoded = await _getBbsJson(
+    '/1/8.0.32/topics/$topicId',
+    queryParameters: queryParameters,
+  );
+  return HupuTopicDetailResponse.fromJson(decoded);
+}
+
+Future<HupuTopicThreadPage> getHupuTopicThreads({
+  required int topicId,
+  required int tabType,
+  int page = 1,
+  int stamp = 0,
+  int width = 518,
+  int? zoneId,
+}) async {
+  final queryParameters = createHupuCommonQueryParameters(
+    crt: DateTime.now().millisecondsSinceEpoch.toString(),
+  )..addAll(<String, String>{
+      'topic_id': '$topicId',
+      'tab_type': '$tabType',
+      'page': '$page',
+      'stamp': '$stamp',
+      'width': '$width',
+    });
+  if (zoneId != null && zoneId > 0) {
+    queryParameters['zoneId'] = '$zoneId';
+  }
+  queryParameters['sign'] = buildHupuSign(queryParameters);
+
+  final decoded = await _getBbsJson(
+    '/1/8.0.32/topics/getTopicThreads',
+    queryParameters: queryParameters,
+  );
+  return HupuTopicThreadPage.fromJson(decoded);
+}
+
+Future<Map<String, dynamic>> _getBbsJson(
+  String path, {
+  required Map<String, String> queryParameters,
+}) async {
+  final response = await hupuBbsClient.get(
+    path,
     queryParameters: queryParameters,
     options: Options(
       responseType: ResponseType.bytes,
-      headers: const {
+      headers: const <String, String>{
         'Accept': 'application/json',
       },
     ),
   );
-
-  final decoded = decodeHupuJson(response.data);
-  return HupuTopicCategoryResponse.fromJson(decoded);
+  return decodeHupuJson(response.data);
 }

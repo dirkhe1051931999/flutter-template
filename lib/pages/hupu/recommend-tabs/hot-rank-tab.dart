@@ -11,6 +11,7 @@ import 'package:oolaf_flutted/components/linked_tab_view/index.dart';
 import 'package:oolaf_flutted/components/network_img/index.dart';
 import 'package:oolaf_flutted/model/hupu/index.dart';
 import 'package:oolaf_flutted/pages/hupu/hupu_post_detail_page.dart';
+import 'package:oolaf_flutted/pages/hupu/hupu_user_detail_helper.dart';
 import 'package:oolaf_flutted/pages/hupu/recommend-tabs/hot-tag-detail-page.dart';
 import 'package:oolaf_flutted/pages/hupu/recommend-tabs/hot-tag-ranking-page.dart';
 import 'package:oolaf_flutted/pages/hupu/widgets/hupu_load_more_footer.dart';
@@ -415,6 +416,19 @@ class _HupuRecommendHotRankTabState extends State<HupuRecommendHotRankTab>
     );
   }
 
+  Future<void> _openUserDetail({
+    required String puid,
+    required String nickname,
+    required String avatar,
+  }) {
+    return openHupuUserDetail(
+      context,
+      puid: puid,
+      initialNickname: nickname,
+      initialAvatar: avatar,
+    );
+  }
+
   Widget _buildRefreshIndicator(
     BuildContext context,
     LinkedTabRefreshState state,
@@ -524,6 +538,35 @@ class _HupuRecommendHotRankTabState extends State<HupuRecommendHotRankTab>
                     child: _HupuHotRankCard(
                       item: items[index],
                       onTap: () => _openPostDetail(items[index]),
+                      onTapAuthor: items[index].thread.puid.isEmpty
+                          ? null
+                          : () => _openUserDetail(
+                                puid: items[index].thread.puid,
+                                nickname: items[index].thread.nickname,
+                                avatar: items[index].thread.header,
+                              ),
+                      onTapLightReplyAuthor:
+                          items[index].thread.lightReplies.isEmpty ||
+                                  items[index].thread.lightReplies.first.puid
+                                      .isEmpty
+                              ? null
+                              : () => _openUserDetail(
+                                    puid: items[index]
+                                        .thread
+                                        .lightReplies
+                                        .first
+                                        .puid,
+                                    nickname: items[index]
+                                        .thread
+                                        .lightReplies
+                                        .first
+                                        .nickname,
+                                    avatar: items[index]
+                                        .thread
+                                        .lightReplies
+                                        .first
+                                        .header,
+                                  ),
                     ),
                   );
                 },
@@ -789,10 +832,14 @@ class _HupuHotRankCard extends StatelessWidget {
   const _HupuHotRankCard({
     required this.item,
     required this.onTap,
+    this.onTapAuthor,
+    this.onTapLightReplyAuthor,
   });
 
   final HupuHotRankItem item;
   final VoidCallback onTap;
+  final VoidCallback? onTapAuthor;
+  final VoidCallback? onTapLightReplyAuthor;
 
   @override
   Widget build(BuildContext context) {
@@ -824,41 +871,49 @@ class _HupuHotRankCard extends StatelessWidget {
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                ClipOval(
-                  child: CustomNetworkImage(
-                    thread.header,
-                    width: 38,
-                    height: 38,
-                    skeletonBorderRadius: BorderRadius.circular(19),
+                GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: onTapAuthor,
+                  child: ClipOval(
+                    child: CustomNetworkImage(
+                      thread.header,
+                      width: 38,
+                      height: 38,
+                      skeletonBorderRadius: BorderRadius.circular(19),
+                    ),
                   ),
                 ),
                 const SizedBox(width: 10),
                 Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        thread.nickname.isEmpty ? '虎扑用户' : thread.nickname,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: Color(0xFF30343B),
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: onTapAuthor,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          thread.nickname.isEmpty ? '虎扑用户' : thread.nickname,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: Color(0xFF30343B),
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        _formatThreadMeta(thread, item.createTimeText),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: Color(0xFF8E8E93),
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
+                        const SizedBox(height: 4),
+                        Text(
+                          _formatThreadMeta(thread, item.createTimeText),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: Color(0xFF8E8E93),
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ],
@@ -892,7 +947,10 @@ class _HupuHotRankCard extends StatelessWidget {
             ],
             if (lightReply != null && lightReply.content.trim().isNotEmpty) ...[
               const SizedBox(height: 12),
-              _HupuHotRankLightReplyCard(reply: lightReply),
+              _HupuHotRankLightReplyCard(
+                reply: lightReply,
+                onTapUser: onTapLightReplyAuthor,
+              ),
             ],
             const SizedBox(height: 14),
             Row(
@@ -1082,9 +1140,11 @@ class _HupuHotRankMediaGrid extends StatelessWidget {
 class _HupuHotRankLightReplyCard extends StatelessWidget {
   const _HupuHotRankLightReplyCard({
     required this.reply,
+    this.onTapUser,
   });
 
   final HupuHotRankLightReply reply;
+  final VoidCallback? onTapUser;
 
   @override
   Widget build(BuildContext context) {
@@ -1101,12 +1161,16 @@ class _HupuHotRankLightReplyCard extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          ClipOval(
-            child: CustomNetworkImage(
-              reply.header,
-              width: 26,
-              height: 26,
-              skeletonBorderRadius: BorderRadius.circular(13),
+          GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: onTapUser,
+            child: ClipOval(
+              child: CustomNetworkImage(
+                reply.header,
+                width: 26,
+                height: 26,
+                skeletonBorderRadius: BorderRadius.circular(13),
+              ),
             ),
           ),
           const SizedBox(width: 10),
@@ -1117,14 +1181,18 @@ class _HupuHotRankLightReplyCard extends StatelessWidget {
                 Row(
                   children: [
                     Expanded(
-                      child: Text(
-                        reply.nickname.isEmpty ? '虎扑用户' : reply.nickname,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: Color(0xFF5A5F69),
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: onTapUser,
+                        child: Text(
+                          reply.nickname.isEmpty ? '虎扑用户' : reply.nickname,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: Color(0xFF5A5F69),
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
                       ),
                     ),

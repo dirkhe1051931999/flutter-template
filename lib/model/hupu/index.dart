@@ -1,9 +1,17 @@
 export 'feed.dart';
 export 'home_team.dart';
 export 'hot_rank.dart';
+export 'nba_match_detail.dart';
+export 'nba_match_live.dart';
+export 'nba_match_score.dart';
+export 'nba_match_score_detail.dart';
+export 'nba_match_stats.dart';
 export 'nba_schedule.dart';
 export 'nba_top_tab.dart';
 export 'post_detail.dart';
 export 'search.dart';
 export 'tag_detail.dart';
 export 'topic.dart';
+export 'topic_detail.dart';
+export 'user_identity.dart';
+export 'user.dart';

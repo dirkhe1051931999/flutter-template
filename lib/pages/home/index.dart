@@ -202,6 +202,12 @@ class _HomePageState extends State<HomePage> {
         icon: CupertinoIcons.sidebar_left,
       ),
       const HomeEntry(
+        title: 'App Tab',
+        subtitle: 'Vant Tab 标签页、line/card、滚动与滑动切换',
+        routeKey: 'app-tab-demo',
+        icon: CupertinoIcons.rectangle_split_3x1,
+      ),
+      const HomeEntry(
         title: 'App Text Ellipsis',
         subtitle: 'Vant TextEllipsis 多行省略、展开收起和头中尾截断',
         routeKey: 'app-text-ellipsis-demo',
@@ -295,6 +301,7 @@ class _HomePageState extends State<HomePage> {
             'app-sidebar-demo',
             'app-stepper-demo',
             'app-steps-demo',
+            'app-tab-demo',
             'app-switch-demo',
             'app-tag-demo',
             'app-text-ellipsis-demo',

@@ -9,6 +9,7 @@ import 'package:oolaf_flutted/components/search_view/home.dart';
 import 'package:oolaf_flutted/components/search_view/types.dart';
 import 'package:oolaf_flutted/model/hupu/index.dart';
 import 'package:oolaf_flutted/pages/hupu/hupu_post_detail_page.dart';
+import 'package:oolaf_flutted/pages/hupu/hupu_user_detail_helper.dart';
 import 'package:oolaf_flutted/pages/hupu/recommend-tabs/hot-tag-detail-page.dart';
 import 'package:oolaf_flutted/pages/hupu/widgets/hupu_status_view.dart';
 import 'package:oolaf_flutted/utils/hupu_search_history_persistence.dart';
@@ -367,6 +368,15 @@ class _HupuSearchPageState extends State<HupuSearchPage> {
     );
   }
 
+  Future<void> _openUserDetail(HupuSearchUserItem item) async {
+    await openHupuUserDetail(
+      context,
+      puid: item.puid,
+      initialNickname: item.username,
+      initialAvatar: item.header,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (!_isShowingResults) {
@@ -461,6 +471,7 @@ class _HupuSearchPageState extends State<HupuSearchPage> {
           hasMore: _hasMoreUsers,
           onLoadMore: _loadMoreUsers,
           onTapMore: _openUserMorePage,
+          onTapItem: _openUserDetail,
         ),
       );
     }
@@ -504,6 +515,7 @@ class _HupuSearchPageState extends State<HupuSearchPage> {
             _HupuUserSection(
               section: _userSection,
               onTapMore: _openUserMorePage,
+              onTapItem: _openUserDetail,
             ),
           if (_matchSection.items.isNotEmpty)
             _HupuMatchSection(section: _matchSection),
@@ -648,8 +660,9 @@ class _HupuTabItem extends StatelessWidget {
             Text(
               title,
               style: TextStyle(
-                color:
-                    isActive ? const Color(0xFF202127) : const Color(0xFF8E8E93),
+                color: isActive
+                    ? const Color(0xFF202127)
+                    : const Color(0xFF8E8E93),
                 fontSize: 17,
                 fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
               ),
@@ -1009,6 +1022,7 @@ class _HupuUserSection extends StatelessWidget {
     this.hasMore = false,
     this.onLoadMore,
     this.onTapMore,
+    this.onTapItem,
   });
 
   final HupuSearchUserSection section;
@@ -1016,6 +1030,7 @@ class _HupuUserSection extends StatelessWidget {
   final bool hasMore;
   final Future<void> Function()? onLoadMore;
   final VoidCallback? onTapMore;
+  final ValueChanged<HupuSearchUserItem>? onTapItem;
 
   @override
   Widget build(BuildContext context) {
@@ -1032,74 +1047,78 @@ class _HupuUserSection extends StatelessWidget {
           onTapMore: onTapMore,
         ),
         ...section.items.map(
-          (item) => Container(
-            color: CupertinoColors.white,
-            padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
-            child: Column(
-              children: [
-                Row(
-                  children: [
-                    ClipOval(
-                      child: CustomNetworkImage(
-                        item.header,
-                        width: 42,
-                        height: 42,
-                        skeletonBorderRadius: BorderRadius.circular(21),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _HupuInlineHighlightText(
-                            text: item.username.trim().isEmpty
-                                ? '虎扑用户'
-                                : item.username,
-                            maxLines: 1,
-                            style: const TextStyle(
-                              color: Color(0xFF202127),
-                              fontSize: 16,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            item.userInfo.trim().isEmpty
-                                ? '被推荐${item.recNum} 被点亮${item.lights} 被${item.fans}人关注'
-                                : item.userInfo,
-                            style: const TextStyle(
-                              color: Color(0xFF8F96A3),
-                              fontSize: 13,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 8,
-                      ),
-                      color: const Color(0xFFFF1E2D),
-                      child: const Text(
-                        '+ 关注',
-                        style: TextStyle(
-                          color: CupertinoColors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
+          (item) => GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: onTapItem == null ? null : () => onTapItem!(item),
+            child: Container(
+              color: CupertinoColors.white,
+              padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      ClipOval(
+                        child: CustomNetworkImage(
+                          item.header,
+                          width: 42,
+                          height: 42,
+                          skeletonBorderRadius: BorderRadius.circular(21),
                         ),
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Container(
-                  height: 1,
-                  color: const Color(0xFFF0F1F4),
-                ),
-              ],
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _HupuInlineHighlightText(
+                              text: item.username.trim().isEmpty
+                                  ? '虎扑用户'
+                                  : item.username,
+                              maxLines: 1,
+                              style: const TextStyle(
+                                color: Color(0xFF202127),
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              item.userInfo.trim().isEmpty
+                                  ? '被推荐${item.recNum} 被点亮${item.lights} 被${item.fans}人关注'
+                                  : item.userInfo,
+                              style: const TextStyle(
+                                color: Color(0xFF8F96A3),
+                                fontSize: 13,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 8,
+                        ),
+                        color: const Color(0xFFFF1E2D),
+                        child: const Text(
+                          '+ 关注',
+                          style: TextStyle(
+                            color: CupertinoColors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Container(
+                    height: 1,
+                    color: const Color(0xFFF0F1F4),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -1582,10 +1601,12 @@ class _HupuSearchPostMorePageState extends State<HupuSearchPostMorePage> {
                       if (item.postSort == _activeSort) {
                         return;
                       }
-                      unawaited(_loadPosts(reset: true, nextSort: item.postSort));
+                      unawaited(
+                          _loadPosts(reset: true, nextSort: item.postSort));
                     },
                     child: Padding(
-                      padding: const EdgeInsets.only(right: 28, top: 10, bottom: 9),
+                      padding:
+                          const EdgeInsets.only(right: 28, top: 10, bottom: 9),
                       child: Text(
                         item.name,
                         style: TextStyle(
@@ -1875,7 +1896,9 @@ class _HupuSearchTopicMorePageState extends State<HupuSearchTopicMorePage> {
                           ),
                           const SizedBox(height: 6),
                           Text(
-                            item.info.trim().isEmpty ? '${item.discussNum}讨论' : item.info,
+                            item.info.trim().isEmpty
+                                ? '${item.discussNum}讨论'
+                                : item.info,
                             style: const TextStyle(
                               color: Color(0xFF8F96A3),
                               fontSize: 14,
@@ -2020,6 +2043,15 @@ class _HupuSearchUserMorePageState extends State<HupuSearchUserMorePage> {
     unawaited(_loadUsers(reset: false));
   }
 
+  Future<void> _openUserDetail(HupuSearchUserItem item) async {
+    await openHupuUserDetail(
+      context,
+      puid: item.puid,
+      initialNickname: item.username,
+      initialAvatar: item.header,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return CupertinoPageScaffold(
@@ -2084,74 +2116,78 @@ class _HupuSearchUserMorePageState extends State<HupuSearchUserMorePage> {
         }
 
         final item = _section.items[index];
-        return Container(
-          color: CupertinoColors.white,
-          padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
-          child: Column(
-            children: [
-              Row(
-                children: [
-                  ClipOval(
-                    child: CustomNetworkImage(
-                      item.header,
-                      width: 42,
-                      height: 42,
-                      skeletonBorderRadius: BorderRadius.circular(21),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _HupuInlineHighlightText(
-                          text: item.username.trim().isEmpty
-                              ? '虎扑用户'
-                              : item.username,
-                          maxLines: 1,
-                          style: const TextStyle(
-                            color: Color(0xFF202127),
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          item.userInfo.trim().isEmpty
-                              ? '被推荐${item.recNum} 被点亮${item.lights} 被${item.fans}人关注'
-                              : item.userInfo,
-                          style: const TextStyle(
-                            color: Color(0xFF8F96A3),
-                            fontSize: 13,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 8,
-                    ),
-                    color: const Color(0xFFFF1E2D),
-                    child: const Text(
-                      '+ 关注',
-                      style: TextStyle(
-                        color: CupertinoColors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
+        return GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () => _openUserDetail(item),
+          child: Container(
+            color: CupertinoColors.white,
+            padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                    ClipOval(
+                      child: CustomNetworkImage(
+                        item.header,
+                        width: 42,
+                        height: 42,
+                        skeletonBorderRadius: BorderRadius.circular(21),
                       ),
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Container(
-                height: 1,
-                color: const Color(0xFFF0F1F4),
-              ),
-            ],
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _HupuInlineHighlightText(
+                            text: item.username.trim().isEmpty
+                                ? '虎扑用户'
+                                : item.username,
+                            maxLines: 1,
+                            style: const TextStyle(
+                              color: Color(0xFF202127),
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            item.userInfo.trim().isEmpty
+                                ? '被推荐${item.recNum} 被点亮${item.lights} 被${item.fans}人关注'
+                                : item.userInfo,
+                            style: const TextStyle(
+                              color: Color(0xFF8F96A3),
+                              fontSize: 13,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 8,
+                      ),
+                      color: const Color(0xFFFF1E2D),
+                      child: const Text(
+                        '+ 关注',
+                        style: TextStyle(
+                          color: CupertinoColors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Container(
+                  height: 1,
+                  color: const Color(0xFFF0F1F4),
+                ),
+              ],
+            ),
           ),
         );
       },

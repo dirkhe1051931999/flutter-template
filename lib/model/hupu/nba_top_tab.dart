@@ -87,33 +87,65 @@ class HupuNbaShortcut {
 class HupuNbaRecommendedMatch {
   const HupuNbaRecommendedMatch({
     required this.matchId,
+    required this.matchStatus,
     required this.homeTeamName,
     required this.awayTeamName,
     required this.homeTeamLogo,
     required this.awayTeamLogo,
+    required this.homeRank,
+    required this.awayRank,
+    required this.homeScore,
+    required this.awayScore,
     required this.homeBigScore,
     required this.awayBigScore,
     required this.statusText,
+    required this.matchStatusChinese,
     required this.iconText,
     required this.dateText,
     required this.matchTitle,
     required this.matchCountText,
     required this.matchListLink,
+    required this.scoreBizId,
   });
 
   final String matchId;
+  final String matchStatus;
   final String homeTeamName;
   final String awayTeamName;
   final String homeTeamLogo;
   final String awayTeamLogo;
+  final String homeRank;
+  final String awayRank;
+  final int? homeScore;
+  final int? awayScore;
   final int homeBigScore;
   final int awayBigScore;
   final String statusText;
+  final String matchStatusChinese;
   final String iconText;
   final String dateText;
   final String matchTitle;
   final String matchCountText;
   final String matchListLink;
+  final String scoreBizId;
+
+  bool get isInProgress => matchStatus == 'INPROGRESS';
+
+  bool get hasScore => homeScore != null && awayScore != null;
+
+  String get awayRankText => _formatRank(awayRank);
+
+  String get homeRankText => _formatRank(homeRank);
+
+  String get displayStatusText {
+    if (statusText.isNotEmpty) {
+      return statusText;
+    }
+    if (matchStatusChinese.isNotEmpty) {
+      return matchStatusChinese;
+    }
+    return '';
+  }
 
   factory HupuNbaRecommendedMatch.fromJson(Map<String, dynamic> json) {
     final matchList = json['matchList'];
@@ -125,18 +157,25 @@ class HupuNbaRecommendedMatch {
 
     return HupuNbaRecommendedMatch(
       matchId: _stringValue(firstMatch['matchId']),
+      matchStatus: _stringValue(firstMatch['matchStatus']),
       homeTeamName: _stringValue(firstMatch['homeTeamName']),
       awayTeamName: _stringValue(firstMatch['awayTeamName']),
       homeTeamLogo: _stringValue(firstMatch['homeTeamLogo']),
       awayTeamLogo: _stringValue(firstMatch['awayTeamLogo']),
+      homeRank: _stringValue(firstMatch['homeRank']),
+      awayRank: _stringValue(firstMatch['awayRank']),
+      homeScore: _nullableInt(firstMatch['homeScore']),
+      awayScore: _nullableInt(firstMatch['awayScore']),
       homeBigScore: _intValue(firstMatch['homeBigScore']),
       awayBigScore: _intValue(firstMatch['awayBigScore']),
       statusText: _stringValue(status['desc']),
+      matchStatusChinese: _stringValue(firstMatch['matchStatusChinese']),
       iconText: _stringValue(firstMatch['iconText']),
       dateText: _stringValue(toast['date']),
       matchTitle: _stringValue(toast['title']),
       matchCountText: _stringValue(toast['matchCountText']),
       matchListLink: _stringValue(toast['matchListLink']),
+      scoreBizId: _resolveScoreBizId(firstMatch),
     );
   }
 }
@@ -217,6 +256,33 @@ Map<String, dynamic> _asMap(dynamic value) {
 
 String _stringValue(dynamic value) => value?.toString() ?? '';
 
+String _resolveScoreBizId(Map<String, dynamic> match) {
+  final scoreItemKey = _asMap(match['scoreItemKey']);
+  final scoreItemKeyBizId = _stringValue(scoreItemKey['outBizNo']);
+  if (scoreItemKeyBizId.isNotEmpty && scoreItemKeyBizId != 'null') {
+    return scoreItemKeyBizId;
+  }
+  for (final key in const <String>[
+    'scoreBizId',
+    'scoreId',
+    'scoreNumber',
+    'outBizNo',
+  ]) {
+    final value = _stringValue(match[key]);
+    if (value.isNotEmpty && value != 'null') {
+      return value;
+    }
+  }
+  return '';
+}
+
+String _formatRank(String rank) {
+  if (rank.isEmpty || rank == '0' || rank == 'null') {
+    return '';
+  }
+  return '[$rank]';
+}
+
 int _intValue(dynamic value) {
   if (value is int) {
     return value;
@@ -225,6 +291,19 @@ int _intValue(dynamic value) {
     return value.toInt();
   }
   return int.tryParse(value?.toString() ?? '') ?? 0;
+}
+
+int? _nullableInt(dynamic value) {
+  if (value == null) {
+    return null;
+  }
+  if (value is int) {
+    return value;
+  }
+  if (value is num) {
+    return value.toInt();
+  }
+  return int.tryParse(value.toString());
 }
 
 List<HupuNbaNewsItem> _parseNewsItems(dynamic rawItems) {

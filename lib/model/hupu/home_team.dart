@@ -1,3 +1,5 @@
+import 'user_identity.dart';
+
 class HupuAttentionTeamListData {
   const HupuAttentionTeamListData({
     required this.teams,
@@ -162,6 +164,7 @@ class HupuHomeTeamTopicThreadPage {
 class HupuHomeTeamTopicThread {
   const HupuHomeTeamTopicThread({
     required this.tid,
+    required this.puid,
     required this.title,
     required this.userName,
     required this.timeText,
@@ -171,6 +174,7 @@ class HupuHomeTeamTopicThread {
   });
 
   final String tid;
+  final String puid;
   final String title;
   final String userName;
   final String timeText;
@@ -181,6 +185,19 @@ class HupuHomeTeamTopicThread {
   factory HupuHomeTeamTopicThread.fromJson(Map<String, dynamic> json) {
     return HupuHomeTeamTopicThread(
       tid: _stringValue(json['tid']),
+      puid: resolveHupuPuid(
+        directValues: <dynamic>[
+          json['puid'],
+          json['user_id'],
+          json['uid'],
+        ],
+        schemaCandidates: <String>[
+          _stringValue(json['schema_url']),
+          _stringValue(json['schemaUrl']),
+          _stringValue(json['user_url']),
+          _stringValue(json['userUrl']),
+        ],
+      ),
       title: _stringValue(json['title']),
       userName: _stringValue(json['user_name']),
       timeText: _stringValue(json['time']),

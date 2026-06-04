@@ -6,6 +6,7 @@ import 'package:oolaf_flutted/components/linked_tab_view/index.dart';
 import 'package:oolaf_flutted/components/network_img/index.dart';
 import 'package:oolaf_flutted/model/hupu/index.dart';
 import 'package:oolaf_flutted/pages/hupu/hupu_post_detail_page.dart';
+import 'package:oolaf_flutted/pages/hupu/hupu_user_detail_helper.dart';
 import 'package:oolaf_flutted/pages/hupu/widgets/hupu_load_more_footer.dart';
 import 'package:oolaf_flutted/pages/hupu/widgets/hupu_refresh_indicator.dart';
 import 'package:oolaf_flutted/pages/hupu/widgets/hupu_status_view.dart';
@@ -207,6 +208,15 @@ class _HupuHomeTeamPageState extends State<HupuHomeTeamPage> {
     );
   }
 
+  Future<void> _openHomeTeamThreadUser(HupuHomeTeamTopicThread item) {
+    return openHupuUserDetail(
+      context,
+      puid: item.puid,
+      initialNickname: item.userName,
+      initialAvatar: '',
+    );
+  }
+
   Widget _buildTabChild(HupuHomeTeamTab tab) {
     if (tab.key == 'bbs') {
       return _HomeTeamBbsTab(
@@ -218,6 +228,7 @@ class _HupuHomeTeamPageState extends State<HupuHomeTeamPage> {
             initialTitle: thread.title,
           );
         },
+        onTapUser: _openHomeTeamThreadUser,
       );
     }
     if (tab.key == 'news') {
@@ -609,11 +620,13 @@ class _HomeTeamBbsTab extends StatefulWidget {
     required this.topicId,
     required this.topicName,
     required this.onTapThread,
+    required this.onTapUser,
   });
 
   final int topicId;
   final String topicName;
   final Future<void> Function(HupuHomeTeamTopicThread item) onTapThread;
+  final Future<void> Function(HupuHomeTeamTopicThread item) onTapUser;
 
   @override
   State<_HomeTeamBbsTab> createState() => _HomeTeamBbsTabState();
@@ -844,6 +857,7 @@ class _HomeTeamBbsTabState extends State<_HomeTeamBbsTab>
             return _HomeTeamThreadTile(
               item: item,
               onTap: () => widget.onTapThread(item),
+              onTapUser: item.puid.isEmpty ? null : () => widget.onTapUser(item),
             );
           },
         ),
@@ -866,10 +880,12 @@ class _HomeTeamThreadTile extends StatelessWidget {
   const _HomeTeamThreadTile({
     required this.item,
     required this.onTap,
+    this.onTapUser,
   });
 
   final HupuHomeTeamTopicThread item;
   final VoidCallback onTap;
+  final VoidCallback? onTapUser;
 
   @override
   Widget build(BuildContext context) {
@@ -904,14 +920,18 @@ class _HomeTeamThreadTile extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 10),
-                  Text(
-                    item.userName,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: Color(0xFF8D95A4),
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
+                  GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: onTapUser,
+                    child: Text(
+                      item.userName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Color(0xFF8D95A4),
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
                   const SizedBox(height: 8),

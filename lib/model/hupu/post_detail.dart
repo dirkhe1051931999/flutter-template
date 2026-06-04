@@ -1,3 +1,5 @@
+import 'user_identity.dart';
+
 class HupuPostDetail {
   const HupuPostDetail({
     required this.tid,
@@ -343,10 +345,12 @@ class HupuPostComment {
 class HupuPostQuote {
   const HupuPostQuote({
     required this.userName,
+    required this.userId,
     required this.content,
   });
 
   final String userName;
+  final String userId;
   final String content;
 
   factory HupuPostQuote.fromJson(Map<String, dynamic> json) {
@@ -362,6 +366,19 @@ class HupuPostQuote {
 
     return HupuPostQuote(
       userName: userName,
+      userId: resolveHupuPuid(
+        directValues: <dynamic>[
+          json['puid'],
+          json['userId'],
+          json['uid'],
+        ],
+        schemaCandidates: <String>[
+          json['schema_url']?.toString() ?? '',
+          json['schemaUrl']?.toString() ?? '',
+          json['url']?.toString() ?? '',
+          if (header is List) ...header.map((item) => item?.toString() ?? ''),
+        ],
+      ),
       content: json['content']?.toString() ?? '',
     );
   }

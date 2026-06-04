@@ -9,6 +9,7 @@ import 'package:oolaf_flutted/components/network_img/index.dart';
 import 'package:oolaf_flutted/components/linked_tab_view/index.dart';
 import 'package:oolaf_flutted/model/hupu/index.dart';
 import 'package:oolaf_flutted/pages/hupu/hupu_home_team_page.dart';
+import 'package:oolaf_flutted/pages/hupu/hupu_nba_match_detail_page.dart';
 import 'package:oolaf_flutted/pages/hupu/hupu_nba_hot_news_page.dart';
 import 'package:oolaf_flutted/pages/hupu/hupu_nba_schedule_page.dart';
 import 'package:oolaf_flutted/pages/hupu/hupu_post_detail_page.dart';
@@ -247,6 +248,20 @@ class _HupuSportsNbaNewsTabState extends State<HupuSportsNbaNewsTab>
     );
   }
 
+  Future<void> _openMatchDetail(HupuNbaRecommendedMatch match) async {
+    if (match.matchId.isEmpty) {
+      return;
+    }
+    await Navigator.of(context).push<void>(
+      CupertinoPageRoute<void>(
+        builder: (_) => HupuNbaMatchDetailPage(
+          matchId: match.matchId,
+          scoreBizId: match.scoreBizId,
+        ),
+      ),
+    );
+  }
+
   Future<void> _handleShortcutTap(HupuNbaShortcut shortcut) async {
     if (_isHomeTeamShortcut(shortcut)) {
       await _openHomeTeamPage();
@@ -311,6 +326,7 @@ class _HupuSportsNbaNewsTabState extends State<HupuSportsNbaNewsTab>
                     if (_recommendedMatch != null)
                       _NbaMatchCard(
                         match: _recommendedMatch!,
+                        onTapCard: _openMatchDetail,
                         onTapSchedule: _openSchedulePage,
                       ),
                     if (_recommendedMatch != null) const SizedBox(height: 18),
@@ -377,95 +393,108 @@ class _HupuSportsNbaNewsTabState extends State<HupuSportsNbaNewsTab>
 class _NbaMatchCard extends StatelessWidget {
   const _NbaMatchCard({
     required this.match,
+    required this.onTapCard,
     required this.onTapSchedule,
   });
 
   final HupuNbaRecommendedMatch match;
+  final ValueChanged<HupuNbaRecommendedMatch> onTapCard;
   final VoidCallback onTapSchedule;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(12, 14, 12, 0),
-      decoration: BoxDecoration(
-        color: CupertinoColors.white,
-        borderRadius: BorderRadius.circular(4),
-        border: Border.all(color: const Color(0xFFE8E9ED)),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x12000000),
-            blurRadius: 8,
-            offset: Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: _MatchTeam(
-                  rank: '[${match.awayBigScore}]',
-                  name: match.awayTeamName,
-                  logoUrl: match.awayTeamLogo,
-                  alignRight: true,
+    final shouldShowScore = match.isInProgress && match.hasScore;
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => onTapCard(match),
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(12, 14, 12, 0),
+        decoration: BoxDecoration(
+          color: CupertinoColors.white,
+          borderRadius: BorderRadius.circular(4),
+          border: Border.all(color: const Color(0xFFE8E9ED)),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x12000000),
+              blurRadius: 8,
+              offset: Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: _MatchTeam(
+                    rank: match.awayRankText,
+                    name: match.awayTeamName,
+                    logoUrl: match.awayTeamLogo,
+                    alignRight: true,
+                  ),
                 ),
-              ),
-              const SizedBox(width: 8),
-              _MatchTime(match: match),
-              const SizedBox(width: 8),
-              Expanded(
-                child: _MatchTeam(
-                  rank: '[${match.homeBigScore}]',
-                  name: match.homeTeamName,
-                  logoUrl: match.homeTeamLogo,
+                const SizedBox(width: 8),
+                shouldShowScore
+                    ? _MatchScore(
+                        awayScore: match.awayScore,
+                        homeScore: match.homeScore,
+                        statusText: match.displayStatusText,
+                      )
+                    : _MatchTime(match: match),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _MatchTeam(
+                    rank: match.homeRankText,
+                    name: match.homeTeamName,
+                    logoUrl: match.homeTeamLogo,
+                  ),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Container(height: 1, color: const Color(0xFFEDEEF2)),
-          GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: onTapSchedule,
-            child: SizedBox(
-              height: 42,
-              child: Row(
-                children: [
-                  Text(
-                    match.dateText,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      color: Color(0xFF202127),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Container(height: 1, color: const Color(0xFFEDEEF2)),
+            GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: onTapSchedule,
+              child: SizedBox(
+                height: 42,
+                child: Row(
+                  children: [
+                    Text(
+                      match.dateText,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: Color(0xFF202127),
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 10),
-                  Text(
-                    match.matchTitle,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      color: Color(0xFF202127),
+                    const SizedBox(width: 10),
+                    Text(
+                      match.matchTitle,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: Color(0xFF202127),
+                      ),
                     ),
-                  ),
-                  const Spacer(),
-                  Text(
-                    match.matchCountText,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      color: Color(0xFF202127),
+                    const Spacer(),
+                    Text(
+                      match.matchCountText,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: Color(0xFF202127),
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 4),
-                  const Icon(
-                    CupertinoIcons.chevron_right,
-                    size: 15,
-                    color: Color(0xFF707682),
-                  ),
-                ],
+                    const SizedBox(width: 4),
+                    const Icon(
+                      CupertinoIcons.chevron_right,
+                      size: 15,
+                      color: Color(0xFF707682),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -486,11 +515,12 @@ class _MatchTeam extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final rankText = rank.isEmpty ? '' : '$rank ';
     final text = FittedBox(
       fit: BoxFit.scaleDown,
       alignment: alignRight ? Alignment.centerRight : Alignment.centerLeft,
       child: Text(
-        '$rank $name',
+        '$rankText$name',
         maxLines: 1,
         style: const TextStyle(fontSize: 16, color: Color(0xFF202127)),
       ),
@@ -518,21 +548,72 @@ class _MatchTime extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final iconText = match.iconText.trim();
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         Text(
-          match.statusText,
+          match.displayStatusText,
           style: const TextStyle(
             fontSize: 15,
             fontWeight: FontWeight.w700,
             color: Color(0xFF202127),
           ),
         ),
+        if (iconText.isNotEmpty) const SizedBox(height: 2),
+        if (iconText.isNotEmpty)
+          Text(
+            iconText,
+            style: const TextStyle(fontSize: 11, color: Color(0xFF8F96A3)),
+          ),
+      ],
+    );
+  }
+}
+
+class _MatchScore extends StatelessWidget {
+  const _MatchScore({
+    required this.awayScore,
+    required this.homeScore,
+    required this.statusText,
+  });
+
+  final int? awayScore;
+  final int? homeScore;
+  final String statusText;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        RichText(
+          text: TextSpan(
+            style: const TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFFE5302F),
+            ),
+            children: [
+              TextSpan(text: '${awayScore ?? 0}'),
+              const TextSpan(
+                text: '  -  ',
+                style: TextStyle(
+                  color: Color(0xFF202127),
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              TextSpan(text: '${homeScore ?? 0}'),
+            ],
+          ),
+        ),
         const SizedBox(height: 2),
         Text(
-          match.iconText,
-          style: const TextStyle(fontSize: 11, color: Color(0xFF8F96A3)),
+          statusText,
+          style: const TextStyle(
+            fontSize: 11,
+            color: Color(0xFFE5302F),
+          ),
         ),
       ],
     );
@@ -554,7 +635,8 @@ class _NbaShortcutRow extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: items
           .take(5)
-          .map((item) => _ShortcutItem(item: item, onTap: () => onTapItem(item)))
+          .map(
+              (item) => _ShortcutItem(item: item, onTap: () => onTapItem(item)))
           .toList(),
     );
   }
@@ -602,8 +684,8 @@ class _ShortcutItem extends StatelessWidget {
                     top: 0,
                     right: -1,
                     child: Container(
-                      padding:
-                          const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 5, vertical: 2),
                       decoration: BoxDecoration(
                         color: const Color(0xFFFF453A),
                         borderRadius: BorderRadius.circular(6),

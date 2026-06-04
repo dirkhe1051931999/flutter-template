@@ -30,6 +30,7 @@ class Routes {
   static const appSwitchDemo = "/app-switch-demo";
   static const appStepperDemo = "/app-stepper-demo";
   static const appStepsDemo = "/app-steps-demo";
+  static const appTabDemo = "/app-tab-demo";
   static const appFieldDemo = "/app-field-demo";
   static const appPasswordInputDemo = "/app-password-input-demo";
   static const appPopoverDemo = "/app-popover-demo";
@@ -139,6 +140,10 @@ class Routes {
     router.define(
       appStepsDemo,
       handler: appStepsDemoRouteHandler,
+    );
+    router.define(
+      appTabDemo,
+      handler: appTabDemoRouteHandler,
     );
     router.define(
       appFieldDemo,

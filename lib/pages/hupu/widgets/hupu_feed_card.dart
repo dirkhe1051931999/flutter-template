@@ -12,6 +12,8 @@ class HupuFeedCard extends StatelessWidget {
     this.onTap,
     this.onTapVideo,
     this.onTapMedia,
+    this.onTapAuthor,
+    this.onTapLightReplyAuthor,
     super.key,
   });
 
@@ -19,6 +21,8 @@ class HupuFeedCard extends StatelessWidget {
   final VoidCallback? onTap;
   final VoidCallback? onTapVideo;
   final VoidCallback? onTapMedia;
+  final VoidCallback? onTapAuthor;
+  final VoidCallback? onTapLightReplyAuthor;
 
   @override
   Widget build(BuildContext context) {
@@ -51,68 +55,76 @@ class HupuFeedCard extends StatelessWidget {
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(20),
-                  child: CustomNetworkImage(
-                    item.header,
-                    width: 40,
-                    height: 40,
-                    skeletonBorderRadius: BorderRadius.circular(20),
+                GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: onTapAuthor,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(20),
+                    child: CustomNetworkImage(
+                      item.header,
+                      width: 40,
+                      height: 40,
+                      skeletonBorderRadius: BorderRadius.circular(20),
+                    ),
                   ),
                 ),
                 const SizedBox(width: 10),
                 Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Flexible(
-                            child: Text(
-                              item.nickname.isEmpty ? '虎扑用户' : item.nickname,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                color: Color(0xFF41414A),
-                                fontSize: 17,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                          if (item.label.isNotEmpty) ...[
-                            const SizedBox(width: 8),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 6,
-                                vertical: 2,
-                              ),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFFFF1F0),
-                                borderRadius: BorderRadius.circular(999),
-                              ),
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: onTapAuthor,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Flexible(
                               child: Text(
-                                item.label,
+                                item.nickname.isEmpty ? '虎扑用户' : item.nickname,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                                 style: const TextStyle(
-                                  color: Color(0xFFE5484D),
-                                  fontSize: 11,
+                                  color: Color(0xFF41414A),
+                                  fontSize: 17,
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
                             ),
+                            if (item.label.isNotEmpty) ...[
+                              const SizedBox(width: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 6,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFFFF1F0),
+                                  borderRadius: BorderRadius.circular(999),
+                                ),
+                                child: Text(
+                                  item.label,
+                                  style: const TextStyle(
+                                    color: Color(0xFFE5484D),
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ],
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        _buildMetaText(item),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: Color(0xFF9A9AA3),
-                          fontSize: 13,
                         ),
-                      ),
-                    ],
+                        const SizedBox(height: 4),
+                        Text(
+                          _buildMetaText(item),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: Color(0xFF9A9AA3),
+                            fontSize: 13,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -143,7 +155,10 @@ class HupuFeedCard extends StatelessWidget {
             ],
             if (lightReply != null) ...[
               const SizedBox(height: 12),
-              HupuLightReplyCard(reply: lightReply),
+              HupuLightReplyCard(
+                reply: lightReply,
+                onTapUser: onTapLightReplyAuthor,
+              ),
             ],
             const SizedBox(height: 12),
             Row(

@@ -1,3 +1,5 @@
+import 'user_identity.dart';
+
 class HupuHotListResponse {
   const HupuHotListResponse({
     required this.items,
@@ -28,6 +30,7 @@ class HupuFeedItem {
     required this.xid,
     required this.label,
     required this.schemaUrl,
+    required this.puid,
     required this.type,
     required this.itemId,
     required this.tid,
@@ -53,6 +56,7 @@ class HupuFeedItem {
   final String xid;
   final String label;
   final String schemaUrl;
+  final String puid;
   final String type;
   final String itemId;
   final String tid;
@@ -85,6 +89,21 @@ class HupuFeedItem {
       xid: json['xid']?.toString() ?? '',
       label: json['label']?.toString() ?? '',
       schemaUrl: json['schema_url']?.toString() ?? '',
+      puid: resolveHupuPuid(
+        directValues: <dynamic>[
+          payload['puid'],
+          payload['user_id'],
+          payload['uid'],
+          json['puid'],
+          json['userId'],
+          json['uid'],
+        ],
+        schemaCandidates: <String>[
+          payload['schema_url']?.toString() ?? '',
+          payload['schemaUrl']?.toString() ?? '',
+          json['schema_url']?.toString() ?? '',
+        ],
+      ),
       type: payload['type']?.toString() ?? json['type']?.toString() ?? '',
       itemId: payload['itemId']?.toString() ?? json['itemId']?.toString() ?? '',
       tid: payload['tid']?.toString() ?? '',
@@ -139,6 +158,7 @@ class HupuLightReply {
     required this.nickname,
     required this.content,
     required this.header,
+    required this.puid,
     required this.lightCount,
     required this.pics,
     required this.quoteNickname,
@@ -148,6 +168,7 @@ class HupuLightReply {
   final String nickname;
   final String content;
   final String header;
+  final String puid;
   final int lightCount;
   final List<HupuImageItem> pics;
   final String quoteNickname;
@@ -160,6 +181,19 @@ class HupuLightReply {
       nickname: json['nickname']?.toString() ?? '',
       content: json['content']?.toString() ?? '',
       header: json['header']?.toString() ?? '',
+      puid: resolveHupuPuid(
+        directValues: <dynamic>[
+          json['puid'],
+          json['userId'],
+          json['uid'],
+          quote is Map<String, dynamic> ? quote['puid'] : null,
+        ],
+        schemaCandidates: <String>[
+          json['schema_url']?.toString() ?? '',
+          json['schemaUrl']?.toString() ?? '',
+          json['url']?.toString() ?? '',
+        ],
+      ),
       lightCount: _parseInt(json['light_count']),
       pics: _parseImageItems(json['pics']),
       quoteNickname: quote is Map<String, dynamic>

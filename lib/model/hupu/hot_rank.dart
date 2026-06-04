@@ -1,3 +1,5 @@
+import 'user_identity.dart';
+
 class HupuHotTagPage {
   const HupuHotTagPage({
     required this.items,
@@ -152,6 +154,7 @@ class HupuHotRankThread {
     required this.tid,
     required this.fid,
     required this.topicId,
+    required this.puid,
     required this.title,
     required this.summary,
     required this.content,
@@ -172,6 +175,7 @@ class HupuHotRankThread {
   final String tid;
   final String fid;
   final int topicId;
+  final String puid;
   final String title;
   final String summary;
   final String content;
@@ -200,6 +204,19 @@ class HupuHotRankThread {
       tid: json['tid']?.toString() ?? '',
       fid: json['fid']?.toString() ?? '',
       topicId: _parseInt(json['topic_id']),
+      puid: resolveHupuPuid(
+        directValues: <dynamic>[
+          json['puid'],
+          json['user_id'],
+          json['uid'],
+          json['author_puid'],
+        ],
+        schemaCandidates: <String>[
+          json['schemaUrl']?.toString() ?? '',
+          json['schema_url']?.toString() ?? '',
+          json['url']?.toString() ?? '',
+        ],
+      ),
       title: json['title']?.toString() ?? '',
       summary: json['summary']?.toString() ?? '',
       content: json['content']?.toString() ?? '',
@@ -249,6 +266,7 @@ class HupuHotRankLightReply {
   const HupuHotRankLightReply({
     required this.nickname,
     required this.header,
+    required this.puid,
     required this.content,
     required this.lightCount,
     required this.createTime,
@@ -257,6 +275,7 @@ class HupuHotRankLightReply {
 
   final String nickname;
   final String header;
+  final String puid;
   final String content;
   final int lightCount;
   final int createTime;
@@ -266,6 +285,18 @@ class HupuHotRankLightReply {
     return HupuHotRankLightReply(
       nickname: json['nickname']?.toString() ?? '',
       header: json['header']?.toString() ?? '',
+      puid: resolveHupuPuid(
+        directValues: <dynamic>[
+          json['puid'],
+          json['userId'],
+          json['uid'],
+        ],
+        schemaCandidates: <String>[
+          json['schemaUrl']?.toString() ?? '',
+          json['schema_url']?.toString() ?? '',
+          json['url']?.toString() ?? '',
+        ],
+      ),
       content: json['content']?.toString() ?? '',
       lightCount: _parseInt(json['light_count']),
       createTime: _parseInt(json['createTime']),

@@ -54,6 +54,38 @@ Future<HupuNbaScheduleData> getHupuNbaScheduleList({
   return HupuNbaScheduleData.fromJson(decoded);
 }
 
+Future<HupuNbaMatchDetail> getHupuNbaMatchDetail({
+  required String matchId,
+}) async {
+  final queryParameters = createHupuCommonQueryParameters(
+    crt: DateTime.now().millisecondsSinceEpoch.toString(),
+  )..addAll(<String, String>{
+      'matchId': matchId,
+    });
+
+  final decoded = await _getGamesJson(
+    '/1/8.0.32/basketballapi/singleMatch',
+    queryParameters: queryParameters,
+  );
+  return HupuNbaMatchDetail.fromJson(decoded);
+}
+
+Future<HupuNbaMatchLiveData> getHupuNbaMatchLiveData({
+  required String matchId,
+}) async {
+  final queryParameters = createHupuCommonQueryParameters(
+    crt: DateTime.now().millisecondsSinceEpoch.toString(),
+  )..addAll(<String, String>{
+      'matchId': matchId,
+    });
+
+  final decoded = await _getGamesJson(
+    '/1/8.0.32/basketballapi/teamMatchScoreTrendStats',
+    queryParameters: queryParameters,
+  );
+  return HupuNbaMatchLiveData.fromJson(decoded);
+}
+
 Future<HupuNbaPlayoffBracketData> getHupuNbaPlayoffBracket() async {
   final decoded = await _getGamesJson(
     '/1/8.0.32/basketballapi/against-plan-chart',

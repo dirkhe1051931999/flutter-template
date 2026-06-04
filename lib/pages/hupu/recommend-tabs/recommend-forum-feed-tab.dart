@@ -9,6 +9,7 @@ import 'package:oolaf_flutted/components/gallery_preview/index.dart';
 import 'package:oolaf_flutted/components/linked_tab_view/index.dart';
 import 'package:oolaf_flutted/model/hupu/index.dart';
 import 'package:oolaf_flutted/pages/hupu/hupu_post_detail_page.dart';
+import 'package:oolaf_flutted/pages/hupu/hupu_user_detail_helper.dart';
 import 'package:oolaf_flutted/pages/hupu/hupu_video_queue_page.dart';
 import 'package:oolaf_flutted/pages/hupu/widgets/hupu_feed_card.dart';
 import 'package:oolaf_flutted/pages/hupu/widgets/hupu_load_more_footer.dart';
@@ -279,6 +280,19 @@ class _HupuRecommendForumFeedTabState extends State<HupuRecommendForumFeedTab>
     );
   }
 
+  Future<void> _openUserDetail({
+    required String puid,
+    required String nickname,
+    required String avatar,
+  }) {
+    return openHupuUserDetail(
+      context,
+      puid: puid,
+      initialNickname: nickname,
+      initialAvatar: avatar,
+    );
+  }
+
   Future<void> _openVideoQueue(HupuFeedItem item) async {
     if (item.video?.isPlayable != true) {
       return;
@@ -370,6 +384,22 @@ class _HupuRecommendForumFeedTabState extends State<HupuRecommendForumFeedTab>
                     onTap: () => _openPostDetail(item),
                     onTapVideo: () => _openVideoQueue(item),
                     onTapMedia: () => _openImageGallery(item),
+                    onTapAuthor: item.puid.isEmpty
+                        ? null
+                        : () => _openUserDetail(
+                              puid: item.puid,
+                              nickname: item.nickname,
+                              avatar: item.header,
+                            ),
+                    onTapLightReplyAuthor:
+                        item.lightReplies.isEmpty ||
+                                item.lightReplies.first.puid.isEmpty
+                            ? null
+                            : () => _openUserDetail(
+                                  puid: item.lightReplies.first.puid,
+                                  nickname: item.lightReplies.first.nickname,
+                                  avatar: item.lightReplies.first.header,
+                                ),
                   ),
                 );
               },

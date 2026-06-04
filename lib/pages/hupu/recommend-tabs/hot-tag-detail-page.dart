@@ -8,6 +8,7 @@ import 'package:oolaf_flutted/components/linked_tab_view/index.dart';
 import 'package:oolaf_flutted/components/network_img/index.dart';
 import 'package:oolaf_flutted/model/hupu/index.dart';
 import 'package:oolaf_flutted/pages/hupu/hupu_post_detail_page.dart';
+import 'package:oolaf_flutted/pages/hupu/hupu_user_detail_helper.dart';
 import 'package:oolaf_flutted/pages/hupu/widgets/hupu_feed_card.dart';
 import 'package:oolaf_flutted/pages/hupu/widgets/hupu_load_more_footer.dart';
 import 'package:oolaf_flutted/pages/hupu/widgets/hupu_status_view.dart';
@@ -405,6 +406,19 @@ class _HotTagThreadListTabState extends State<_HotTagThreadListTab>
     _loadInitial();
   }
 
+  Future<void> _openUserDetail({
+    required String puid,
+    required String nickname,
+    required String avatar,
+  }) {
+    return openHupuUserDetail(
+      context,
+      puid: puid,
+      initialNickname: nickname,
+      initialAvatar: avatar,
+    );
+  }
+
   @override
   void dispose() {
     _scrollController
@@ -585,6 +599,21 @@ class _HotTagThreadListTabState extends State<_HotTagThreadListTab>
                 child: HupuFeedCard(
                   item: item.toFeedItem(),
                   onTap: () => widget.onOpenPost(item),
+                  onTapAuthor: item.puid.isEmpty
+                      ? null
+                      : () => _openUserDetail(
+                            puid: item.puid,
+                            nickname: item.userName,
+                            avatar: item.userHeader,
+                          ),
+                  onTapLightReplyAuthor: item.lightReply == null ||
+                          item.lightReply!.puid.isEmpty
+                      ? null
+                      : () => _openUserDetail(
+                            puid: item.lightReply!.puid,
+                            nickname: item.lightReply!.nickname,
+                            avatar: item.lightReply!.header,
+                          ),
                 ),
               );
             },

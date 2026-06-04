@@ -315,6 +315,11 @@ class HupuSearchUserItem {
   final String url;
   final String itemId;
 
+  String get puid {
+    final direct = _firstMeaningfulNumeric(<String>[url, itemId, id]);
+    return direct;
+  }
+
   factory HupuSearchUserItem.fromJson(Map<String, dynamic> json) {
     return HupuSearchUserItem(
       id: json['id']?.toString() ?? '',
@@ -329,6 +334,35 @@ class HupuSearchUserItem {
       itemId: json['itemid']?.toString() ?? '',
     );
   }
+}
+
+String _firstMeaningfulNumeric(List<String> values) {
+  for (final value in values) {
+    final trimmed = value.trim();
+    if (trimmed.isEmpty) {
+      continue;
+    }
+    final puidFromUrl = _extractPuidFromUrl(trimmed);
+    if (puidFromUrl.isNotEmpty) {
+      return puidFromUrl;
+    }
+    if (RegExp(r'^\d+$').hasMatch(trimmed)) {
+      return trimmed;
+    }
+  }
+  return '';
+}
+
+String _extractPuidFromUrl(String value) {
+  final userPathMatch = RegExp(r'/user/(\d+)').firstMatch(value);
+  if (userPathMatch != null) {
+    return userPathMatch.group(1) ?? '';
+  }
+  final puidQueryMatch = RegExp(r'[?&]puid=(\d+)').firstMatch(value);
+  if (puidQueryMatch != null) {
+    return puidQueryMatch.group(1) ?? '';
+  }
+  return '';
 }
 
 class HupuSearchPostSortItem {
@@ -594,7 +628,8 @@ List<HupuSearchHotKeyword> parseHupuSearchHotKeywords(dynamic rawItems) {
   return rawItems
       .whereType<Map>()
       .map(
-        (item) => HupuSearchHotKeyword.fromJson(Map<String, dynamic>.from(item)),
+        (item) =>
+            HupuSearchHotKeyword.fromJson(Map<String, dynamic>.from(item)),
       )
       .toList(growable: false);
 }

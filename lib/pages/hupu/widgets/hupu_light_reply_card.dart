@@ -5,10 +5,12 @@ import 'package:oolaf_flutted/model/hupu/index.dart';
 class HupuLightReplyCard extends StatelessWidget {
   const HupuLightReplyCard({
     required this.reply,
+    this.onTapUser,
     super.key,
   });
 
   final HupuLightReply reply;
+  final VoidCallback? onTapUser;
 
   @override
   Widget build(BuildContext context) {
@@ -27,16 +29,31 @@ class HupuLightReplyCard extends StatelessWidget {
           Row(
             children: [
               Expanded(
-                child: Text(
-                  '${reply.nickname}:',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Color(0xFF666977),
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
+                child: onTapUser == null
+                    ? Text(
+                        '${reply.nickname}:',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Color(0xFF666977),
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      )
+                    : GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: onTapUser,
+                        child: Text(
+                          '${reply.nickname}:',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: Color(0xFF666977),
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
               ),
               if (reply.lightCount > 0)
                 Text(

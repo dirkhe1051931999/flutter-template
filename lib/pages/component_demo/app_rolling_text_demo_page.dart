@@ -9,13 +9,13 @@ class AppRollingTextDemoPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 24),
-      children: [
+      children: const [
         _DemoSection(
           title: '组件说明',
           subtitle: '参考 Vant RollingText，补了数字滚动和文本轮播两种常用模式。',
           child: _FeatureList(),
         ),
-        const SizedBox(height: 14),
+        SizedBox(height: 14),
         _DemoSection(
           title: '数字翻牌',
           subtitle: '适合金额、销量、计数器和战报分数等场景。',
@@ -42,7 +42,7 @@ class AppRollingTextDemoPage extends StatelessWidget {
             ],
           ),
         ),
-        const SizedBox(height: 14),
+        SizedBox(height: 14),
         _DemoSection(
           title: '文本轮播',
           subtitle: '适合热点播报、活动轮播和顶部口号切换。',

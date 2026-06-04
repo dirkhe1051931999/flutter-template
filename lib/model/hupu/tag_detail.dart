@@ -1,4 +1,5 @@
 import 'feed.dart';
+import 'user_identity.dart';
 
 class HupuTagDetail {
   const HupuTagDetail({
@@ -99,6 +100,7 @@ class HupuTagThreadItem {
     required this.tid,
     required this.fid,
     required this.topicId,
+    required this.puid,
     required this.title,
     required this.summary,
     required this.userName,
@@ -121,6 +123,7 @@ class HupuTagThreadItem {
   final String tid;
   final String fid;
   final int topicId;
+  final String puid;
   final String title;
   final String summary;
   final String userName;
@@ -144,6 +147,7 @@ class HupuTagThreadItem {
       xid: tid,
       label: topThread ? '置顶' : '',
       schemaUrl: '',
+      puid: puid,
       type: '$contentType',
       itemId: tid,
       tid: tid,
@@ -179,6 +183,20 @@ class HupuTagThreadItem {
       tid: json['tid']?.toString() ?? '',
       fid: json['fid']?.toString() ?? '',
       topicId: _parseInt(json['topicId']),
+      puid: resolveHupuPuid(
+        directValues: <dynamic>[
+          json['puid'],
+          json['userId'],
+          json['uid'],
+          json['authorPuid'],
+        ],
+        schemaCandidates: <String>[
+          json['schemaUrl']?.toString() ?? '',
+          json['schema_url']?.toString() ?? '',
+          json['userSchema']?.toString() ?? '',
+          json['userUrl']?.toString() ?? '',
+        ],
+      ),
       title: json['title']?.toString() ?? '',
       summary: json['summary']?.toString() ?? '',
       userName: json['userName']?.toString() ?? '',

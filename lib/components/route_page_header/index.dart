@@ -7,6 +7,7 @@ class RoutePageNavigationBar extends StatelessWidget
     this.title,
     this.subtitle,
     this.avatarUrl,
+    this.onTapIdentity,
     this.onBack,
     this.onTapFollow,
     this.onTapMore,
@@ -22,6 +23,7 @@ class RoutePageNavigationBar extends StatelessWidget
   final String? title;
   final String? subtitle;
   final String? avatarUrl;
+  final VoidCallback? onTapIdentity;
   final VoidCallback? onBack;
   final VoidCallback? onTapFollow;
   final VoidCallback? onTapMore;
@@ -48,6 +50,7 @@ class RoutePageNavigationBar extends StatelessWidget
           title: title,
           subtitle: subtitle,
           avatarUrl: avatarUrl,
+          onTapIdentity: onTapIdentity,
           onBack: onBack,
           onTapFollow: onTapFollow,
           onTapMore: onTapMore,
@@ -68,6 +71,7 @@ class RoutePageHeader extends StatelessWidget {
     this.title,
     this.subtitle,
     this.avatarUrl,
+    this.onTapIdentity,
     this.onBack,
     this.onTapFollow,
     this.onTapMore,
@@ -83,6 +87,7 @@ class RoutePageHeader extends StatelessWidget {
   final String? title;
   final String? subtitle;
   final String? avatarUrl;
+  final VoidCallback? onTapIdentity;
   final VoidCallback? onBack;
   final VoidCallback? onTapFollow;
   final VoidCallback? onTapMore;
@@ -131,7 +136,7 @@ class RoutePageHeader extends StatelessWidget {
 
   Widget _buildCenterContent() {
     if (_hasAvatarTitle) {
-      return ConstrainedBox(
+      final content = ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 220),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -178,6 +183,14 @@ class RoutePageHeader extends StatelessWidget {
             ),
           ],
         ),
+      );
+      if (onTapIdentity == null) {
+        return content;
+      }
+      return GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onTapIdentity,
+        child: content,
       );
     }
 

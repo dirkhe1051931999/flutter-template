@@ -10,6 +10,7 @@ import 'package:oolaf_flutted/components/route_page_header/index.dart';
 import 'package:oolaf_flutted/components/network_img/index.dart';
 import 'package:oolaf_flutted/components/short_video/short_video_player_wrapper.dart';
 import 'package:oolaf_flutted/model/hupu/index.dart';
+import 'package:oolaf_flutted/pages/hupu/hupu_user_detail_helper.dart';
 import 'package:oolaf_flutted/pages/video_tabs/short_video_article_body_helper.dart';
 import 'package:oolaf_flutted/utils/oolaf_video_player_controller.dart';
 
@@ -227,6 +228,19 @@ class _HupuPostDetailPageState extends State<HupuPostDetailPage> {
     }
   }
 
+  Future<void> _openUserDetail({
+    required String puid,
+    required String nickname,
+    required String avatar,
+  }) {
+    return openHupuUserDetail(
+      context,
+      puid: puid,
+      initialNickname: nickname,
+      initialAvatar: avatar,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return CupertinoPageScaffold(
@@ -361,6 +375,13 @@ class _HupuPostDetailPageState extends State<HupuPostDetailPage> {
           ? detail!.authorPublishTime
           : widget.initialTitle,
       avatarUrl: detail?.authorAvatar ?? '',
+      onTapIdentity: detail?.authorPuid.isNotEmpty == true
+          ? () => _openUserDetail(
+                puid: detail!.authorPuid,
+                nickname: detail.authorName,
+                avatar: detail.authorAvatar,
+              )
+          : null,
       onBack: () => Navigator.of(context).pop(),
       showFollowButton: true,
       showMoreButton: true,
@@ -637,12 +658,22 @@ class _HupuPostDetailPageState extends State<HupuPostDetailPage> {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              ClipOval(
-                child: CustomNetworkImage(
-                  comment.userAvatar,
-                  width: 38,
-                  height: 38,
-                  skeletonBorderRadius: BorderRadius.circular(19),
+              GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: comment.userId.isEmpty
+                    ? null
+                    : () => _openUserDetail(
+                          puid: comment.userId,
+                          nickname: comment.userName,
+                          avatar: comment.userAvatar,
+                        ),
+                child: ClipOval(
+                  child: CustomNetworkImage(
+                    comment.userAvatar,
+                    width: 38,
+                    height: 38,
+                    skeletonBorderRadius: BorderRadius.circular(19),
+                  ),
                 ),
               ),
               const SizedBox(width: 12),
@@ -650,12 +681,22 @@ class _HupuPostDetailPageState extends State<HupuPostDetailPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      comment.userName.isEmpty ? '虎扑用户' : comment.userName,
-                      style: const TextStyle(
-                        color: Color(0xFF555555),
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
+                    GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: comment.userId.isEmpty
+                          ? null
+                          : () => _openUserDetail(
+                                puid: comment.userId,
+                                nickname: comment.userName,
+                                avatar: comment.userAvatar,
+                              ),
+                      child: Text(
+                        comment.userName.isEmpty ? '虎扑用户' : comment.userName,
+                        style: const TextStyle(
+                          color: Color(0xFF555555),
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 2),
@@ -709,14 +750,39 @@ class _HupuPostDetailPageState extends State<HupuPostDetailPage> {
                           color: const Color(0xFFF5F6F8),
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: Text(
-                          comment.quote!.userName.isEmpty
-                              ? quote.text
-                              : '${comment.quote!.userName}: ${quote.text}',
-                          style: const TextStyle(
-                            color: Color(0xFF6E6E73),
-                            fontSize: 13,
-                            height: 1.45,
+                        child: RichText(
+                          text: TextSpan(
+                            style: const TextStyle(
+                              color: Color(0xFF6E6E73),
+                              fontSize: 13,
+                              height: 1.45,
+                            ),
+                            children: [
+                              if (comment.quote!.userName.isNotEmpty &&
+                                  comment.quote!.userId.isNotEmpty)
+                                WidgetSpan(
+                                  alignment: PlaceholderAlignment.middle,
+                                  child: GestureDetector(
+                                    behavior: HitTestBehavior.opaque,
+                                    onTap: () => _openUserDetail(
+                                      puid: comment.quote!.userId,
+                                      nickname: comment.quote!.userName,
+                                      avatar: '',
+                                    ),
+                                    child: Text(
+                                      '${comment.quote!.userName}: ',
+                                      style: const TextStyle(
+                                        color: Color(0xFF1C63B7),
+                                        fontSize: 13,
+                                        height: 1.45,
+                                      ),
+                                    ),
+                                  ),
+                                )
+                              else if (comment.quote!.userName.isNotEmpty)
+                                TextSpan(text: '${comment.quote!.userName}: '),
+                              TextSpan(text: quote.text),
+                            ],
                           ),
                         ),
                       ),
