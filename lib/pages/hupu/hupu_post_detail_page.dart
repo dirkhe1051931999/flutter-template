@@ -4,14 +4,16 @@ import 'dart:async';
 import 'package:oolaf_flutted/api/hupu/index.dart';
 import 'package:oolaf_flutted/components/app_sheet/index.dart';
 import 'package:oolaf_flutted/components/app_text_ellipsis/index.dart';
+import 'package:oolaf_flutted/components/article/article_body_helper.dart';
 import 'package:oolaf_flutted/components/comment/comment_panel_scaffold.dart';
 import 'package:oolaf_flutted/components/gallery_preview/index.dart';
+import 'package:oolaf_flutted/components/app_asset_icon/index.dart';
 import 'package:oolaf_flutted/components/route_page_header/index.dart';
 import 'package:oolaf_flutted/components/network_img/index.dart';
 import 'package:oolaf_flutted/components/short_video/short_video_player_wrapper.dart';
 import 'package:oolaf_flutted/model/hupu/index.dart';
 import 'package:oolaf_flutted/pages/hupu/hupu_user_detail_helper.dart';
-import 'package:oolaf_flutted/pages/video_tabs/short_video_article_body_helper.dart';
+import 'package:oolaf_flutted/utils/duration_format.dart';
 import 'package:oolaf_flutted/utils/oolaf_video_player_controller.dart';
 
 enum HupuPostCommentSort {
@@ -45,6 +47,9 @@ class HupuPostDetailPage extends StatefulWidget {
 
 class _HupuPostDetailPageState extends State<HupuPostDetailPage> {
   final ScrollController _scrollController = ScrollController();
+  final GlobalKey _videoHeroKey = GlobalKey();
+  Timer? _videoControlsHideTimer;
+  Offset? _floatingVideoOffset;
 
   HupuPostDetail? _detail;
   OolafVideoPlayerController? _videoController;
@@ -52,6 +57,10 @@ class _HupuPostDetailPageState extends State<HupuPostDetailPage> {
   final List<HupuPostComment> _allComments = <HupuPostComment>[];
   bool _isLoading = true;
   bool _isLoadingMore = false;
+  bool _isVideoMuted = false;
+  bool _showVideoControls = true;
+  bool _showFloatingVideo = false;
+  bool _disableFloatingVideoForSession = false;
   String? _errorMessage;
   int _currentPage = 1;
   int _totalPages = 1;
@@ -95,13 +104,75 @@ class _HupuPostDetailPageState extends State<HupuPostDetailPage> {
     if (videoController != null) {
       unawaited(videoController.dispose());
     }
+    _videoControlsHideTimer?.cancel();
     _scrollController
       ..removeListener(_handleScroll)
       ..dispose();
     super.dispose();
   }
 
+  void _cancelVideoControlsHideTimer() {
+    _videoControlsHideTimer?.cancel();
+    _videoControlsHideTimer = null;
+  }
+
+  void _scheduleVideoControlsAutoHide() {
+    final controller = _videoController;
+    if (controller == null || !controller.isPlaying.value) {
+      return;
+    }
+    _cancelVideoControlsHideTimer();
+    _videoControlsHideTimer = Timer(const Duration(seconds: 3), () {
+      if (!mounted || !_videoController!.isPlaying.value) {
+        return;
+      }
+      setState(() {
+        _showVideoControls = false;
+      });
+    });
+  }
+
+  void _showVideoControlsTemporarily() {
+    if (!_showVideoControls && mounted) {
+      setState(() {
+        _showVideoControls = true;
+      });
+    } else {
+      setState(() {
+        _showVideoControls = true;
+      });
+    }
+    _scheduleVideoControlsAutoHide();
+  }
+
+  Future<void> _togglePostVideoPlayback() async {
+    final controller = _videoController;
+    if (controller == null) {
+      return;
+    }
+    if (controller.isPlaying.value) {
+      await controller.pause();
+      _cancelVideoControlsHideTimer();
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _showVideoControls = true;
+      });
+      return;
+    }
+    await controller.play();
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _showVideoControls = true;
+    });
+    _scheduleVideoControlsAutoHide();
+  }
+
   void _handleScroll() {
+    _updateFloatingVideoVisibility();
     if (!_scrollController.hasClients ||
         _isLoading ||
         _isLoadingMore ||
@@ -112,6 +183,42 @@ class _HupuPostDetailPageState extends State<HupuPostDetailPage> {
       return;
     }
     _loadMoreComments();
+  }
+
+  void _updateFloatingVideoVisibility() {
+    if (!mounted ||
+        _detail?.hasVideo != true ||
+        _disableFloatingVideoForSession) {
+      return;
+    }
+    final videoContext = _videoHeroKey.currentContext;
+    if (videoContext == null) {
+      return;
+    }
+    final renderObject = videoContext.findRenderObject();
+    if (renderObject is! RenderBox) {
+      return;
+    }
+    final top = renderObject.localToGlobal(Offset.zero).dy;
+    final bottom = top + renderObject.size.height;
+    final safeTop = MediaQuery.paddingOf(context).top;
+    const double topBarHeight = 44;
+    final triggerLine = safeTop + topBarHeight + 8;
+    final shouldShow = bottom <= triggerLine;
+    final shouldHide = bottom > triggerLine;
+
+    if (_showFloatingVideo && shouldHide) {
+      setState(() {
+        _showFloatingVideo = false;
+      });
+      return;
+    }
+
+    if (!_showFloatingVideo && shouldShow) {
+      setState(() {
+        _showFloatingVideo = true;
+      });
+    }
   }
 
   Future<void> _loadInitial() async {
@@ -148,6 +255,11 @@ class _HupuPostDetailPageState extends State<HupuPostDetailPage> {
       setState(() {
         _detail = detail;
         _videoController = videoController;
+        _isVideoMuted = false;
+        _showVideoControls = true;
+        _showFloatingVideo = false;
+        _disableFloatingVideoForSession = false;
+        _floatingVideoOffset = null;
         _lightReplies = lightReplies.comments;
         _allComments
           ..clear()
@@ -254,112 +366,127 @@ class _HupuPostDetailPageState extends State<HupuPostDetailPage> {
               )
             : _errorMessage != null && _detail == null
                 ? _buildErrorView()
-                : Column(
-                    children: [
-                      Expanded(
-                        child: CustomScrollView(
-                          controller: _scrollController,
-                          physics: const BouncingScrollPhysics(
-                            parent: AlwaysScrollableScrollPhysics(),
-                          ),
-                          slivers: [
-                            SliverToBoxAdapter(
-                              child: _buildPostBody(),
-                            ),
-                            if (_lightReplies.isNotEmpty) ...[
-                              SliverToBoxAdapter(
-                                child: _buildSectionDivider(),
+                : LayoutBuilder(
+                    builder: (context, constraints) {
+                      return Stack(
+                        children: [
+                      Column(
+                        children: [
+                          Expanded(
+                            child: CustomScrollView(
+                              controller: _scrollController,
+                              physics: const BouncingScrollPhysics(
+                                parent: AlwaysScrollableScrollPhysics(),
                               ),
-                              SliverToBoxAdapter(
-                                child: _buildSectionHeader(
-                                  title: '这些回复亮了',
-                                  trailing: Text(
-                                    '${_lightReplies.length}条',
-                                    style: const TextStyle(
-                                      color: Color(0xFF999999),
-                                      fontSize: 13,
+                              slivers: [
+                                SliverToBoxAdapter(
+                                  child: _buildPostBody(),
+                                ),
+                                if (_lightReplies.isNotEmpty) ...[
+                                  SliverToBoxAdapter(
+                                    child: _buildSectionDivider(),
+                                  ),
+                                  SliverToBoxAdapter(
+                                    child: _buildSectionHeader(
+                                      title: '这些回复亮了',
+                                      trailing: Text(
+                                        '${_lightReplies.length}条',
+                                        style: const TextStyle(
+                                          color: Color(0xFF999999),
+                                          fontSize: 13,
+                                        ),
+                                      ),
                                     ),
                                   ),
-                                ),
-                              ),
-                              SliverList(
-                                delegate: SliverChildBuilderDelegate(
-                                  (context, index) => _buildCommentCard(
-                                    _lightReplies[index],
-                                    emphasizeLightCount: true,
+                                  SliverList(
+                                    delegate: SliverChildBuilderDelegate(
+                                      (context, index) => _buildCommentCard(
+                                        _lightReplies[index],
+                                        emphasizeLightCount: true,
+                                      ),
+                                      childCount: _lightReplies.length,
+                                    ),
                                   ),
-                                  childCount: _lightReplies.length,
+                                ],
+                                SliverToBoxAdapter(
+                                  child: _buildSectionDivider(),
                                 ),
-                              ),
-                            ],
-                            SliverToBoxAdapter(
-                              child: _buildSectionDivider(),
-                            ),
-                            SliverToBoxAdapter(
-                              child: _buildSectionHeader(
-                                title: '全部回复',
-                                trailing: SingleChildScrollView(
-                                  scrollDirection: Axis.horizontal,
-                                  child: Row(
-                                    children: HupuPostCommentSort.values
-                                        .map(_buildSortChip)
-                                        .toList(growable: false),
-                                  ),
-                                ),
-                              ),
-                            ),
-                            if (_displayComments.isEmpty)
-                              SliverToBoxAdapter(
-                                child: Padding(
-                                  padding:
-                                      const EdgeInsets.symmetric(vertical: 56),
-                                  child: Center(
-                                    child: Text(
-                                      _activeSort == HupuPostCommentSort.author
-                                          ? '楼主暂时没有参与回复'
-                                          : '暂无评论',
-                                      style: const TextStyle(
-                                        color: Color(0xFF999999),
-                                        fontSize: 14,
+                                SliverToBoxAdapter(
+                                  child: _buildSectionHeader(
+                                    title: '全部回复',
+                                    trailing: SingleChildScrollView(
+                                      scrollDirection: Axis.horizontal,
+                                      child: Row(
+                                        children: HupuPostCommentSort.values
+                                            .map(_buildSortChip)
+                                            .toList(growable: false),
                                       ),
                                     ),
                                   ),
                                 ),
-                              )
-                            else
-                              SliverList(
-                                delegate: SliverChildBuilderDelegate(
-                                  (context, index) => _buildCommentCard(
-                                    _displayComments[index],
-                                  ),
-                                  childCount: _displayComments.length,
-                                ),
-                              ),
-                            SliverToBoxAdapter(
-                              child: Padding(
-                                padding:
-                                    const EdgeInsets.fromLTRB(16, 12, 16, 24),
-                                child: Center(
-                                  child: _isLoadingMore
-                                      ? const CupertinoActivityIndicator(
-                                          radius: 10)
-                                      : Text(
-                                          _hasMoreComments
-                                              ? '继续上拉加载更多'
-                                              : '没有更多评论了',
+                                if (_displayComments.isEmpty)
+                                  SliverToBoxAdapter(
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                          vertical: 56),
+                                      child: Center(
+                                        child: Text(
+                                          _activeSort ==
+                                                  HupuPostCommentSort.author
+                                              ? '楼主暂时没有参与回复'
+                                              : '暂无评论',
                                           style: const TextStyle(
                                             color: Color(0xFF999999),
-                                            fontSize: 12,
+                                            fontSize: 14,
                                           ),
                                         ),
+                                      ),
+                                    ),
+                                  )
+                                else
+                                  SliverList(
+                                    delegate: SliverChildBuilderDelegate(
+                                      (context, index) => _buildCommentCard(
+                                        _displayComments[index],
+                                      ),
+                                      childCount: _displayComments.length,
+                                    ),
+                                  ),
+                                SliverToBoxAdapter(
+                                  child: Padding(
+                                    padding: const EdgeInsets.fromLTRB(
+                                      16,
+                                      12,
+                                      16,
+                                      24,
+                                    ),
+                                    child: Center(
+                                      child: _isLoadingMore
+                                          ? const CupertinoActivityIndicator(
+                                              radius: 10)
+                                          : Text(
+                                              _hasMoreComments
+                                                  ? '继续上拉加载更多'
+                                                  : '没有更多评论了',
+                                              style: const TextStyle(
+                                                color: Color(0xFF999999),
+                                                fontSize: 12,
+                                              ),
+                                            ),
+                                    ),
+                                  ),
                                 ),
-                              ),
+                              ],
                             ),
-                          ],
-                        ),
+                          ),
+                          _buildBottomBar(),
+                        ],
                       ),
-                      _buildBottomBar(),
+                      if (_showFloatingVideo && _detail?.hasVideo == true)
+                        _buildFloatingVideoOverlay(constraints.biggest),
                     ],
+                  );
+                    },
                   ),
       ),
     );
@@ -433,7 +560,7 @@ class _HupuPostDetailPageState extends State<HupuPostDetailPage> {
       return const SizedBox.shrink();
     }
 
-    final body = ShortVideoArticleBodyHelper.parse(
+    final body = ArticleBodyHelper.parse(
       title: detail.title,
       source: detail.forumName,
       updateTime: detail.authorPublishTime,
@@ -447,7 +574,10 @@ class _HupuPostDetailPageState extends State<HupuPostDetailPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (detail.hasVideo) ...[
-            _buildVideoHero(detail),
+            KeyedSubtree(
+              key: _videoHeroKey,
+              child: _buildVideoHero(detail),
+            ),
             const SizedBox(height: 16),
           ],
           Text(
@@ -460,7 +590,7 @@ class _HupuPostDetailPageState extends State<HupuPostDetailPage> {
             ),
           ),
           const SizedBox(height: 14),
-          ...ShortVideoArticleBodyHelper.buildWidgets(
+          ...ArticleBodyHelper.buildWidgets(
             context: context,
             nodes: body.nodes,
             galleryImageUrls: body.imageUrls,
@@ -498,32 +628,79 @@ class _HupuPostDetailPageState extends State<HupuPostDetailPage> {
           children: [
             AspectRatio(
               aspectRatio: clampedRatio,
-              child: controller == null
-                  ? CustomNetworkImage(
-                      videoInfo.coverUrl.isNotEmpty
-                          ? videoInfo.coverUrl
-                          : videoInfo.posterUrl,
-                      fit: BoxFit.cover,
-                    )
-                  : ShortVideoPlayerWrapper(
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  controller == null
+                      ? CustomNetworkImage(
+                          videoInfo.coverUrl.isNotEmpty
+                              ? videoInfo.coverUrl
+                              : videoInfo.posterUrl,
+                          fit: BoxFit.cover,
+                        )
+                      : ShortVideoPlayerWrapper(
+                          controller: controller,
+                          fit: BoxFit.contain,
+                          enableVerticalSwipeGestures: false,
+                          onSingleTap: () async {
+                            if (controller.isPlaying.value) {
+                              if (_showVideoControls) {
+                                _cancelVideoControlsHideTimer();
+                                if (mounted) {
+                                  setState(() {
+                                    _showVideoControls = false;
+                                  });
+                                }
+                              } else {
+                                _showVideoControlsTemporarily();
+                              }
+                              return;
+                            }
+                            _showVideoControlsTemporarily();
+                          },
+                          onLongPress: () {},
+                          onDoubleTap: () async {
+                            await _togglePostVideoPlayback();
+                          },
+                          onSwipeUp: () {},
+                          onSwipeDown: () {},
+                          enableDoubleTapLikeBurst: false,
+                          showPausedPlayButton: false,
+                        ),
+                  if (controller != null)
+                    _PostDetailVideoControls(
                       controller: controller,
-                      fit: BoxFit.contain,
-                      enableVerticalSwipeGestures: false,
-                      onSingleTap: () async {
-                        if (controller.isPlaying.value) {
-                          await controller.pause();
-                        } else {
-                          await controller.play();
+                      isMuted: _isVideoMuted,
+                      isVisible: _showVideoControls,
+                      onTogglePlayback: _togglePostVideoPlayback,
+                      onToggleMute: () async {
+                        _showVideoControlsTemporarily();
+                        final nextMuted = !_isVideoMuted;
+                        await controller.setVolume(nextMuted ? 0 : 1);
+                        if (!mounted) {
+                          return;
                         }
+                        setState(() {
+                          _isVideoMuted = nextMuted;
+                        });
+                      },
+                      onOpenFullscreen: () async {
+                        _showVideoControlsTemporarily();
+                        await Navigator.of(context).push<void>(
+                          CupertinoPageRoute<void>(
+                            builder: (_) => _HupuPostVideoFullscreenPage(
+                              controller: controller,
+                              title: detail.title,
+                            ),
+                          ),
+                        );
                         if (mounted) {
                           setState(() {});
                         }
                       },
-                      onLongPress: () {},
-                      onDoubleTap: () {},
-                      onSwipeUp: () {},
-                      onSwipeDown: () {},
                     ),
+                ],
+              ),
             ),
             Container(
               width: double.infinity,
@@ -979,6 +1156,442 @@ class _HupuPostDetailPageState extends State<HupuPostDetailPage> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildFloatingVideo() {
+    final detail = _detail;
+    final controller = _videoController;
+    final videoInfo = detail?.videoInfo;
+    if (detail == null || videoInfo == null) {
+      return const SizedBox.shrink();
+    }
+
+    final aspectRatio = (videoInfo.aspectRatio ?? 16 / 9).clamp(1.1, 2.2);
+    const double width = 168;
+    final double height = width / aspectRatio;
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(14),
+      child: DecoratedBox(
+        decoration: const BoxDecoration(
+          color: Color(0xFF000000),
+          boxShadow:  [
+            BoxShadow(
+              color: Color(0x26000000),
+              blurRadius: 16,
+              offset: Offset(0, 8),
+            ),
+          ],
+        ),
+        child: SizedBox(
+        width: width,
+        height: height,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              controller == null
+                  ? CustomNetworkImage(
+                      videoInfo.coverUrl.isNotEmpty
+                          ? videoInfo.coverUrl
+                          : videoInfo.posterUrl,
+                      fit: BoxFit.cover,
+                    )
+                  : ShortVideoPlayerWrapper(
+                      controller: controller,
+                      fit: BoxFit.contain,
+                      enableVerticalSwipeGestures: false,
+                      onSingleTap: () async {
+                        if (controller.isPlaying.value) {
+                          _showVideoControlsTemporarily();
+                          return;
+                        }
+                        await _togglePostVideoPlayback();
+                      },
+                      onLongPress: () {},
+                      onDoubleTap: () async {
+                        await _togglePostVideoPlayback();
+                      },
+                      onSwipeUp: () {},
+                      onSwipeDown: () {},
+                      enableDoubleTapLikeBurst: false,
+                      showPausedPlayButton: false,
+                      progressBarBottomOffset: 0,
+                    ),
+              Positioned(
+                top: 8,
+                right: 8,
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () {
+                    setState(() {
+                      _showFloatingVideo = false;
+                      _disableFloatingVideoForSession = true;
+                    });
+                  },
+                  child: Container(
+                    width: 24,
+                    height: 24,
+                    decoration: const BoxDecoration(
+                      color: Color(0x80000000),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      CupertinoIcons.chevron_down,
+                      color: CupertinoColors.white,
+                      size: 15,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFloatingVideoOverlay(Size areaSize) {
+    final detail = _detail;
+    final videoInfo = detail?.videoInfo;
+    if (detail == null || videoInfo == null) {
+      return const SizedBox.shrink();
+    }
+
+    final aspectRatio = (videoInfo.aspectRatio ?? 16 / 9).clamp(1.1, 2.2);
+    const double width = 168;
+    final double height = width / aspectRatio;
+    const double margin = 12;
+
+    final double maxLeft =
+        (areaSize.width - width - margin).clamp(margin, areaSize.width);
+    final double maxTop =
+        (areaSize.height - height - margin).clamp(margin, areaSize.height);
+
+    final Offset defaultOffset = Offset(maxLeft, margin);
+    final Offset currentOffset = Offset(
+      (_floatingVideoOffset ?? defaultOffset).dx.clamp(margin, maxLeft),
+      (_floatingVideoOffset ?? defaultOffset).dy.clamp(margin, maxTop),
+    );
+
+    return Positioned(
+      left: currentOffset.dx,
+      top: currentOffset.dy,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onPanUpdate: (details) {
+          final Offset nextOffset = Offset(
+            (currentOffset.dx + details.delta.dx).clamp(margin, maxLeft),
+            (currentOffset.dy + details.delta.dy).clamp(margin, maxTop),
+          );
+          setState(() {
+            _floatingVideoOffset = nextOffset;
+          });
+        },
+        child: _buildFloatingVideo(),
+      ),
+    );
+  }
+}
+
+class _PostDetailVideoControls extends StatelessWidget {
+  const _PostDetailVideoControls({
+    required this.controller,
+    required this.isVisible,
+    required this.isMuted,
+    required this.onTogglePlayback,
+    required this.onToggleMute,
+    required this.onOpenFullscreen,
+  });
+
+  final OolafVideoPlayerController controller;
+  final bool isVisible;
+  final bool isMuted;
+  final Future<void> Function() onTogglePlayback;
+  final Future<void> Function() onToggleMute;
+  final Future<void> Function() onOpenFullscreen;
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<bool>(
+      valueListenable: controller.isPlaying,
+      builder: (context, isPlaying, _) {
+        final showCenterPlayButton = !isPlaying;
+        return Stack(
+          children: [
+            Positioned.fill(
+              child: IgnorePointer(
+                ignoring: !showCenterPlayButton,
+                child: AnimatedOpacity(
+                  duration: const Duration(milliseconds: 180),
+                  opacity: showCenterPlayButton ? 1 : 0,
+                  child: Center(
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: onTogglePlayback,
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          color: const Color(0x70000000),
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: const Color(0x33FFFFFF),
+                            width: 1,
+                          ),
+                        ),
+                        child: const Padding(
+                          padding: EdgeInsets.all(18),
+                          child: Icon(
+                            CupertinoIcons.play_fill,
+                            color: CupertinoColors.white,
+                            size: 42,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: IgnorePointer(
+                ignoring: !isVisible,
+                child: AnimatedOpacity(
+                  duration: const Duration(milliseconds: 180),
+                  opacity: isVisible ? 1 : 0,
+                  child: Container(
+                    padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
+                    decoration: const BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Color(0x00000000),
+                          Color(0xCC000000),
+                        ],
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTap: onTogglePlayback,
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 4,
+                              vertical: 2,
+                            ),
+                            child: AppAssetIcon(
+                              assetName: isPlaying ? 'pause' : 'play',
+                              color: CupertinoColors.white,
+                              size: 18,
+                                fallbackIcon: isPlaying
+                                    ? CupertinoIcons.pause_fill
+                                    : CupertinoIcons.play_fill,
+                              ),
+                            ),
+                          ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: ValueListenableBuilder<Duration>(
+                            valueListenable: controller.position,
+                            builder: (context, position, _) {
+                              return ValueListenableBuilder<Duration>(
+                                valueListenable: controller.duration,
+                                builder: (context, duration, __) {
+                                  final safeDuration = duration > Duration.zero
+                                      ? duration
+                                      : Duration.zero;
+                                  final safePosition = position > safeDuration
+                                      ? safeDuration
+                                      : position;
+                                  return Text(
+                                    '${formatDuration(safePosition, showHoursIfNeeded: true)} / '
+                                    '${formatDuration(safeDuration, showHoursIfNeeded: true)}',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      color: CupertinoColors.white,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  );
+                                },
+                              );
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTap: onToggleMute,
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 4,
+                              vertical: 2,
+                            ),
+                            child: Icon(
+                              isMuted
+                                  ? CupertinoIcons.speaker_slash_fill
+                                  : CupertinoIcons.speaker_2_fill,
+                              color: CupertinoColors.white,
+                              size: 18,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTap: onOpenFullscreen,
+                          child: const Padding(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 4,
+                              vertical: 2,
+                            ),
+                            child: Icon(
+                              CupertinoIcons.fullscreen,
+                              color: CupertinoColors.white,
+                              size: 18,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _HupuPostVideoFullscreenPage extends StatelessWidget {
+  const _HupuPostVideoFullscreenPage({
+    required this.controller,
+    required this.title,
+  });
+
+  final OolafVideoPlayerController controller;
+  final String title;
+
+  Future<void> _togglePlay() async {
+    if (controller.isPlaying.value) {
+      await controller.pause();
+      return;
+    }
+    await controller.play();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return CupertinoPageScaffold(
+      backgroundColor: const Color(0xFF000000),
+      child: SafeArea(
+        bottom: false,
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: ShortVideoPlayerWrapper(
+                controller: controller,
+                fit: BoxFit.contain,
+                enableVerticalSwipeGestures: false,
+                onSingleTap: () async {
+                  await _togglePlay();
+                },
+                onLongPress: () {},
+                onDoubleTap: () {},
+                onSwipeUp: () {},
+                onSwipeDown: () {},
+              ),
+            ),
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: Container(
+                padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Color(0xCC000000),
+                      Color(0x00000000),
+                    ],
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () => Navigator.of(context).maybePop(),
+                      child: const Padding(
+                        padding: EdgeInsets.all(6),
+                        child: Icon(
+                          CupertinoIcons.back,
+                          color: CupertinoColors.white,
+                          size: 22,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: CupertinoColors.white,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            Positioned.fill(
+              child: IgnorePointer(
+                ignoring: controller.isPlaying.value,
+                child: ValueListenableBuilder<bool>(
+                  valueListenable: controller.isPlaying,
+                  builder: (context, isPlaying, _) {
+                    if (isPlaying) {
+                      return const SizedBox.shrink();
+                    }
+                    return Center(
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          color: const Color(0x66000000),
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: const Color(0x33FFFFFF),
+                            width: 1,
+                          ),
+                        ),
+                        child: const Padding(
+                          padding: EdgeInsets.all(18),
+                          child: Icon(
+                            CupertinoIcons.play_fill,
+                            color: CupertinoColors.white,
+                            size: 52,
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

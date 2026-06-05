@@ -36,6 +36,7 @@ class HupuHotTagPage {
       headTitleImageNight: resourceMap['headTitleImgNight']?.toString() ?? '',
     );
   }
+
 }
 
 class HupuHotTagItem {
@@ -65,6 +66,7 @@ class HupuHotTagItem {
       useBusiness: _parseInt(json['useBusiness']),
     );
   }
+
 }
 
 class HupuHotRankCategory {
@@ -94,6 +96,7 @@ class HupuHotRankCategory {
       adPageId: json['ad_page_id']?.toString() ?? '',
     );
   }
+
 }
 
 class HupuHotRankResponse {
@@ -119,6 +122,7 @@ class HupuHotRankResponse {
       adPageId: result['ad_page_id']?.toString() ?? '',
     );
   }
+
 }
 
 class HupuHotRankItem {
@@ -147,6 +151,7 @@ class HupuHotRankItem {
       thread: HupuHotRankThread.fromJson(thread),
     );
   }
+
 }
 
 class HupuHotRankThread {
@@ -234,6 +239,7 @@ class HupuHotRankThread {
       lightReplies: _parseHotRankLightReplies(json['light_replies']),
     );
   }
+
 }
 
 class HupuHotRankImage {
@@ -260,6 +266,7 @@ class HupuHotRankImage {
       type: json['type']?.toString() ?? '',
     );
   }
+
 }
 
 class HupuHotRankLightReply {
@@ -303,6 +310,7 @@ class HupuHotRankLightReply {
       pics: _parseHotRankImages(json['pics']),
     );
   }
+
 }
 
 int _parseInt(dynamic value) {

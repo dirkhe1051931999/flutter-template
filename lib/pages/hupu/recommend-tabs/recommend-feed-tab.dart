@@ -11,6 +11,7 @@ import 'package:oolaf_flutted/model/hupu/index.dart';
 import 'package:oolaf_flutted/pages/hupu/hupu_post_detail_page.dart';
 import 'package:oolaf_flutted/pages/hupu/hupu_user_detail_helper.dart';
 import 'package:oolaf_flutted/pages/hupu/hupu_video_queue_page.dart';
+import 'package:oolaf_flutted/utils/hupu_recommend_feed_persistence.dart';
 import 'package:oolaf_flutted/pages/hupu/widgets/hupu_feed_card.dart';
 import 'package:oolaf_flutted/pages/hupu/widgets/hupu_load_more_footer.dart';
 import 'package:oolaf_flutted/pages/hupu/widgets/hupu_refresh_indicator.dart';
@@ -34,6 +35,8 @@ class HupuRecommendFeedTab extends StatefulWidget {
 
 class _HupuRecommendFeedTabState extends State<HupuRecommendFeedTab>
     with AutomaticKeepAliveClientMixin<HupuRecommendFeedTab> {
+  static const Duration _maxCacheAge = Duration(minutes: 5);
+
   final ScrollController _scrollController = ScrollController();
   final List<HupuFeedItem> _items = <HupuFeedItem>[];
   final Set<String> _itemKeys = <String>{};
@@ -57,7 +60,7 @@ class _HupuRecommendFeedTabState extends State<HupuRecommendFeedTab>
   void initState() {
     super.initState();
     _scrollController.addListener(_handleScroll);
-    _fetchInitial();
+    _loadInitialFromCacheOrNetwork();
   }
 
   @override
@@ -79,6 +82,29 @@ class _HupuRecommendFeedTabState extends State<HupuRecommendFeedTab>
     unawaited(_onLoading());
   }
 
+  Future<void> _loadInitialFromCacheOrNetwork() async {
+    final cachedSnapshot = await HupuRecommendFeedPersistence.load();
+    if (cachedSnapshot != null &&
+        cachedSnapshot.isFresh(_maxCacheAge) &&
+        mounted) {
+      final merged = _mergeItems(cachedSnapshot.response.items, reset: true);
+      setState(() {
+        _items
+          ..clear()
+          ..addAll(merged);
+        _hasMore = cachedSnapshot.response.items.isNotEmpty;
+        _isInitialLoading = false;
+        _errorMessage = null;
+        _loadMoreState = cachedSnapshot.response.items.isNotEmpty
+            ? HupuLoadMoreState.idle
+            : HupuLoadMoreState.noMore;
+      });
+      return;
+    }
+
+    await _fetchInitial();
+  }
+
   Future<void> _fetchInitial() async {
     if (_isRefreshing || _isLoadingMore) {
       return;
@@ -95,6 +121,12 @@ class _HupuRecommendFeedTabState extends State<HupuRecommendFeedTab>
         isRefresh: true,
       );
       final merged = _mergeItems(response.items, reset: true);
+      await HupuRecommendFeedPersistence.save(
+        HupuRecommendFeedCacheSnapshot(
+          cachedAtMillis: DateTime.now().millisecondsSinceEpoch,
+          response: response,
+        ),
+      );
       if (!mounted) {
         return;
       }
@@ -133,6 +165,12 @@ class _HupuRecommendFeedTabState extends State<HupuRecommendFeedTab>
         isRefresh: true,
       );
       final merged = _mergeItems(response.items, reset: true);
+      await HupuRecommendFeedPersistence.save(
+        HupuRecommendFeedCacheSnapshot(
+          cachedAtMillis: DateTime.now().millisecondsSinceEpoch,
+          response: response,
+        ),
+      );
       if (!mounted) {
         return;
       }

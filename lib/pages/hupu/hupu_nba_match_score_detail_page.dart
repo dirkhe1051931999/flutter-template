@@ -2,8 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/cupertino.dart';
 import 'package:oolaf_flutted/api/hupu/index.dart';
-import 'package:oolaf_flutted/components/app_tab/app_tab_types.dart';
-import 'package:oolaf_flutted/components/app_tab/index.dart';
 import 'package:oolaf_flutted/components/network_img/index.dart';
 import 'package:oolaf_flutted/components/route_page_header/index.dart';
 import 'package:oolaf_flutted/model/hupu/index.dart';
@@ -692,35 +690,42 @@ class _CommentHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tabItems = <({String label, _ScoreCommentType type})>[
+      (
+        label: '亮回复 /${_countText(hotCount)}',
+        type: _ScoreCommentType.hottest,
+      ),
+      (
+        label: '全部回复 /${_countText(allCount)}',
+        type: _ScoreCommentType.all,
+      ),
+    ];
+
     return Container(
       color: CupertinoColors.white,
       child: Column(
         children: [
-          SizedBox(
+          Container(
             height: 48,
-            child: AppTabs(
-              activeKey: type.index,
-              onChange: (index) {
-                onTypeChanged(_ScoreCommentType.values[index]);
-              },
-              backgroundColor: CupertinoColors.white,
-              border: true,
-              color: const Color(0xFFE51E2A),
-              titleActiveColor: const Color(0xFF202127),
-              titleInactiveColor: const Color(0xFF8F96A3),
-              headerHeight: 48,
-              lineWidth: 28,
-              lineHeight: 3,
-              items: <AppTabItemData>[
-                AppTabItemData(
-                  title: '亮回复 /${_countText(hotCount)}',
-                  child: const SizedBox.shrink(),
-                ),
-                AppTabItemData(
-                  title: '全部回复 /${_countText(allCount)}',
-                  child: const SizedBox.shrink(),
-                ),
-              ],
+            decoration: const BoxDecoration(
+              border: Border(
+                bottom: BorderSide(color: Color(0x12000000), width: 0.5),
+              ),
+            ),
+            child: Row(
+              children: tabItems.map((item) {
+                final isActive = type == item.type;
+                return Expanded(
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: isLoading ? null : () => onTypeChanged(item.type),
+                    child: _CommentHeaderTab(
+                      label: item.label,
+                      isActive: isActive,
+                    ),
+                  ),
+                );
+              }).toList(growable: false),
             ),
           ),
           Padding(
@@ -752,6 +757,50 @@ class _CommentHeader extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _CommentHeaderTab extends StatelessWidget {
+  const _CommentHeaderTab({
+    required this.label,
+    required this.isActive,
+  });
+
+  final String label;
+  final bool isActive;
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        Text(
+          label,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+            color: isActive
+                ? const Color(0xFF202127)
+                : const Color(0xFF8F96A3),
+            fontSize: 14,
+            fontWeight: isActive ? FontWeight.w800 : FontWeight.w600,
+          ),
+        ),
+        Positioned(
+          bottom: 4,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 180),
+            curve: Curves.easeOutCubic,
+            width: isActive ? 28 : 0,
+            height: 3,
+            decoration: BoxDecoration(
+              color: const Color(0xFFE51E2A),
+              borderRadius: BorderRadius.circular(999),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

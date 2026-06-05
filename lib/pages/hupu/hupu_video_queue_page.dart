@@ -3,9 +3,8 @@ import 'dart:ui';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
-import 'package:oolaf_flutted/components/app_asset_icon/index.dart';
+import 'package:oolaf_flutted/components/app_vertical_video_feed/index.dart';
 import 'package:oolaf_flutted/components/network_img/index.dart';
-import 'package:oolaf_flutted/components/short_video/short_video_player_wrapper.dart';
 import 'package:oolaf_flutted/model/hupu/index.dart';
 import 'package:oolaf_flutted/utils/oolaf_video_controller.dart';
 import 'package:oolaf_flutted/utils/video_manager.dart';
@@ -62,9 +61,9 @@ class HupuVideoQueuePage extends StatefulWidget {
 class _HupuVideoQueuePageState extends State<HupuVideoQueuePage>
     with WidgetsBindingObserver {
   static const String _scope = 'hupu_video_queue';
-  static const int _preloadTriggerRemainingCount = 5;
 
-  final PageController _pageController = PageController();
+  final AppVerticalVideoFeedController _feedController =
+      AppVerticalVideoFeedController();
   final VideoManager _videoManager = VideoManager();
 
   List<HupuFeedItem> _videoItems = const <HupuFeedItem>[];
@@ -97,16 +96,15 @@ class _HupuVideoQueuePageState extends State<HupuVideoQueuePage>
       await _videoManager.setActiveIndex(_activeIndex);
       await _videoManager.playActive();
       if (_activeIndex > 0) {
-        _pageController.jumpToPage(_activeIndex);
+        _feedController.jumpToPage(_activeIndex);
       }
-      await _loadMoreIfNeeded(_activeIndex);
     });
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    _pageController.dispose();
+    _feedController.dispose();
     unawaited(_videoManager.release(_scope));
     unawaited(_videoManager.disposeManager());
     super.dispose();
@@ -187,7 +185,6 @@ class _HupuVideoQueuePageState extends State<HupuVideoQueuePage>
     if (mounted) {
       setState(() {});
     }
-    await _loadMoreIfNeeded(index);
   }
 
   void _schedulePlayerRefresh() {
@@ -212,12 +209,8 @@ class _HupuVideoQueuePageState extends State<HupuVideoQueuePage>
     });
   }
 
-  Future<void> _loadMoreIfNeeded(int index) async {
+  Future<void> _handleLoadMoreRequested() async {
     if (_isLoadingMore || !widget.hasMoreProvider()) {
-      return;
-    }
-    final remainingCount = _videoItems.length - index - 1;
-    if (remainingCount > _preloadTriggerRemainingCount) {
       return;
     }
     _isLoadingMore = true;
@@ -243,150 +236,50 @@ class _HupuVideoQueuePageState extends State<HupuVideoQueuePage>
     await Clipboard.setData(ClipboardData(text: video.videoUrl));
   }
 
-  Future<void> _showNextVideo() async {
-    final targetIndex = _activeIndex + 1;
-    if (targetIndex >= _videoItems.length) {
-      await _loadMoreIfNeeded(_activeIndex);
-      if (!mounted || targetIndex >= _videoItems.length) {
-        return;
-      }
-    }
-    await _pageController.animateToPage(
-      targetIndex,
-      duration: const Duration(milliseconds: 260),
-      curve: Curves.easeOutCubic,
-    );
-  }
-
-  Future<void> _showPreviousVideo() async {
-    final targetIndex = _activeIndex - 1;
-    if (targetIndex < 0) {
-      return;
-    }
-    await _pageController.animateToPage(
-      targetIndex,
-      duration: const Duration(milliseconds: 260),
-      curve: Curves.easeOutCubic,
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
-    if (_videoItems.isEmpty) {
-      return CupertinoPageScaffold(
-        backgroundColor: const Color(0xFF0B0B0F),
-        child: SafeArea(
-          child: Center(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 28),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 68,
-                    height: 68,
-                    decoration: BoxDecoration(
-                      color: const Color(0x1AFFFFFF),
-                      borderRadius: BorderRadius.circular(22),
-                    ),
-                    child: const Center(
-                      child: AppAssetIcon(
-                        assetName: 'play',
-                        color: CupertinoColors.white,
-                        size: 30,
-                        fallbackIcon: CupertinoIcons.play_rectangle_fill,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  const Text(
-                    '暂无可播放视频',
-                    style: TextStyle(
-                      color: CupertinoColors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    '当前已加载的虎扑帖子里还没有可播放的视频内容。',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: Color(0xB3FFFFFF),
-                      fontSize: 13,
-                      height: 1.45,
-                    ),
-                  ),
-                  const SizedBox(height: 18),
-                  CupertinoButton(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 10),
-                    color: const Color(0x1AFFFFFF),
-                    borderRadius: BorderRadius.circular(18),
-                    onPressed: () => Navigator.of(context).maybePop(),
-                    child: const Text(
-                      '返回列表',
-                      style: TextStyle(
-                        color: CupertinoColors.white,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      );
-    }
-
-    return CupertinoPageScaffold(
+    return AppVerticalVideoFeed<HupuFeedItem>(
+      controller: _feedController,
+      items: _videoItems,
+      dragDevices: _hupuVideoQueueDragDevices,
+      hasMore: widget.hasMoreProvider(),
+      onLoadMoreRequested: _handleLoadMoreRequested,
       backgroundColor: const Color(0xFF05060A),
-      child: ScrollConfiguration(
-        behavior: const CupertinoScrollBehavior().copyWith(
-          dragDevices: _hupuVideoQueueDragDevices,
-        ),
-        child: PageView.builder(
-          controller: _pageController,
-          scrollDirection: Axis.vertical,
-          itemCount: _videoItems.length,
-          onPageChanged: (index) {
-            unawaited(_handlePageChanged(index));
+      emptyMessage: '当前已加载的虎扑帖子里还没有可播放的视频内容。',
+      emptyActionLabel: '返回列表',
+      onEmptyActionPressed: () => Navigator.of(context).maybePop(),
+      onPageChanged: _handlePageChanged,
+      itemBuilder: (context, index, item, actions) {
+        return _HupuVideoPageItem(
+          key: ValueKey<String>(
+            'hupu_video_page_${item.uniqueKey}_$_playerRefreshEpoch',
+          ),
+          item: item,
+          controller: _controllerOf(item),
+          isActive: index == _activeIndex,
+          isDetailsExpanded: _detailsExpanded,
+          onBack: () => Navigator.of(context).maybePop(),
+          onCopyLink: () => _copyLink(item),
+          onExpandDetails: () {
+            if (_detailsExpanded) {
+              return;
+            }
+            setState(() {
+              _detailsExpanded = true;
+            });
           },
-          itemBuilder: (context, index) {
-            final item = _videoItems[index];
-            return _HupuVideoPageItem(
-              key: ValueKey<String>(
-                  'hupu_video_page_${item.uniqueKey}_$_playerRefreshEpoch'),
-              item: item,
-              controller: _controllerOf(item),
-              isActive: index == _activeIndex,
-              isDetailsExpanded: _detailsExpanded,
-              onBack: () => Navigator.of(context).maybePop(),
-              onCopyLink: () => _copyLink(item),
-              onExpandDetails: () {
-                if (_detailsExpanded) {
-                  return;
-                }
-                setState(() {
-                  _detailsExpanded = true;
-                });
-              },
-              onCollapseDetails: () {
-                if (!_detailsExpanded) {
-                  return;
-                }
-                setState(() {
-                  _detailsExpanded = false;
-                });
-              },
-              onSwipeUp: _showNextVideo,
-              onSwipeDown: _showPreviousVideo,
-            );
+          onCollapseDetails: () {
+            if (!_detailsExpanded) {
+              return;
+            }
+            setState(() {
+              _detailsExpanded = false;
+            });
           },
-        ),
-      ),
+          onSwipeUp: actions.showNextPage,
+          onSwipeDown: actions.showPreviousPage,
+        );
+      },
     );
   }
 }
@@ -604,343 +497,355 @@ class _HupuVideoPageItem extends StatelessWidget {
     return Stack(
       fit: StackFit.expand,
       children: [
-        CustomNetworkImage(
-          coverUrl,
-          fit: BoxFit.cover,
-        ),
-        const DecoratedBox(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
-                Color(0xC0000000),
-                Color(0x40000000),
-                Color(0xD9000000),
-              ],
-              stops: [0, 0.35, 1],
-            ),
-          ),
-        ),
-        ShortVideoPlayerWrapper(
+        AppVerticalVideoFeedPlayerPage(
           controller: controller,
-          onSingleTap: () {},
-          onLongPress: () {},
-          onDoubleTap: () {},
-          onSwipeUp: () {
-            unawaited(onSwipeUp());
-          },
-          onSwipeDown: () {
-            unawaited(onSwipeDown());
-          },
-          progressBarBottomOffset: 0,
-          enableVerticalSwipeGestures: true,
-        ),
-        SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 10, 16, 18),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          backgroundBuilder: (_) {
+            return Stack(
+              fit: StackFit.expand,
               children: [
-                AnimatedSlide(
-                  duration: const Duration(milliseconds: 260),
-                  curve: Curves.easeOutCubic,
-                  offset: isActive ? Offset.zero : const Offset(0, -0.06),
-                  child: AnimatedOpacity(
-                    duration: const Duration(milliseconds: 220),
-                    opacity: isActive ? 1 : 0.9,
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(22),
-                      child: BackdropFilter(
-                        filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-                        child: Container(
-                          padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
-                          decoration: BoxDecoration(
-                            color: const Color(0x2411171F),
-                            borderRadius: BorderRadius.circular(22),
-                            border: Border.all(color: const Color(0x26FFFFFF)),
-                          ),
-                          child: Row(
-                            children: [
-                              _TopActionButton(
-                                icon: CupertinoIcons.back,
-                                onPressed: onBack,
-                              ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      item.forumName.isEmpty
-                                          ? item.topicName
-                                          : item.forumName,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(
-                                        color: CupertinoColors.white,
-                                        fontSize: 15,
-                                        fontWeight: FontWeight.w700,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 2),
-                                    Text(
-                                      '第 ${item.replies} 条讨论热帖视频流',
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(
-                                        color: Color(0xB3FFFFFF),
-                                        fontSize: 12,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              _TopActionButton(
-                                icon: CupertinoIcons.link,
-                                onPressed: () {
-                                  unawaited(onCopyLink());
-                                },
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
+                CustomNetworkImage(
+                  coverUrl,
+                  fit: BoxFit.cover,
+                ),
+                const DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Color(0xC0000000),
+                        Color(0x40000000),
+                        Color(0xD9000000),
+                      ],
+                      stops: [0, 0.35, 1],
                     ),
                   ),
                 ),
-                const Spacer(),
-                AnimatedSlide(
-                  duration: const Duration(milliseconds: 280),
-                  curve: Curves.easeOutCubic,
-                  offset: isActive ? Offset.zero : const Offset(0, 0.04),
-                  child: AnimatedOpacity(
-                    duration: const Duration(milliseconds: 220),
-                    opacity: isActive ? 1 : 0.92,
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(26),
-                      child: BackdropFilter(
-                        filter: ImageFilter.blur(sigmaX: 22, sigmaY: 22),
-                        child: Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                              colors: [
-                                Color(0x36171A1F),
-                                Color(0x1D171A1F),
-                              ],
-                            ),
-                            borderRadius: BorderRadius.circular(26),
-                            border: Border.all(color: const Color(0x30FFFFFF)),
-                            boxShadow: const [
-                              BoxShadow(
-                                color: Color(0x33000000),
-                                blurRadius: 24,
-                                offset: Offset(0, 10),
+              ],
+            );
+          },
+          onSwipeUp: onSwipeUp,
+          onSwipeDown: onSwipeDown,
+          overlayBuilder: (_) {
+            return SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 10, 16, 18),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    AnimatedSlide(
+                      duration: const Duration(milliseconds: 260),
+                      curve: Curves.easeOutCubic,
+                      offset: isActive ? Offset.zero : const Offset(0, -0.06),
+                      child: AnimatedOpacity(
+                        duration: const Duration(milliseconds: 220),
+                        opacity: isActive ? 1 : 0.9,
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(22),
+                          child: BackdropFilter(
+                            filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+                            child: Container(
+                              padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
+                              decoration: BoxDecoration(
+                                color: const Color(0x2411171F),
+                                borderRadius: BorderRadius.circular(22),
+                                border: Border.all(color: const Color(0x26FFFFFF)),
                               ),
-                            ],
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                crossAxisAlignment: CrossAxisAlignment.center,
+                              child: Row(
                                 children: [
-                                  if (!isDetailsExpanded) ...[
-                                    _ExpandHandleButton(
-                                        onPressed: onExpandDetails),
-                                    const SizedBox(width: 10),
-                                  ],
-                                  ClipOval(
-                                    child: CustomNetworkImage(
-                                      item.header,
-                                      width: isDetailsExpanded ? 46 : 38,
-                                      height: isDetailsExpanded ? 46 : 38,
-                                    ),
+                                  _TopActionButton(
+                                    icon: CupertinoIcons.back,
+                                    onPressed: onBack,
                                   ),
-                                  const SizedBox(width: 12),
+                                  const SizedBox(width: 10),
                                   Expanded(
                                     child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
+                                      crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
                                         Text(
-                                          item.nickname.isEmpty
-                                              ? '虎扑用户'
-                                              : item.nickname,
+                                          item.forumName.isEmpty
+                                              ? item.topicName
+                                              : item.forumName,
                                           maxLines: 1,
                                           overflow: TextOverflow.ellipsis,
                                           style: const TextStyle(
                                             color: CupertinoColors.white,
-                                            fontSize: 16,
+                                            fontSize: 15,
                                             fontWeight: FontWeight.w700,
                                           ),
                                         ),
-                                        const SizedBox(height: 4),
+                                        const SizedBox(height: 2),
                                         Text(
-                                          publishTimeText.isNotEmpty
-                                              ? '$metaText  $publishTimeText'
-                                              : metaText,
+                                          '第 ${item.replies} 条讨论热帖视频流',
                                           maxLines: 1,
                                           overflow: TextOverflow.ellipsis,
                                           style: const TextStyle(
-                                            color: Color(0xCCFFFFFF),
+                                            color: Color(0xB3FFFFFF),
                                             fontSize: 12,
                                           ),
                                         ),
                                       ],
                                     ),
                                   ),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 10, vertical: 6),
-                                    decoration: BoxDecoration(
-                                      color: const Color(0x1FFFFFFF),
-                                      borderRadius: BorderRadius.circular(999),
-                                    ),
-                                    child: const Text(
-                                      '视频帖',
-                                      style: TextStyle(
-                                        color: CupertinoColors.white,
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w700,
-                                      ),
-                                    ),
+                                  _TopActionButton(
+                                    icon: CupertinoIcons.link,
+                                    onPressed: () {
+                                      unawaited(onCopyLink());
+                                    },
                                   ),
-                                  if (isDetailsExpanded) ...[
-                                    const SizedBox(width: 10),
-                                    _CollapseHandleButton(
-                                        onPressed: onCollapseDetails),
-                                  ],
                                 ],
                               ),
-                              const SizedBox(height: 12),
-                              AnimatedSize(
-                                duration: const Duration(milliseconds: 320),
-                                curve: Curves.easeOutCubic,
-                                alignment: Alignment.topCenter,
-                                child: isDetailsExpanded
-                                    ? Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            item.title,
-                                            style: const TextStyle(
-                                              color: CupertinoColors.white,
-                                              fontSize: 22,
-                                              height: 1.32,
-                                              fontWeight: FontWeight.w800,
-                                            ),
-                                          ),
-                                          const SizedBox(height: 10),
-                                          Text(
-                                            summaryText,
-                                            maxLines: 3,
-                                            overflow: TextOverflow.ellipsis,
-                                            style: const TextStyle(
-                                              color: Color(0xCCFFFFFF),
-                                              fontSize: 14,
-                                              height: 1.55,
-                                            ),
-                                          ),
-                                          const SizedBox(height: 14),
-                                          Wrap(
-                                            spacing: 8,
-                                            runSpacing: 8,
-                                            children: [
-                                              _InfoChip(
-                                                  label: item.topicName.isEmpty
-                                                      ? '未分类'
-                                                      : item.topicName),
-                                              _InfoChip(
-                                                  label: '${item.replies}回复'),
-                                              _InfoChip(
-                                                  label: '${item.lights}亮了'),
-                                              if (video.bulletCommentCount
-                                                  .isNotEmpty)
-                                                _InfoChip(
-                                                    label:
-                                                        '${video.bulletCommentCount}弹幕'),
-                                            ],
-                                          ),
-                                          const SizedBox(height: 14),
-                                          Row(
-                                            children: [
-                                              Expanded(
-                                                child: _StatCapsule(
-                                                  title: '播放热度',
-                                                  value: video.playCount.isEmpty
-                                                      ? '--'
-                                                      : video.playCount,
-                                                ),
-                                              ),
-                                              const SizedBox(width: 10),
-                                              Expanded(
-                                                child: _StatCapsule(
-                                                  title: '视频时长',
-                                                  value: video.duration.isEmpty
-                                                      ? '--'
-                                                      : video.duration,
-                                                ),
-                                              ),
-                                              const SizedBox(width: 10),
-                                              Expanded(
-                                                child: _StatCapsule(
-                                                  title: '文件大小',
-                                                  value: video.size.isEmpty
-                                                      ? '--'
-                                                      : video.size,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ],
-                                      )
-                                    : _CollapsedVideoInfoBar(
-                                        title: item.title,
-                                        onExpand: onExpandDetails,
-                                      ),
-                              ),
-                            ],
+                            ),
                           ),
                         ),
                       ),
                     ),
-                  ),
-                ),
-                const SizedBox(height: 10),
-                AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 220),
-                  child: isActive
-                      ? Center(
-                          child: Container(
-                            key: ValueKey<String>(
-                                'queue_hint_${item.uniqueKey}'),
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 12, vertical: 7),
-                            decoration: BoxDecoration(
-                              color: const Color(0x33000000),
-                              borderRadius: BorderRadius.circular(999),
-                            ),
-                            child: const Text(
-                              '上滑切换下一个视频',
-                              style: TextStyle(
-                                color: CupertinoColors.white,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w500,
+                    const Spacer(),
+                    AnimatedSlide(
+                      duration: const Duration(milliseconds: 280),
+                      curve: Curves.easeOutCubic,
+                      offset: isActive ? Offset.zero : const Offset(0, 0.04),
+                      child: AnimatedOpacity(
+                        duration: const Duration(milliseconds: 220),
+                        opacity: isActive ? 1 : 0.92,
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(26),
+                          child: BackdropFilter(
+                            filter: ImageFilter.blur(sigmaX: 22, sigmaY: 22),
+                            child: Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                gradient: const LinearGradient(
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                  colors: [
+                                    Color(0x36171A1F),
+                                    Color(0x1D171A1F),
+                                  ],
+                                ),
+                                borderRadius: BorderRadius.circular(26),
+                                border: Border.all(color: const Color(0x30FFFFFF)),
+                                boxShadow: const [
+                                  BoxShadow(
+                                    color: Color(0x33000000),
+                                    blurRadius: 24,
+                                    offset: Offset(0, 10),
+                                  ),
+                                ],
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    crossAxisAlignment: CrossAxisAlignment.center,
+                                    children: [
+                                      if (!isDetailsExpanded) ...[
+                                        _ExpandHandleButton(
+                                          onPressed: onExpandDetails,
+                                        ),
+                                        const SizedBox(width: 10),
+                                      ],
+                                      ClipOval(
+                                        child: CustomNetworkImage(
+                                          item.header,
+                                          width: isDetailsExpanded ? 46 : 38,
+                                          height: isDetailsExpanded ? 46 : 38,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              item.nickname.isEmpty
+                                                  ? '虎扑用户'
+                                                  : item.nickname,
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: const TextStyle(
+                                                color: CupertinoColors.white,
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.w700,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 4),
+                                            Text(
+                                              publishTimeText.isNotEmpty
+                                                  ? '$metaText  $publishTimeText'
+                                                  : metaText,
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: const TextStyle(
+                                                color: Color(0xCCFFFFFF),
+                                                fontSize: 12,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 10,
+                                          vertical: 6,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0x1FFFFFFF),
+                                          borderRadius:
+                                              BorderRadius.circular(999),
+                                        ),
+                                        child: const Text(
+                                          '视频帖',
+                                          style: TextStyle(
+                                            color: CupertinoColors.white,
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                        ),
+                                      ),
+                                      if (isDetailsExpanded) ...[
+                                        const SizedBox(width: 10),
+                                        _CollapseHandleButton(
+                                          onPressed: onCollapseDetails,
+                                        ),
+                                      ],
+                                    ],
+                                  ),
+                                  const SizedBox(height: 12),
+                                  AnimatedSize(
+                                    duration: const Duration(milliseconds: 320),
+                                    curve: Curves.easeOutCubic,
+                                    alignment: Alignment.topCenter,
+                                    child: isDetailsExpanded
+                                        ? Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                item.title,
+                                                style: const TextStyle(
+                                                  color: CupertinoColors.white,
+                                                  fontSize: 22,
+                                                  height: 1.32,
+                                                  fontWeight: FontWeight.w800,
+                                                ),
+                                              ),
+                                              const SizedBox(height: 10),
+                                              Text(
+                                                summaryText,
+                                                maxLines: 3,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: const TextStyle(
+                                                  color: Color(0xCCFFFFFF),
+                                                  fontSize: 14,
+                                                  height: 1.55,
+                                                ),
+                                              ),
+                                              const SizedBox(height: 14),
+                                              Wrap(
+                                                spacing: 8,
+                                                runSpacing: 8,
+                                                children: [
+                                                  _InfoChip(
+                                                    label: item.topicName.isEmpty
+                                                        ? '未分类'
+                                                        : item.topicName,
+                                                  ),
+                                                  _InfoChip(
+                                                    label: '${item.replies}回复',
+                                                  ),
+                                                  _InfoChip(
+                                                    label: '${item.lights}亮了',
+                                                  ),
+                                                  if (video.bulletCommentCount
+                                                      .isNotEmpty)
+                                                    _InfoChip(
+                                                      label:
+                                                          '${video.bulletCommentCount}弹幕',
+                                                    ),
+                                                ],
+                                              ),
+                                              const SizedBox(height: 14),
+                                              Row(
+                                                children: [
+                                                  Expanded(
+                                                    child: _StatCapsule(
+                                                      title: '播放热度',
+                                                      value: video.playCount.isEmpty
+                                                          ? '--'
+                                                          : video.playCount,
+                                                    ),
+                                                  ),
+                                                  const SizedBox(width: 10),
+                                                  Expanded(
+                                                    child: _StatCapsule(
+                                                      title: '视频时长',
+                                                      value: video.duration.isEmpty
+                                                          ? '--'
+                                                          : video.duration,
+                                                    ),
+                                                  ),
+                                                  const SizedBox(width: 10),
+                                                  Expanded(
+                                                    child: _StatCapsule(
+                                                      title: '文件大小',
+                                                      value: video.size.isEmpty
+                                                          ? '--'
+                                                          : video.size,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ],
+                                          )
+                                        : _CollapsedVideoInfoBar(
+                                            title: item.title,
+                                            onExpand: onExpandDetails,
+                                          ),
+                                  ),
+                                ],
                               ),
                             ),
                           ),
-                        )
-                      : const SizedBox.shrink(),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 220),
+                      child: isActive
+                          ? Center(
+                              child: Container(
+                                key: ValueKey<String>(
+                                  'queue_hint_${item.uniqueKey}',
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 7,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: const Color(0x33000000),
+                                  borderRadius: BorderRadius.circular(999),
+                                ),
+                                child: const Text(
+                                  '上滑切换下一个视频',
+                                  style: TextStyle(
+                                    color: CupertinoColors.white,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                            )
+                          : const SizedBox.shrink(),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-          ),
+              ),
+            );
+          },
         ),
         if (!isActive) const SizedBox.shrink(),
       ],

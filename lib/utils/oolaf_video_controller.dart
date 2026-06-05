@@ -15,6 +15,7 @@ abstract class OolafVideoController {
 
   ValueListenable<Duration> get position;
   ValueListenable<Duration> get duration;
+  ValueListenable<double> get volume;
 
   ValueListenable<Size?> get videoSize;
   ValueListenable<OolafVideoOutputStatus> get videoOutputStatus;
@@ -25,6 +26,7 @@ abstract class OolafVideoController {
   Future<void> seekTo(Duration position);
   Future<void> setLooping(bool looping);
   Future<void> setPlaybackRate(double rate);
+  Future<void> setVolume(double volume);
 
   Widget buildView({BoxFit fit = BoxFit.cover});
 

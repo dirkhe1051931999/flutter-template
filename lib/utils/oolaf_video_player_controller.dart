@@ -34,6 +34,9 @@ class OolafVideoPlayerController implements OolafVideoController {
   ValueListenable<Duration> get duration => _delegate.duration;
 
   @override
+  ValueListenable<double> get volume => _delegate.volume;
+
+  @override
   ValueListenable<Size?> get videoSize => _delegate.videoSize;
 
   @override
@@ -57,6 +60,9 @@ class OolafVideoPlayerController implements OolafVideoController {
 
   @override
   Future<void> setPlaybackRate(double rate) => _delegate.setPlaybackRate(rate);
+
+  @override
+  Future<void> setVolume(double volume) => _delegate.setVolume(volume);
 
   @override
   Widget buildView({BoxFit fit = BoxFit.cover}) =>

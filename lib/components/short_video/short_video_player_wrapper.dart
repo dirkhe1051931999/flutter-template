@@ -25,6 +25,8 @@ class ShortVideoPlayerWrapper extends StatefulWidget {
     this.landscapeContainCenterYFactor = 0.4,
     this.landscapeContainTopInset,
     this.enableVerticalSwipeGestures = true,
+    this.enableDoubleTapLikeBurst = true,
+    this.showPausedPlayButton = true,
   });
 
   final OolafVideoController? controller;
@@ -44,6 +46,8 @@ class ShortVideoPlayerWrapper extends StatefulWidget {
   final double landscapeContainCenterYFactor;
   final double? landscapeContainTopInset;
   final bool enableVerticalSwipeGestures;
+  final bool enableDoubleTapLikeBurst;
+  final bool showPausedPlayButton;
 
   @override
   State<ShortVideoPlayerWrapper> createState() =>
@@ -161,6 +165,7 @@ class _ShortVideoPlayerWrapperState extends State<ShortVideoPlayerWrapper> {
                   return Stack(
                     fit: StackFit.expand,
                     children: [
+                      const ColoredBox(color: CupertinoColors.black),
                       if (useCustomLandscapeLayout && videoSize != null)
                         _buildLandscapeContainedVideo(
                           controller: controller,
@@ -194,7 +199,8 @@ class _ShortVideoPlayerWrapperState extends State<ShortVideoPlayerWrapper> {
                                       isInitialized &&
                                       !isPlaying &&
                                       status ==
-                                          OolafVideoOutputStatus.normal;
+                                          OolafVideoOutputStatus.normal &&
+                                      widget.showPausedPlayButton;
                                   if (!shouldShowPlayIcon) {
                                     return const SizedBox.shrink();
                                   }
@@ -304,7 +310,7 @@ class _ShortVideoPlayerWrapperState extends State<ShortVideoPlayerWrapper> {
                   onDoubleTap: () {
                     widget.onDoubleTap();
                     final pos = _lastDoubleTapPosition;
-                    if (pos != null) {
+                    if (widget.enableDoubleTapLikeBurst && pos != null) {
                       layerContext.emitLikeBurst(pos);
                     }
                   },
@@ -366,7 +372,10 @@ class _ShortVideoPlayerWrapperState extends State<ShortVideoPlayerWrapper> {
       left: (maxWidth - renderedWidth) / 2,
       width: renderedWidth,
       height: renderedHeight,
-      child: controller.buildView(fit: fit),
+      child: ColoredBox(
+        color: CupertinoColors.black,
+        child: controller.buildView(fit: fit),
+      ),
     );
   }
 }

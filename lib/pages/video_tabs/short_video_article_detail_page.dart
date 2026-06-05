@@ -1,13 +1,13 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart' show SelectionArea, SelectableText;
 import 'package:oolaf_flutted/components/article/article_comment_input_sheet.dart';
+import 'package:oolaf_flutted/components/article/article_body_helper.dart';
 import 'package:oolaf_flutted/components/article/article_detail_bottom_action_bar.dart';
 import 'package:oolaf_flutted/components/article/article_share_sheet.dart';
 import 'package:oolaf_flutted/components/article/doc_comment_section.dart';
 import 'package:oolaf_flutted/components/app_asset_icon/index.dart';
 import 'package:oolaf_flutted/components/gallery_preview/index.dart'
     show GalleryPreviewImage, wrapWithGalleryPreviewScrollBehavior;
-import 'package:oolaf_flutted/pages/video_tabs/short_video_article_body_helper.dart';
 import 'package:flutter/services.dart';
 import 'package:oolaf_flutted/api/short_video/comment.dart';
 import 'package:oolaf_flutted/api/short_video/index.dart';
@@ -188,14 +188,14 @@ class _ShortVideoArticleDetailPageState
 
   @override
   Widget build(BuildContext context) {
-    final articleBody = ShortVideoArticleBodyHelper.parse(
+    final articleBody = ArticleBodyHelper.parse(
       title: widget.detail.title,
       source: widget.detail.source,
       updateTime: widget.detail.updateTime,
       htmlText: widget.detail.htmlText,
       coverUrl: widget.coverUrl,
     );
-    final articleBodyWidgets = ShortVideoArticleBodyHelper.buildWidgets(
+    final articleBodyWidgets = ArticleBodyHelper.buildWidgets(
       context: context,
       nodes: articleBody.nodes,
       galleryImageUrls: articleBody.imageUrls,

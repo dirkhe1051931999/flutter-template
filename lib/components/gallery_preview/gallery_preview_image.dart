@@ -19,6 +19,7 @@ class GalleryPreviewImage extends StatelessWidget {
   final BoxFit fit;
   final double? width;
   final double? height;
+  static const double _defaultAspectRatio = 4 / 3;
 
   @override
   Widget build(BuildContext context) {
@@ -26,6 +27,18 @@ class GalleryPreviewImage extends StatelessWidget {
     if (normalizedUrl.isEmpty) {
       return const SizedBox.shrink();
     }
+
+    final hasExplicitSize = width != null || height != null;
+    final image = ClipRRect(
+      borderRadius: borderRadius,
+      child: CustomNetworkImage(
+        normalizedUrl,
+        width: width,
+        height: height,
+        fit: fit,
+        errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+      ),
+    );
 
     return GestureDetector(
       onTap: () {
@@ -36,16 +49,15 @@ class GalleryPreviewImage extends StatelessWidget {
         );
       },
       behavior: HitTestBehavior.opaque,
-      child: ClipRRect(
-        borderRadius: borderRadius,
-        child: CustomNetworkImage(
-          normalizedUrl,
-          width: width,
-          height: height,
-          fit: fit,
-          errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-        ),
-      ),
+      child: hasExplicitSize
+          ? image
+          : SizedBox(
+              width: double.infinity,
+              child: AspectRatio(
+                aspectRatio: _defaultAspectRatio,
+                child: image,
+              ),
+            ),
     );
   }
 }

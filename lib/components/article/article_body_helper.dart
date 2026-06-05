@@ -3,32 +3,32 @@ import 'package:flutter/material.dart' show SelectableText;
 import 'package:html/parser.dart' as html_parser;
 import 'package:oolaf_flutted/components/gallery_preview/index.dart';
 
-class ShortVideoArticleBodyNode {
-  const ShortVideoArticleBodyNode.text({
+class ArticleBodyNode {
+  const ArticleBodyNode.text({
     required this.text,
     this.emphasized = false,
-  })  : type = ShortVideoArticleBodyNodeType.text,
+  })  : type = ArticleBodyNodeType.text,
         imageUrl = '';
 
-  const ShortVideoArticleBodyNode.image({
+  const ArticleBodyNode.image({
     required this.imageUrl,
-  })  : type = ShortVideoArticleBodyNodeType.image,
+  })  : type = ArticleBodyNodeType.image,
         text = '',
         emphasized = false;
 
-  final ShortVideoArticleBodyNodeType type;
+  final ArticleBodyNodeType type;
   final String text;
   final String imageUrl;
   final bool emphasized;
 }
 
-enum ShortVideoArticleBodyNodeType {
+enum ArticleBodyNodeType {
   text,
   image,
 }
 
-class ShortVideoArticleBodyParseResult {
-  const ShortVideoArticleBodyParseResult({
+class ArticleBodyParseResult {
+  const ArticleBodyParseResult({
     required this.imageUrls,
     required this.plainText,
     required this.nodes,
@@ -36,13 +36,13 @@ class ShortVideoArticleBodyParseResult {
 
   final List<String> imageUrls;
   final String plainText;
-  final List<ShortVideoArticleBodyNode> nodes;
+  final List<ArticleBodyNode> nodes;
 }
 
-class ShortVideoArticleBodyHelper {
-  const ShortVideoArticleBodyHelper._();
+class ArticleBodyHelper {
+  const ArticleBodyHelper._();
 
-  static ShortVideoArticleBodyParseResult parse({
+  static ArticleBodyParseResult parse({
     required String title,
     required String source,
     required String updateTime,
@@ -53,7 +53,7 @@ class ShortVideoArticleBodyHelper {
     final body = document.body;
 
     final imageUrls = <String>[];
-    final nodes = <ShortVideoArticleBodyNode>[];
+    final nodes = <ArticleBodyNode>[];
 
     void addImageUrl(String url) {
       final trimmedUrl = url.trim();
@@ -69,7 +69,7 @@ class ShortVideoArticleBodyHelper {
         return;
       }
       nodes.add(
-        ShortVideoArticleBodyNode.text(
+        ArticleBodyNode.text(
           text: normalizedText,
           emphasized: emphasized,
         ),
@@ -82,7 +82,7 @@ class ShortVideoArticleBodyHelper {
         return;
       }
       addImageUrl(normalizedUrl);
-      nodes.add(ShortVideoArticleBodyNode.image(imageUrl: normalizedUrl));
+      nodes.add(ArticleBodyNode.image(imageUrl: normalizedUrl));
     }
 
     void visitNode(dynamic node, {bool emphasized = false}) {
@@ -164,16 +164,16 @@ class ShortVideoArticleBodyHelper {
     final plainText =
         '$title\n${'$source  $updateTime'.trim()}\n\n$bodyText'.trim();
 
-    return ShortVideoArticleBodyParseResult(
+    return ArticleBodyParseResult(
       imageUrls: List<String>.unmodifiable(imageUrls),
       plainText: plainText,
-      nodes: List<ShortVideoArticleBodyNode>.unmodifiable(nodes),
+      nodes: List<ArticleBodyNode>.unmodifiable(nodes),
     );
   }
 
   static List<Widget> buildWidgets({
     required BuildContext context,
-    required List<ShortVideoArticleBodyNode> nodes,
+    required List<ArticleBodyNode> nodes,
     required List<String> galleryImageUrls,
   }) {
     final widgets = <Widget>[];
@@ -183,7 +183,7 @@ class ShortVideoArticleBodyHelper {
         widgets.add(const SizedBox(height: 14));
       }
 
-      if (node.type == ShortVideoArticleBodyNodeType.image) {
+      if (node.type == ArticleBodyNodeType.image) {
         widgets.add(
           GalleryPreviewImage(
             imageUrl: node.imageUrl,

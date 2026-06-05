@@ -7,6 +7,7 @@ import 'package:oolaf_flutted/components/linked_tab_view/index.dart';
 import 'package:oolaf_flutted/components/network_img/index.dart';
 import 'package:oolaf_flutted/components/route_page_header/index.dart';
 import 'package:oolaf_flutted/model/hupu/index.dart';
+import 'package:oolaf_flutted/pages/hupu/hupu_nba_match_detail_page.dart';
 import 'package:oolaf_flutted/pages/hupu/widgets/hupu_refresh_indicator.dart';
 
 const Set<PointerDeviceKind> _nbaScheduleDragDevices = <PointerDeviceKind>{
@@ -512,130 +513,148 @@ class _ScheduleMatchTile extends StatelessWidget {
 
   final HupuNbaScheduleMatch match;
 
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 98,
-      decoration: const BoxDecoration(
-        color: CupertinoColors.white,
-        border: Border(
-          bottom: BorderSide(color: Color(0xFFEDEEF2), width: 0.7),
+  Future<void> _openMatchDetail(BuildContext context) async {
+    if (match.matchId.isEmpty) {
+      return;
+    }
+    await Navigator.of(context).push<void>(
+      CupertinoPageRoute<void>(
+        builder: (_) => HupuNbaMatchDetailPage(
+          matchId: match.matchId,
+          scoreBizId: match.scoreBizId,
         ),
       ),
-      child: Row(
-        children: [
-          SizedBox(
-            width: 70,
-            child: Padding(
-              padding: const EdgeInsets.only(left: 14),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    match.timeText,
-                    style: const TextStyle(
-                      color: Color(0xFF202127),
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => _openMatchDetail(context),
+      child: Container(
+        height: 98,
+        decoration: const BoxDecoration(
+          color: CupertinoColors.white,
+          border: Border(
+            bottom: BorderSide(color: Color(0xFFEDEEF2), width: 0.7),
+          ),
+        ),
+        child: Row(
+          children: [
+            SizedBox(
+              width: 70,
+              child: Padding(
+                padding: const EdgeInsets.only(left: 14),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      match.timeText,
+                      style: const TextStyle(
+                        color: Color(0xFF202127),
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    match.stageText,
-                    style: const TextStyle(
-                      color: Color(0xFF9AA1AE),
-                      fontSize: 11,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          Expanded(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                _TeamLine(
-                  logoUrl: match.awayTeamLogo,
-                  name: match.awayTeamName,
-                  bigScore: match.awayBigScore,
-                ),
-                const SizedBox(height: 8),
-                _TeamLine(
-                  logoUrl: match.homeTeamLogo,
-                  name: match.homeTeamName,
-                  bigScore: match.homeBigScore,
-                ),
-              ],
-            ),
-          ),
-          SizedBox(
-            width: 38,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  _scoreText(match.awayScore),
-                  style: TextStyle(
-                    color: match.isCompleted
-                        ? const Color(0xFF9AA1AE)
-                        : const Color(0xFF202127),
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  _scoreText(match.homeScore),
-                  style: const TextStyle(
-                    color: Color(0xFF202127),
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Container(
-            width: 1,
-            height: 58,
-            margin: const EdgeInsets.symmetric(horizontal: 10),
-            color: const Color(0xFFEDEEF2),
-          ),
-          Padding(
-            padding: const EdgeInsets.only(right: 10),
-            child: SizedBox(
-              width: 52,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    match.rightTitle,
-                    style: const TextStyle(
-                      color: Color(0xFF202127),
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  if (match.scoreText.isNotEmpty) ...[
                     const SizedBox(height: 6),
                     Text(
-                      match.scoreText,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                      match.stageText,
                       style: const TextStyle(
                         color: Color(0xFF9AA1AE),
-                        fontSize: 10,
+                        fontSize: 11,
                       ),
                     ),
                   ],
+                ),
+              ),
+            ),
+            Expanded(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  _TeamLine(
+                    logoUrl: match.awayTeamLogo,
+                    name: match.awayTeamName,
+                    bigScore: match.awayBigScore,
+                  ),
+                  const SizedBox(height: 8),
+                  _TeamLine(
+                    logoUrl: match.homeTeamLogo,
+                    name: match.homeTeamName,
+                    bigScore: match.homeBigScore,
+                  ),
                 ],
               ),
             ),
-          ),
-        ],
+            SizedBox(
+              width: 38,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    _scoreText(match.awayScore),
+                    style: TextStyle(
+                      color: match.isCompleted
+                          ? const Color(0xFF9AA1AE)
+                          : const Color(0xFF202127),
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    _scoreText(match.homeScore),
+                    style: const TextStyle(
+                      color: Color(0xFF202127),
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              width: 1,
+              height: 58,
+              margin: const EdgeInsets.symmetric(horizontal: 10),
+              color: const Color(0xFFEDEEF2),
+            ),
+            Padding(
+              padding: const EdgeInsets.only(right: 10),
+              child: SizedBox(
+                width: 52,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      match.rightTitle,
+                      style: const TextStyle(
+                        color: Color(0xFF202127),
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    if (match.scoreText.isNotEmpty) ...[
+                      const SizedBox(height: 6),
+                      Text(
+                        match.scoreText,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Color(0xFF9AA1AE),
+                          fontSize: 10,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

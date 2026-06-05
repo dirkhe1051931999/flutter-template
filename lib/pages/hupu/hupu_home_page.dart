@@ -15,6 +15,14 @@ class HupuHomePage extends StatefulWidget {
 
 class _HupuHomePageState extends State<HupuHomePage> {
   static const List<String> _topTabs = <String>['关注', '推荐', '赛事'];
+  static const List<Widget> _topTabPages = <Widget>[
+    _HupuHomePlaceholder(
+      title: '关注',
+      description: '关注流内容后续再接，这里先保留一级 tab 占位。',
+    ),
+    HupuRecommendTabView(),
+    HupuSportsTabView(),
+  ];
 
   int _activeTopTabIndex = 1;
 
@@ -50,26 +58,14 @@ class _HupuHomePageState extends State<HupuHomePage> {
             },
           ),
           Expanded(
-            child: _buildTopTabContent(),
+            child: IndexedStack(
+              index: _activeTopTabIndex,
+              children: _topTabPages,
+            ),
           ),
         ],
       ),
     );
-  }
-
-  Widget _buildTopTabContent() {
-    switch (_activeTopTabIndex) {
-      case 2:
-        return const HupuSportsTabView();
-      case 0:
-        return const _HupuHomePlaceholder(
-          title: '关注',
-          description: '关注流内容后续再接，这里先保留一级 tab 占位。',
-        );
-      case 1:
-      default:
-        return const HupuRecommendTabView();
-    }
   }
 }
 

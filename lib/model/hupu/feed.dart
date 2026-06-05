@@ -23,6 +23,16 @@ class HupuHotListResponse {
       isEmpty: result['empty'] == true,
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'result': <String, dynamic>{
+        'data': items.map((item) => item.toJson()).toList(growable: false),
+        'notice': notice,
+        'empty': isEmpty,
+      },
+    };
+  }
 }
 
 class HupuFeedItem {
@@ -128,6 +138,39 @@ class HupuFeedItem {
           : null,
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'xid': xid,
+      'label': label,
+      'schema_url': schemaUrl,
+      'data': <String, dynamic>{
+        'puid': puid,
+        'type': type,
+        'itemId': itemId,
+        'tid': tid,
+        'fid': fid,
+        'topic_id': topicId,
+        'title': title,
+        'summary': summary,
+        'nickname': nickname,
+        'header': header,
+        'forum_name': forumName,
+        'topic_name': topicName,
+        'create_time': createTime,
+        'lastpost_time': lastPostTime,
+        'replies': replies,
+        'lights': lights,
+        'share_num': shareNum,
+        'visits': visits,
+        'pics': pics.map((item) => item.toJson()).toList(growable: false),
+        'light_replies': lightReplies
+            .map((item) => item.toJson())
+            .toList(growable: false),
+        if (video != null) 'video': video!.toJson(),
+      },
+    };
+  }
 }
 
 class HupuImageItem {
@@ -150,6 +193,15 @@ class HupuImageItem {
       height: _parseDouble(json['height']),
       type: json['type']?.toString() ?? '',
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'url': url,
+      'width': width,
+      'height': height,
+      'type': type,
+    };
   }
 }
 
@@ -204,6 +256,21 @@ class HupuLightReply {
           : '',
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'nickname': nickname,
+      'content': content,
+      'header': header,
+      'puid': puid,
+      'light_count': lightCount,
+      'pics': pics.map((item) => item.toJson()).toList(growable: false),
+      'quote': <String, dynamic>{
+        'nickname': quoteNickname,
+        'content': quoteContent,
+      },
+    };
+  }
 }
 
 class HupuVideoItem {
@@ -250,6 +317,20 @@ class HupuVideoItem {
       height: _parseDouble(json['height']),
       bulletCommentCount: json['bullet_comment_num']?.toString() ?? '',
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'img': cover,
+      'bg_img': backgroundImage,
+      'duration': duration,
+      'play_num': playCount,
+      'url': videoUrl,
+      'size': size,
+      'width': width,
+      'height': height,
+      'bullet_comment_num': bulletCommentCount,
+    };
   }
 }
 

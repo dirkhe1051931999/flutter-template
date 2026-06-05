@@ -1,4 +1,5 @@
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/gestures.dart';
 import 'package:oolaf_flutted/components/network_img/index.dart';
 
 class GalleryZoomableImage extends StatefulWidget {
@@ -29,12 +30,14 @@ class _GalleryZoomableImageState extends State<GalleryZoomableImage>
   bool _isZoomed = false;
   bool _isHandlingVerticalDrag = false;
   Size? _rawImageSize;
+  Size? _lastViewportSize;
   ImageStream? _imageStream;
   ImageStreamListener? _imageStreamListener;
 
   static const double _doubleTapZoomScale = 2.4;
   static const double _minScale = 1;
   static const double _maxScale = 4;
+  static const double _mouseWheelZoomSensitivity = 0.0018;
 
   @override
   void initState() {
@@ -59,6 +62,7 @@ class _GalleryZoomableImageState extends State<GalleryZoomableImage>
     super.didUpdateWidget(oldWidget);
     if (oldWidget.imageUrl != widget.imageUrl) {
       _rawImageSize = null;
+      _lastViewportSize = null;
       _transformationController.value = Matrix4.identity();
       _resolveImageSize();
       _notifyInteractionState();
@@ -97,6 +101,16 @@ class _GalleryZoomableImageState extends State<GalleryZoomableImage>
       setState(() {
         _rawImageSize = size;
       });
+      final viewportSize = _lastViewportSize;
+      if (viewportSize != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) {
+            return;
+          }
+          _syncBaseTransform(viewportSize);
+          _notifyVerticalGestureHandling(viewportSize);
+        });
+      }
     });
     stream.addListener(_imageStreamListener!);
   }
@@ -110,6 +124,21 @@ class _GalleryZoomableImageState extends State<GalleryZoomableImage>
       _isZoomed = isZoomed;
     });
     widget.onInteractionStateChanged(isZoomed);
+  }
+
+  void _syncBaseTransform(Size viewportSize) {
+    _lastViewportSize = viewportSize;
+    if (_isZoomed) {
+      return;
+    }
+    final normalized = _normalizedTransform(
+      _transformationController.value,
+      viewportSize,
+    );
+    if (_transformationController.value == normalized) {
+      return;
+    }
+    _transformationController.value = normalized;
   }
 
   bool _isLongImage(Size viewportSize) {
@@ -188,6 +217,26 @@ class _GalleryZoomableImageState extends State<GalleryZoomableImage>
       ..scaleByDouble(scale, scale, 1, 1);
   }
 
+  Matrix4 _zoomTransformAroundPoint({
+    required Size viewportSize,
+    required Offset focalPoint,
+    required double targetScale,
+  }) {
+    final current = _transformationController.value;
+    final currentScale = current.getMaxScaleOnAxis().clamp(_minScale, _maxScale);
+    final normalizedTargetScale = targetScale.clamp(_minScale, _maxScale);
+    final currentOffset = _extractTranslation(current);
+    final scaleRatio = normalizedTargetScale / currentScale;
+    final targetOffset = Offset(
+      focalPoint.dx - (focalPoint.dx - currentOffset.dx) * scaleRatio,
+      focalPoint.dy - (focalPoint.dy - currentOffset.dy) * scaleRatio,
+    );
+    return _normalizedTransform(
+      _matrixFor(normalizedTargetScale, targetOffset),
+      viewportSize,
+    );
+  }
+
   ({double minDx, double maxDx, double minDy, double maxDy}) _translationBounds(
     Size viewportSize,
     double scale,
@@ -246,7 +295,12 @@ class _GalleryZoomableImageState extends State<GalleryZoomableImage>
 
     final isZoomed = _transformationController.value.getMaxScaleOnAxis() > 1.01;
     if (isZoomed) {
-      _animateTo(Matrix4.identity());
+      final viewportSize = _lastViewportSize;
+      if (viewportSize == null) {
+        _animateTo(Matrix4.identity());
+        return;
+      }
+      _animateTo(_normalizedTransform(Matrix4.identity(), viewportSize));
       return;
     }
 
@@ -259,26 +313,40 @@ class _GalleryZoomableImageState extends State<GalleryZoomableImage>
       );
       return;
     }
-    final displayedSize = _contentSize(viewportSize);
-    final baseBounds = _translationBounds(viewportSize, 1);
-    final imageOrigin = Offset(baseBounds.minDx, baseBounds.minDy);
-    final normalizedAnchor = Offset(
-      ((position.dx - imageOrigin.dx) / displayedSize.width).clamp(0.0, 1.0),
-      ((position.dy - imageOrigin.dy) / displayedSize.height).clamp(0.0, 1.0),
-    );
-    final localAnchor = Offset(
-      displayedSize.width * normalizedAnchor.dx,
-      displayedSize.height * normalizedAnchor.dy,
-    );
-    final zoomedOffset = Offset(
-      position.dx - localAnchor.dx * zoomScale,
-      position.dy - localAnchor.dy * zoomScale,
-    );
-    final zoomed = _normalizedTransform(
-      _matrixFor(zoomScale, zoomedOffset),
-      viewportSize,
+    final zoomed = _zoomTransformAroundPoint(
+      viewportSize: viewportSize,
+      focalPoint: position,
+      targetScale: zoomScale,
     );
     _animateTo(zoomed);
+  }
+
+  void _handlePointerSignal(PointerSignalEvent event, Size viewportSize) {
+    if (event is! PointerScrollEvent) {
+      return;
+    }
+    final isTrackpadEvent = event.kind == PointerDeviceKind.trackpad;
+    if (isTrackpadEvent) {
+      return;
+    }
+    final scrollDelta = event.scrollDelta.dy;
+    if (scrollDelta == 0) {
+      return;
+    }
+    _transformAnimationController.stop();
+    _zoomAnimation = null;
+    final currentScale = _transformationController.value.getMaxScaleOnAxis();
+    final scaleFactor = scrollDelta > 0
+        ? 1 / (1 + scrollDelta.abs() * _mouseWheelZoomSensitivity)
+        : 1 + scrollDelta.abs() * _mouseWheelZoomSensitivity;
+    final nextTransform = _zoomTransformAroundPoint(
+      viewportSize: viewportSize,
+      focalPoint: event.localPosition,
+      targetScale: currentScale * scaleFactor,
+    );
+    _transformationController.value = nextTransform;
+    _notifyInteractionState();
+    _notifyVerticalGestureHandling(viewportSize);
   }
 
   @override
@@ -286,6 +354,7 @@ class _GalleryZoomableImageState extends State<GalleryZoomableImage>
     return LayoutBuilder(
       builder: (context, constraints) {
         final viewportSize = Size(constraints.maxWidth, constraints.maxHeight);
+        _syncBaseTransform(viewportSize);
         final contentSize = _contentSize(viewportSize);
         final isLongImage = _isLongImage(viewportSize);
         _notifyVerticalGestureHandling(viewportSize);
@@ -351,43 +420,55 @@ class _GalleryZoomableImageState extends State<GalleryZoomableImage>
           ),
         );
 
-        return GestureDetector(
-          onDoubleTapDown: (details) {
-            _doubleTapDetails = details;
+        return Listener(
+          onPointerSignal: (event) {
+            if (useScrollableLongImage) {
+              return;
+            }
+            _handlePointerSignal(event, viewportSize);
           },
-          onDoubleTap: _handleDoubleTap,
-          child: useScrollableLongImage
-              ? SingleChildScrollView(
-                  physics: const BouncingScrollPhysics(),
-                  child: SizedBox(
-                    width: viewportSize.width,
-                    child: Align(
-                      alignment: Alignment.topCenter,
-                      child: imageContent,
+          child: GestureDetector(
+            onDoubleTapDown: (details) {
+              _doubleTapDetails = details;
+            },
+            onDoubleTap: _handleDoubleTap,
+            child: useScrollableLongImage
+                ? SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(),
+                    child: SizedBox(
+                      width: viewportSize.width,
+                      child: Align(
+                        alignment: Alignment.topCenter,
+                        child: imageContent,
+                      ),
                     ),
+                  )
+                : InteractiveViewer(
+                    transformationController: _transformationController,
+                    minScale: _minScale,
+                    maxScale: _maxScale,
+                    panEnabled: _isZoomed,
+                    scaleEnabled: true,
+                    constrained: false,
+                    alignment: Alignment.topLeft,
+                    clipBehavior: Clip.hardEdge,
+                    boundaryMargin: EdgeInsets.zero,
+                    interactionEndFrictionCoefficient: 0.00004,
+                    trackpadScrollCausesScale: true,
+                    scaleFactor: 180,
+                    onInteractionStart: (_) {
+                      _transformAnimationController.stop();
+                      _zoomAnimation = null;
+                    },
+                    onInteractionUpdate: (_) {
+                      _notifyVerticalGestureHandling(viewportSize);
+                    },
+                    onInteractionEnd: (_) {
+                      _handleInteractionEnd(viewportSize);
+                    },
+                    child: imageContent,
                   ),
-                )
-              : InteractiveViewer(
-                  transformationController: _transformationController,
-                  minScale: _minScale,
-                  maxScale: _maxScale,
-                  panEnabled: _isZoomed,
-                  scaleEnabled: true,
-                  constrained: false,
-                  alignment: Alignment.center,
-                  clipBehavior: Clip.hardEdge,
-                  boundaryMargin: EdgeInsets.zero,
-                  interactionEndFrictionCoefficient: 0.00008,
-                  trackpadScrollCausesScale: true,
-                  onInteractionStart: (_) {
-                    _transformAnimationController.stop();
-                    _zoomAnimation = null;
-                  },
-                  onInteractionEnd: (_) {
-                    _handleInteractionEnd(viewportSize);
-                  },
-                  child: imageContent,
-                ),
+          ),
         );
       },
     );

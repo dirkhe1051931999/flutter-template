@@ -24,6 +24,7 @@ class OolafMediaKitController implements OolafVideoController {
       ValueNotifier<Duration>(Duration.zero);
   final ValueNotifier<Duration> _duration =
       ValueNotifier<Duration>(Duration.zero);
+  final ValueNotifier<double> _volume = ValueNotifier<double>(1);
   final ValueNotifier<Size?> _videoSize = ValueNotifier<Size?>(null);
   final ValueNotifier<OolafVideoOutputStatus> _videoOutputStatus =
       ValueNotifier<OolafVideoOutputStatus>(OolafVideoOutputStatus.normal);
@@ -129,6 +130,9 @@ class OolafMediaKitController implements OolafVideoController {
 
   @override
   ValueListenable<Duration> get duration => _duration;
+
+  @override
+  ValueListenable<double> get volume => _volume;
 
   @override
   ValueListenable<Size?> get videoSize => _videoSize;
@@ -265,6 +269,7 @@ class OolafMediaKitController implements OolafVideoController {
       }
       _duration.value = value;
     });
+    _volume.value = _player.state.volume;
     _videoParamsSub = _player.stream.videoParams.listen((params) {
       if (!_isAlive) {
         return;
@@ -340,6 +345,16 @@ class OolafMediaKitController implements OolafVideoController {
   }
 
   @override
+  Future<void> setVolume(double volume) async {
+    if (!_isAlive) {
+      return;
+    }
+    final normalized = volume.clamp(0.0, 1.0);
+    await _player.setVolume(normalized * 100);
+    _volume.value = normalized;
+  }
+
+  @override
   Widget buildView({BoxFit fit = BoxFit.cover}) {
     if (!_isAlive) {
       return const SizedBox.shrink();
@@ -392,6 +407,7 @@ class OolafMediaKitController implements OolafVideoController {
     _isBuffering.dispose();
     _position.dispose();
     _duration.dispose();
+    _volume.dispose();
     _videoSize.dispose();
     _videoOutputStatus.dispose();
   }
