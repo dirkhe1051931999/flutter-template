@@ -1,0 +1,65 @@
+name: Publish Flutter Web
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ["main-v2"]
+
+concurrency:
+  group: flutter-web-publish-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v5
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.41.9"
+          channel: "stable"
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Build Web
+        run: |
+          flutter build web \
+            --release \
+            --base-href /flutter-template/ \
+            --dart-define=PROXY=true \
+            --dart-define=PROXY_BASE_URL=http://101.200.123.220:9212/ \
+            --dart-define=PROXY_TOKEN=oolaf-oolaf-oolaf-oolaf
+
+      - name: Checkout pages repo
+        uses: actions/checkout@v5
+        with:
+          repository: dirkhe1051931999/dirkhe1051931999.github.io
+          token: ${{ secrets.FLUTTER_WEB_PUBLISH }}
+          path: pages-repo
+
+      - name: Publish to pages repo
+        run: |
+          rm -rf pages-repo/flutter-template
+          mkdir -p pages-repo/flutter-template
+          cp -R build/web/. pages-repo/flutter-template/
+
+          cd pages-repo
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A -- flutter-template
+          if git diff --cached --quiet; then
+            echo "No changes to publish."
+          else
+            git commit -m "chore: publish flutter-template web"
+            git push
+          fi

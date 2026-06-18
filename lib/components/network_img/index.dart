@@ -1,5 +1,7 @@
 import 'package:flutter/cupertino.dart';
+import 'package:oolaf_flutted/app.config.dart';
 import 'package:oolaf_flutted/components/app_asset_icon/index.dart';
+import 'package:oolaf_flutted/utils/proxy_url.dart';
 
 class CustomNetworkImage extends StatefulWidget {
   const CustomNetworkImage(
@@ -220,13 +222,19 @@ class _CustomNetworkImageState extends State<CustomNetworkImage>
             );
     }
 
+    final imageUrl = AppConfig.shouldUseProxy
+        ? buildProxyUrl(method: 'get', targetUrl: normalizedUrl)
+        : normalizedUrl;
+    final proxyHeaders = AppConfig.shouldUseProxy ? buildProxyHeaders() : null;
+
     return Image.network(
-      normalizedUrl,
+      imageUrl,
       width: widget.width,
       height: widget.height,
       fit: widget.fit,
       alignment: widget.alignment,
       filterQuality: widget.filterQuality,
+      headers: proxyHeaders,
       color: widget.color,
       colorBlendMode: widget.colorBlendMode,
       repeat: widget.repeat,

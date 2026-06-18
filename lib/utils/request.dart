@@ -8,6 +8,7 @@ import 'package:oolaf_flutted/app.config.dart';
 import 'package:oolaf_flutted/tools/developer_tools_center.dart';
 import 'package:oolaf_flutted/utils/ifeng_auth_storage.dart';
 import 'package:oolaf_flutted/utils/helper.dart';
+import 'package:oolaf_flutted/utils/proxy_url.dart';
 import 'package:logger/logger.dart';
 
 typedef TokenGetter = FutureOr<String?> Function();
@@ -202,7 +203,8 @@ class DioClient {
     final startedAt = requestOptions.extra['devtools_request_started_at'];
     final started = startedAt is DateTime ? startedAt : null;
     final now = DateTime.now();
-    final durationMs = started == null ? null : now.difference(started).inMilliseconds;
+    final durationMs =
+        started == null ? null : now.difference(started).inMilliseconds;
 
     DeveloperToolsCenter.instance.recordRequest(
       DeveloperRequestLog(
@@ -211,7 +213,8 @@ class DioClient {
         url: requestOptions.uri.toString(),
         statusCode: response?.statusCode,
         durationMs: durationMs,
-        requestSummary: _summarizePayload(requestOptions.data ?? requestOptions.queryParameters),
+        requestSummary: _summarizePayload(
+            requestOptions.data ?? requestOptions.queryParameters),
         responseSummary: _summarizePayload(response?.data),
         errorMessage: errorMessage,
       ),
@@ -265,8 +268,29 @@ class DioClient {
     }
 
     options.extra['devtools_request_started_at'] = DateTime.now();
+    _applyProxyOptions(options);
 
     handler.next(options);
+  }
+
+  void _applyProxyOptions(RequestOptions options) {
+    if (!AppConfig.shouldUseProxy ||
+        options.extra['skipProxy'] == true ||
+        options.extra['proxied'] == true) {
+      return;
+    }
+
+    final targetUrl = options.uri.toString();
+    options.baseUrl = '';
+    options.path = buildProxyUrl(
+      method: options.method,
+      targetUrl: targetUrl,
+    );
+    options.queryParameters.clear();
+
+    options.headers.addAll(buildProxyHeaders());
+    options.extra['proxied'] = true;
+    options.extra['proxy_target_url'] = targetUrl;
   }
 
   Future<void> _handleError(
@@ -413,7 +437,8 @@ class DioClient {
       cancelToken: cancelToken,
       options: options,
     );
-    _recordRequestLog(requestOptions: response.requestOptions, response: response);
+    _recordRequestLog(
+        requestOptions: response.requestOptions, response: response);
     return response;
   }
 
@@ -430,7 +455,8 @@ class DioClient {
       cancelToken: cancelToken,
       options: options,
     );
-    _recordRequestLog(requestOptions: response.requestOptions, response: response);
+    _recordRequestLog(
+        requestOptions: response.requestOptions, response: response);
     return response;
   }
 
@@ -447,7 +473,8 @@ class DioClient {
       cancelToken: cancelToken,
       options: options,
     );
-    _recordRequestLog(requestOptions: response.requestOptions, response: response);
+    _recordRequestLog(
+        requestOptions: response.requestOptions, response: response);
     return response;
   }
 
@@ -480,7 +507,8 @@ class DioClient {
       cancelToken: cancelToken,
       options: options,
     );
-    _recordRequestLog(requestOptions: response.requestOptions, response: response);
+    _recordRequestLog(
+        requestOptions: response.requestOptions, response: response);
     return response;
   }
 
@@ -501,7 +529,8 @@ class DioClient {
       onReceiveProgress: onProgress,
       options: options,
     );
-    _recordRequestLog(requestOptions: response.requestOptions, response: response);
+    _recordRequestLog(
+        requestOptions: response.requestOptions, response: response);
     return response;
   }
 
@@ -518,7 +547,8 @@ class DioClient {
       cancelToken: cancelToken,
       options: options,
     );
-    _recordRequestLog(requestOptions: response.requestOptions, response: response);
+    _recordRequestLog(
+        requestOptions: response.requestOptions, response: response);
     return response;
   }
 
@@ -535,7 +565,8 @@ class DioClient {
       cancelToken: cancelToken,
       options: options,
     );
-    _recordRequestLog(requestOptions: response.requestOptions, response: response);
+    _recordRequestLog(
+        requestOptions: response.requestOptions, response: response);
     return response;
   }
 }

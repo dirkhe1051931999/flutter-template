@@ -4,6 +4,13 @@ Flutter Template 是一个用于快速启动 Flutter 应用开发的项目模板
 
 本项目已经在 Windows 环境下通过 Android 模拟器运行验证。由于 Flutter、Dart、Android Gradle Plugin、Kotlin、Gradle、Android SDK 之间存在较强的版本耦合，请不要随意升级或降级关键依赖版本。版本不匹配可能导致 `flutter run` 阶段出现 Gradle 编译失败、插件接口缺失、Kotlin 编译失败、JDK class file 不兼容、下载超时等问题。
 
+## 协作与变更规则
+
+- 修改代码前优先使用 CodeGraph 分析相关调用链，不先做全仓库 grep。
+- 修改代码前需要先分析影响范围。
+- 修改完成后需要运行测试。
+- 每次修改、编辑、新增或删除时，需要同步更新 `README.md`。
+
 ## 平台支持
 
 - Android
@@ -911,6 +918,74 @@ flutter run --dart-define=APP_ENV=production --dart-define=PROD_BASE_URL=https:/
 
 ```powershell
 flutter run --dart-define=BASE_URL=https://mock-api.example.com
+```
+
+### Web 构建环境变量
+
+Web 打包时同样通过 `--dart-define` 注入环境配置。生产环境构建：
+
+```powershell
+flutter build web --release --dart-define=APP_ENV=production
+```
+
+Web 平台如果需要通过代理服务转发接口请求，需要同时打开代理开关并传入代理地址。代理只在 Web 生效：
+
+```powershell
+flutter build web --release --dart-define=APP_ENV=production --dart-define=PROXY=true --dart-define=PROXY_BASE_URL=https://proxy.example.com
+```
+
+开启代理后，Web 端的接口请求、`CustomNetworkImage` 远端图片请求，以及 Oolaf 音乐远端音频播放请求都会改写到代理服务，路径格式为：
+
+```text
+{PROXY_BASE_URL}/proxy/{method}/{targetUrl}
+```
+
+代理服务需要 token 时，继续传入 `PROXY_TOKEN`。应用会把该值放到请求头 `x-proxy-token`：
+
+```powershell
+flutter build web --release --dart-define=APP_ENV=production --dart-define=PROXY=true --dart-define=PROXY_BASE_URL=https://proxy.example.com --dart-define=PROXY_TOKEN=your-proxy-token
+```
+
+当前也兼容旧参数名：`--dart-define=proxy=true`、`--dart-define=url=https://proxy.example.com`、`--dart-define=proxyToken=your-proxy-token`。新命令优先使用 `PROXY`、`PROXY_BASE_URL`、`PROXY_TOKEN`。
+
+生产环境并覆盖默认 API 地址：
+
+```powershell
+flutter build web --release --dart-define=APP_ENV=production --dart-define=PROD_BASE_URL=https://api.example.com
+```
+
+测试环境构建：
+
+```powershell
+flutter build web --release --dart-define=APP_ENV=test --dart-define=TEST_BASE_URL=https://test-api.example.com
+```
+
+临时指定任意 API 地址：
+
+```powershell
+flutter build web --release --dart-define=BASE_URL=https://mock-api.example.com
+```
+
+### Web 自动发布
+
+仓库包含 GitHub Actions 工作流：
+
+```text
+.github/workflows/flutter-web-publish.yml
+```
+
+该工作流会执行 `flutter build web --release --base-href /flutter-template/`，并带上 Web 代理参数：
+
+```text
+PROXY=true
+PROXY_BASE_URL=http://101.200.123.220:9212/
+PROXY_TOKEN=oolaf-oolaf-oolaf-oolaf
+```
+
+构建产物会通过仓库 secret `FLUTTER_WEB_PUBLISH` 推送到：
+
+```text
+dirkhe1051931999/dirkhe1051931999.github.io/flutter-template
 ```
 
 ## 注意事项

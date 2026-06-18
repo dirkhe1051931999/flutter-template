@@ -2,10 +2,13 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:audio_session/audio_session.dart';
+import 'package:flutter/foundation.dart';
 import 'package:just_audio/just_audio.dart';
 
+import 'package:oolaf_flutted/app.config.dart';
 import 'package:oolaf_flutted/utils/helper.dart';
 import 'package:oolaf_flutted/utils/oolaf_audio_cache_proxy.dart';
+import 'package:oolaf_flutted/utils/proxy_url.dart';
 
 enum OolafFocusEvent {
   pause,
@@ -82,6 +85,9 @@ class OolafAudioPlayer {
   }
 
   Future<void> _ensureAudioSession() async {
+    if (kIsWeb) {
+      return;
+    }
     if (!(Platform.isAndroid || Platform.isIOS || Platform.isMacOS)) {
       return;
     }
@@ -150,6 +156,9 @@ class OolafAudioPlayer {
   }
 
   Future<void> _ensureAudioCacheProxy() async {
+    if (kIsWeb) {
+      return;
+    }
     if (!(Platform.isAndroid || Platform.isIOS || Platform.isMacOS)) {
       return;
     }
@@ -163,6 +172,10 @@ class OolafAudioPlayer {
 
   Future<void> prefetchUrl(String url) async {
     if (_isDisposed) {
+      return;
+    }
+
+    if (kIsWeb) {
       return;
     }
 
@@ -232,6 +245,14 @@ class OolafAudioPlayer {
     _hasStarted = false;
     _currentUrl = url;
 
+    if (AppConfig.shouldUseProxy) {
+      await _player.setUrl(
+        buildProxyUrl(method: 'get', targetUrl: url),
+        headers: buildProxyHeaders(),
+      );
+      return;
+    }
+
     if (Platform.isAndroid || Platform.isIOS || Platform.isMacOS) {
       try {
         final cached = await OolafAudioCacheProxy.instance.getCachedFile(url);
@@ -249,7 +270,8 @@ class OolafAudioPlayer {
         await _player.setUrl(proxyUri.toString());
         return;
       } catch (error, stackTrace) {
-        customLogger.log('setUrl via local proxy failed, fallback direct url: $error');
+        customLogger
+            .log('setUrl via local proxy failed, fallback direct url: $error');
         customLogger.log(stackTrace);
         await _player.setUrl(url);
         return;

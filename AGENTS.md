@@ -8,6 +8,14 @@ This repository uses `.windsurfrules` as a source of truth for engineering style
 - If this file and `.windsurfrules` overlap, treat them as consistent restatements of the same policy.
 - If a rule here is less detailed than `.windsurfrules`, prefer the more specific requirement from `.windsurfrules`.
 
+## Required Change Workflow
+
+- Use CodeGraph to analyze relevant call chains before code changes.
+- Do not use whole-repository grep for initial code discovery when CodeGraph can answer the question.
+- Analyze and state the likely impact scope before modifying code.
+- Run tests after completing code or documentation changes.
+- Every modification, edit, addition, or deletion must include a corresponding `README.md` update.
+
 ## Required Working Style
 
 - Use Vue/TypeScript-like layering when writing Flutter/Dart code: clear module boundaries, explicit types, centralized singletons, thin API wrappers, immutable state, semantic naming.

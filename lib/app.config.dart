@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 class AppConfig {
   static const appName = 'FlutterTemplate';
   static const appDescription = 'FlutterTemplate';
@@ -52,6 +54,16 @@ class AppConfig {
     'APP_ENV',
     defaultValue: 'development',
   );
+  static const proxyEnabled =
+      bool.fromEnvironment('PROXY') || bool.fromEnvironment('proxy');
+  static const proxyBaseUrl = String.fromEnvironment(
+    'PROXY_BASE_URL',
+    defaultValue: String.fromEnvironment('url'),
+  );
+  static const proxyToken = String.fromEnvironment(
+    'PROXY_TOKEN',
+    defaultValue: String.fromEnvironment('proxyToken'),
+  );
   static const customBaseUrl = String.fromEnvironment('BASE_URL');
   static const developmentBaseUrl = String.fromEnvironment(
     'DEV_BASE_URL',
@@ -78,6 +90,9 @@ class AppConfig {
       _ => throw UnsupportedError('Unsupported APP_ENV: $appEnv'),
     };
   }
+
+  static bool get shouldUseProxy =>
+      kIsWeb && proxyEnabled && proxyBaseUrl.trim().isNotEmpty;
 
   static String _requiredBaseUrl(String value, String envName) {
     if (value.isEmpty) {
