@@ -33,9 +33,19 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Use GitHub Actions Gradle distribution
+      - name: Prepare Gradle for GitHub Actions
         run: |
-          sed -i 's#https\\://mirrors.cloud.tencent.com/gradle/gradle-8.11.1-all.zip#https\\://services.gradle.org/distributions/gradle-8.11.1-all.zip#' android/gradle/wrapper/gradle-wrapper.properties
+          set -euo pipefail
+          sed -i '/^systemProp\.http\.proxyHost=/d' android/gradle.properties
+          sed -i '/^systemProp\.http\.proxyPort=/d' android/gradle.properties
+          sed -i '/^systemProp\.https\.proxyHost=/d' android/gradle.properties
+          sed -i '/^systemProp\.https\.proxyPort=/d' android/gradle.properties
+          sed -i 's#^distributionUrl=.*#distributionUrl=https\\://services.gradle.org/distributions/gradle-8.11.1-all.zip#' android/gradle/wrapper/gradle-wrapper.properties
+          grep '^distributionUrl=' android/gradle/wrapper/gradle-wrapper.properties
+          if grep -n '^systemProp\..*proxy' android/gradle.properties; then
+            echo "Gradle proxy settings must not be enabled in GitHub Actions."
+            exit 1
+          fi
 
       - name: Build Android APK
         run: flutter build apk
