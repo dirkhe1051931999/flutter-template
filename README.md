@@ -1024,7 +1024,7 @@ tag 自增规则会优先读取仓库里最新的 `vX.Y.Z` tag，并将 patch �
 
 该工作流只打 APK 和 Web 包，不带 `--dart-define`、`--base-href` 或其他构建参数。
 
-GitHub Actions 的海外 runner 访问腾讯云 Gradle 镜像可能出现网络问题；同时仓库本地开发配置中的 `127.0.0.1:7890` Gradle 代理在 runner 上不可用，会导致 `java.net.ConnectException: Connection refused`。Release 工作流会在构建 APK 前临时移除 `android/gradle.properties` 里的 Gradle 代理配置，并把 `android/gradle/wrapper/gradle-wrapper.properties` 中的 Gradle 分发地址切换为 `https://services.gradle.org/distributions/gradle-8.11.1-all.zip`，这些修改只发生在 CI 工作区，不会提交回仓库。
+GitHub Actions 的海外 runner 访问腾讯云 Gradle 镜像可能出现网络问题；同时仓库本地开发配置中的 `127.0.0.1:7890` Gradle 代理在 runner 上不可用，会导致 `java.net.ConnectException: Connection refused`。Release 工作流会在构建 APK 前临时移除 `android/gradle.properties` 里的 Gradle 代理配置，把 Gradle JVM heap 调整为 `-Xmx4096M`，并把 `android/gradle/wrapper/gradle-wrapper.properties` 中的 Gradle 分发地址切换为 `https://services.gradle.org/distributions/gradle-8.11.1-all.zip`，这些修改只发生在 CI 工作区，不会提交回仓库。
 
 ## 注意事项
 
