@@ -1,5 +1,48 @@
 import 'package:oolaf_flutted/app.config.dart';
 
+const Set<String> _proxyBypassImageExtensions = <String>{
+  '.apng',
+  '.avif',
+  '.bmp',
+  '.gif',
+  '.ico',
+  '.jpeg',
+  '.jpg',
+  '.png',
+  '.svg',
+  '.webp',
+};
+
+bool shouldProxyUrl(String targetUrl) {
+  if (!AppConfig.shouldUseProxy) {
+    return false;
+  }
+  return !shouldBypassProxyUrl(targetUrl);
+}
+
+bool shouldBypassProxyUrl(String targetUrl) {
+  final targetUri = Uri.tryParse(targetUrl.trim());
+  if (targetUri == null || !targetUri.hasScheme || targetUri.host.isEmpty) {
+    return false;
+  }
+
+  if (_isImageUrl(targetUri)) {
+    return true;
+  }
+
+  final musicCdnUri = Uri.tryParse(AppConfig.oolafMusicCdnBaseUrl.trim());
+  if (musicCdnUri == null || musicCdnUri.host.isEmpty) {
+    return false;
+  }
+
+  return targetUri.host.toLowerCase() == musicCdnUri.host.toLowerCase();
+}
+
+bool _isImageUrl(Uri uri) {
+  final path = uri.path.toLowerCase();
+  return _proxyBypassImageExtensions.any(path.endsWith);
+}
+
 String buildProxyUrl({
   required String method,
   required String targetUrl,

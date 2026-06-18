@@ -274,13 +274,13 @@ class DioClient {
   }
 
   void _applyProxyOptions(RequestOptions options) {
-    if (!AppConfig.shouldUseProxy ||
+    final targetUrl = options.uri.toString();
+    if (!shouldProxyUrl(targetUrl) ||
         options.extra['skipProxy'] == true ||
         options.extra['proxied'] == true) {
       return;
     }
 
-    final targetUrl = options.uri.toString();
     options.baseUrl = '';
     options.path = buildProxyUrl(
       method: options.method,

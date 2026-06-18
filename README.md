@@ -934,10 +934,30 @@ Web 平台如果需要通过代理服务转发接口请求，需要同时打开�
 flutter build web --release --dart-define=APP_ENV=production --dart-define=PROXY=true --dart-define=PROXY_BASE_URL=https://proxy.example.com
 ```
 
+本地 Web 调试也可以带同样的代理参数运行：
+
+```powershell
+flutter run -d chrome --dart-define=PROXY=true --dart-define=PROXY_BASE_URL=http://101.200.123.220:9212/ --dart-define=PROXY_TOKEN=oolaf-oolaf-oolaf-oolaf
+```
+
+如果需要模拟子目录部署路径，可以同时加上 Web renderer 启动参数和页面路径调试，但多数接口、图片、音频代理问题只需要上面的 `flutter run -d chrome` 命令即可复现。
+
 开启代理后，Web 端的接口请求、`CustomNetworkImage` 远端图片请求，以及 Oolaf 音乐远端音频播放请求都会改写到代理服务，路径格式为：
 
 ```text
 {PROXY_BASE_URL}/proxy/{method}/{targetUrl}
+```
+
+Oolaf 自有音乐 CDN 不走 Web 代理，会保持直连。默认跳过的域名来自：
+
+```text
+OOLAF_MUSIC_CDN_BASE_URL=https://s1.oolaf.top
+```
+
+常见图片资源也不走 Web 代理，会按 URL path 扩展名直连，例如 `.png`、`.jpg`、`.jpeg`、`.webp`、`.gif`、`.svg`、`.avif`、`.apng`、`.bmp`、`.ico`。带查询参数的图片地址同样会按 path 判断，例如：
+
+```text
+https://i5.hoopchina.com.cn/news-editor/example.png?x-oss-process=image/resize,w_250/format,webp
 ```
 
 代理服务需要 token 时，继续传入 `PROXY_TOKEN`。应用会把该值放到请求头 `x-proxy-token`：

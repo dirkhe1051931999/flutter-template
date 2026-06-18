@@ -1,5 +1,4 @@
 import 'package:flutter/cupertino.dart';
-import 'package:oolaf_flutted/app.config.dart';
 import 'package:oolaf_flutted/components/app_asset_icon/index.dart';
 import 'package:oolaf_flutted/utils/proxy_url.dart';
 
@@ -222,10 +221,11 @@ class _CustomNetworkImageState extends State<CustomNetworkImage>
             );
     }
 
-    final imageUrl = AppConfig.shouldUseProxy
+    final shouldUseProxy = shouldProxyUrl(normalizedUrl);
+    final imageUrl = shouldUseProxy
         ? buildProxyUrl(method: 'get', targetUrl: normalizedUrl)
         : normalizedUrl;
-    final proxyHeaders = AppConfig.shouldUseProxy ? buildProxyHeaders() : null;
+    final proxyHeaders = shouldUseProxy ? buildProxyHeaders() : null;
 
     return Image.network(
       imageUrl,

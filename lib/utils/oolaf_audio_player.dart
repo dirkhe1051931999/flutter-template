@@ -5,7 +5,6 @@ import 'package:audio_session/audio_session.dart';
 import 'package:flutter/foundation.dart';
 import 'package:just_audio/just_audio.dart';
 
-import 'package:oolaf_flutted/app.config.dart';
 import 'package:oolaf_flutted/utils/helper.dart';
 import 'package:oolaf_flutted/utils/oolaf_audio_cache_proxy.dart';
 import 'package:oolaf_flutted/utils/proxy_url.dart';
@@ -245,7 +244,7 @@ class OolafAudioPlayer {
     _hasStarted = false;
     _currentUrl = url;
 
-    if (AppConfig.shouldUseProxy) {
+    if (shouldProxyUrl(url)) {
       await _player.setUrl(
         buildProxyUrl(method: 'get', targetUrl: url),
         headers: buildProxyHeaders(),
