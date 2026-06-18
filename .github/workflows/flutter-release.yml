@@ -1,0 +1,90 @@
+name: Flutter Release
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ["main-v2"]
+
+concurrency:
+  group: flutter-release-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.41.9"
+          channel: "stable"
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Build Android APK
+        run: flutter build apk
+
+      - name: Build Web
+        run: flutter build web
+
+      - name: Prepare release metadata
+        id: release_meta
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          latest_tag="$(git tag --list 'v[0-9]*.[0-9]*.[0-9]*' --sort=-v:refname | head -n 1)"
+          if [[ -z "$latest_tag" ]]; then
+            pubspec_version="$(grep '^version:' pubspec.yaml | awk '{print $2}' | cut -d '+' -f 1)"
+            latest_tag="v${pubspec_version:-0.0.0}"
+          fi
+
+          version="${latest_tag#v}"
+          IFS='.' read -r major minor patch <<< "$version"
+          major="${major:-0}"
+          minor="${minor:-0}"
+          patch="${patch:-0}"
+          next_tag="v${major}.${minor}.$((patch + 1))"
+
+          echo "tag=$next_tag" >> "$GITHUB_OUTPUT"
+          echo "apk_name=flutter-template-${next_tag}.apk" >> "$GITHUB_OUTPUT"
+          echo "web_name=flutter-template-${next_tag}-web.zip" >> "$GITHUB_OUTPUT"
+
+      - name: Package release artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          mkdir -p dist/releases
+          cp build/app/outputs/flutter-apk/app-release.apk "dist/releases/${{ steps.release_meta.outputs.apk_name }}"
+          (cd build/web && zip -r "../../dist/releases/${{ steps.release_meta.outputs.web_name }}" .)
+
+      - name: Create and push tag
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag "${{ steps.release_meta.outputs.tag }}"
+          git push origin "${{ steps.release_meta.outputs.tag }}"
+
+      - name: Publish GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.release_meta.outputs.tag }}
+          name: ${{ steps.release_meta.outputs.tag }}
+          files: dist/releases/*
+          generate_release_notes: true

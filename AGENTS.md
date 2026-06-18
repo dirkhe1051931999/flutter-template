@@ -15,6 +15,7 @@ This repository uses `.windsurfrules` as a source of truth for engineering style
 - Analyze and state the likely impact scope before modifying code.
 - Run tests after completing code or documentation changes.
 - Every modification, edit, addition, or deletion must include a corresponding `README.md` update.
+- Do not use flutter run build  command
 
 ## Required Working Style
 

@@ -986,27 +986,43 @@ flutter build web --release --dart-define=APP_ENV=test --dart-define=TEST_BASE_U
 flutter build web --release --dart-define=BASE_URL=https://mock-api.example.com
 ```
 
-### Web 自动发布
+### GitHub Actions 自动发布
 
-仓库包含 GitHub Actions 工作流：
+仓库包含两个 GitHub Actions 工作流。
+
+Web Pages 发布：
 
 ```text
 .github/workflows/flutter-web-publish.yml
 ```
 
-该工作流会执行 `flutter build web --release --base-href /flutter-template/`，并带上 Web 代理参数：
-
-```text
-PROXY=true
-PROXY_BASE_URL=http://101.200.123.220:9212/
-PROXY_TOKEN=oolaf-oolaf-oolaf-oolaf
-```
-
-构建产物会通过仓库 secret `FLUTTER_WEB_PUBLISH` 推送到：
+该工作流会在 `main-v2` 分支收到 push 后自动执行，也可以在 GitHub Actions 页面手动触发。它会执行带 Pages 子路径和 Web 代理参数的 Web 构建，并将产物发布到：
 
 ```text
 dirkhe1051931999/dirkhe1051931999.github.io/flutter-template
 ```
+
+Release 打包发布：
+
+```text
+.github/workflows/flutter-release.yml
+```
+
+该工作流会在 `main-v2` 分支收到 push 后自动执行，也可以在 GitHub Actions 页面手动触发。
+
+自动发布流程：
+
+- 执行 `flutter pub get`
+- 执行 `flutter build apk`
+- 执行 `flutter build web`
+- 自动计算下一个 `vX.Y.Z` tag
+- 推送 tag 到远端
+- 创建 GitHub Release
+- 上传 APK 和 Web zip 包
+
+tag 自增规则会优先读取仓库里最新的 `vX.Y.Z` tag，并将 patch 版本加一。例如最新 tag 是 `v1.0.3`，下一次 `main-v2` 提交成功构建后会发布 `v1.0.4`。如果仓库还没有符合规则的 tag，则从 `pubspec.yaml` 的 `version` 起步。
+
+该工作流只打 APK 和 Web 包，不带 `--dart-define`、`--base-href` 或其他构建参数。
 
 ## 注意事项
 
