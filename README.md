@@ -36,8 +36,8 @@ Flutter Template 是一个用于快速启动 Flutter 应用开发的项目模板
 | Android Studio JBR | `D:\Android Studio\jbr` |
 | Android Gradle Plugin | `8.6.0` |
 | Kotlin Gradle Plugin | `2.1.0` |
-| Gradle Wrapper | `8.7` |
-| Gradle 分发地址 | `https://mirrors.cloud.tencent.com/gradle/gradle-8.7-all.zip` |
+| Gradle Wrapper | `8.11.1` |
+| Gradle 分发地址 | `https://mirrors.cloud.tencent.com/gradle/gradle-8.11.1-all.zip` |
 | Flutter Android 引擎制品镜像 | `https://storage.flutter-io.cn/download.flutter.io` |
 | Maven 镜像 | 阿里云 Maven 仓库 |
 
@@ -56,10 +56,10 @@ android/gradle/wrapper/gradle-wrapper.properties
 当前配置：
 
 ```properties
-distributionUrl=https\://mirrors.cloud.tencent.com/gradle/gradle-8.7-all.zip
+distributionUrl=https\://mirrors.cloud.tencent.com/gradle/gradle-8.11.1-all.zip
 ```
 
-使用 Gradle 8.7 的原因：
+使用 Gradle 8.11.1 的原因：
 
 - 旧版本 Gradle 与 JDK 21 不兼容时，可能出现 `Unsupported class file major version 65`。
 - 使用腾讯云 Gradle 镜像可以避免从 `services.gradle.org` 下载超时。
@@ -199,7 +199,7 @@ java.net.ConnectException: Connection timed out
 本项目已经将 Gradle Wrapper 改为腾讯云镜像：
 
 ```properties
-distributionUrl=https\://mirrors.cloud.tencent.com/gradle/gradle-8.7-all.zip
+distributionUrl=https\://mirrors.cloud.tencent.com/gradle/gradle-8.11.1-all.zip
 ```
 
 ### Maven 依赖下载超时
@@ -1023,6 +1023,8 @@ Release 打包发布：
 tag 自增规则会优先读取仓库里最新的 `vX.Y.Z` tag，并将 patch 版本加一。例如最新 tag 是 `v1.0.3`，下一次 `main-v2` 提交成功构建后会发布 `v1.0.4`。如果仓库还没有符合规则的 tag，则从 `pubspec.yaml` 的 `version` 起步。
 
 该工作流只打 APK 和 Web 包，不带 `--dart-define`、`--base-href` 或其他构建参数。
+
+GitHub Actions 的海外 runner 访问腾讯云 Gradle 镜像可能出现 `java.net.ConnectException: Connection refused`。Release 工作流会在构建 APK 前临时把 `android/gradle/wrapper/gradle-wrapper.properties` 中的 Gradle 分发地址切换为 `https://services.gradle.org/distributions/gradle-8.11.1-all.zip`，该修改只发生在 CI 工作区，不会提交回仓库。
 
 ## 注意事项
 

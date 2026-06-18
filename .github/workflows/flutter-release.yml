@@ -33,6 +33,10 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      - name: Use GitHub Actions Gradle distribution
+        run: |
+          sed -i 's#https\\://mirrors.cloud.tencent.com/gradle/gradle-8.11.1-all.zip#https\\://services.gradle.org/distributions/gradle-8.11.1-all.zip#' android/gradle/wrapper/gradle-wrapper.properties
+
       - name: Build Android APK
         run: flutter build apk
 
