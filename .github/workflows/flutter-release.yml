@@ -13,15 +13,53 @@ permissions:
   contents: write
 
 jobs:
-  release:
+  metadata:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 10
+    outputs:
+      tag: ${{ steps.release_meta.outputs.tag }}
+      apk_name: ${{ steps.release_meta.outputs.apk_name }}
+      web_name: ${{ steps.release_meta.outputs.web_name }}
+      windows_name: ${{ steps.release_meta.outputs.windows_name }}
 
     steps:
       - name: Checkout source
         uses: actions/checkout@v5
         with:
           fetch-depth: 0
+
+      - name: Prepare release metadata
+        id: release_meta
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          latest_tag="$(git tag --list 'v[0-9]*.[0-9]*.[0-9]*' --sort=-v:refname | head -n 1)"
+          if [[ -z "$latest_tag" ]]; then
+            pubspec_version="$(grep '^version:' pubspec.yaml | awk '{print $2}' | cut -d '+' -f 1)"
+            latest_tag="v${pubspec_version:-0.0.0}"
+          fi
+
+          version="${latest_tag#v}"
+          IFS='.' read -r major minor patch <<< "$version"
+          major="${major:-0}"
+          minor="${minor:-0}"
+          patch="${patch:-0}"
+          next_tag="v${major}.${minor}.$((patch + 1))"
+
+          echo "tag=$next_tag" >> "$GITHUB_OUTPUT"
+          echo "apk_name=flutter-template-${next_tag}.apk" >> "$GITHUB_OUTPUT"
+          echo "web_name=flutter-template-${next_tag}-web.zip" >> "$GITHUB_OUTPUT"
+          echo "windows_name=flutter-template-${next_tag}-windows.zip" >> "$GITHUB_OUTPUT"
+
+  build-android-web:
+    needs: metadata
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v5
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
@@ -55,37 +93,82 @@ jobs:
       - name: Build Web
         run: flutter build web
 
-      - name: Prepare release metadata
-        id: release_meta
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          latest_tag="$(git tag --list 'v[0-9]*.[0-9]*.[0-9]*' --sort=-v:refname | head -n 1)"
-          if [[ -z "$latest_tag" ]]; then
-            pubspec_version="$(grep '^version:' pubspec.yaml | awk '{print $2}' | cut -d '+' -f 1)"
-            latest_tag="v${pubspec_version:-0.0.0}"
-          fi
-
-          version="${latest_tag#v}"
-          IFS='.' read -r major minor patch <<< "$version"
-          major="${major:-0}"
-          minor="${minor:-0}"
-          patch="${patch:-0}"
-          next_tag="v${major}.${minor}.$((patch + 1))"
-
-          echo "tag=$next_tag" >> "$GITHUB_OUTPUT"
-          echo "apk_name=flutter-template-${next_tag}.apk" >> "$GITHUB_OUTPUT"
-          echo "web_name=flutter-template-${next_tag}-web.zip" >> "$GITHUB_OUTPUT"
-
       - name: Package release artifacts
         shell: bash
         run: |
           set -euo pipefail
 
           mkdir -p dist/releases
-          cp build/app/outputs/flutter-apk/app-release.apk "dist/releases/${{ steps.release_meta.outputs.apk_name }}"
-          (cd build/web && zip -r "../../dist/releases/${{ steps.release_meta.outputs.web_name }}" .)
+          cp build/app/outputs/flutter-apk/app-release.apk "dist/releases/${{ needs.metadata.outputs.apk_name }}"
+          (cd build/web && zip -r "../../dist/releases/${{ needs.metadata.outputs.web_name }}" .)
+
+      - name: Upload Android and Web artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-android-web
+          path: dist/releases/*
+          if-no-files-found: error
+
+  build-windows:
+    needs: metadata
+    runs-on: windows-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v5
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.41.9"
+          channel: "stable"
+          cache: true
+
+      - name: Enable Windows desktop
+        run: flutter config --enable-windows-desktop
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Build Windows
+        run: flutter build windows
+
+      - name: Package Windows artifact
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path dist\releases | Out-Null
+          Compress-Archive `
+            -Path build\windows\x64\runner\Release\* `
+            -DestinationPath "dist\releases\${{ needs.metadata.outputs.windows_name }}" `
+            -Force
+
+      - name: Upload Windows artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-windows
+          path: dist/releases/*
+          if-no-files-found: error
+
+  release:
+    needs:
+      - metadata
+      - build-android-web
+      - build-windows
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Download release artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist/releases
+          merge-multiple: true
 
       - name: Create and push tag
         shell: bash
@@ -94,13 +177,13 @@ jobs:
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git tag "${{ steps.release_meta.outputs.tag }}"
-          git push origin "${{ steps.release_meta.outputs.tag }}"
+          git tag "${{ needs.metadata.outputs.tag }}"
+          git push origin "${{ needs.metadata.outputs.tag }}"
 
       - name: Publish GitHub release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ steps.release_meta.outputs.tag }}
-          name: ${{ steps.release_meta.outputs.tag }}
+          tag_name: ${{ needs.metadata.outputs.tag }}
+          name: ${{ needs.metadata.outputs.tag }}
           files: dist/releases/*
           generate_release_notes: true

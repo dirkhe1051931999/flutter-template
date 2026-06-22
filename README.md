@@ -1015,14 +1015,15 @@ Release 打包发布：
 - 执行 `flutter pub get`
 - 执行 `flutter build apk`
 - 执行 `flutter build web`
+- 在 Windows runner 执行 `flutter build windows`
 - 自动计算下一个 `vX.Y.Z` tag
 - 推送 tag 到远端
 - 创建 GitHub Release
-- 上传 APK 和 Web zip 包
+- 上传 APK、Web zip 包和 Windows zip 包
 
 tag 自增规则会优先读取仓库里最新的 `vX.Y.Z` tag，并将 patch 版本加一。例如最新 tag 是 `v1.0.3`，下一次 `main-v2` 提交成功构建后会发布 `v1.0.4`。如果仓库还没有符合规则的 tag，则从 `pubspec.yaml` 的 `version` 起步。
 
-该工作流只打 APK 和 Web 包，不带 `--dart-define`、`--base-href` 或其他构建参数。
+该工作流会分别在 Ubuntu runner 打 APK/Web 包、在 Windows runner 打 Windows 桌面包，不带 `--dart-define`、`--base-href` 或其他构建参数。
 
 GitHub Actions 的海外 runner 访问腾讯云 Gradle 镜像可能出现网络问题；同时仓库本地开发配置中的 `127.0.0.1:7890` Gradle 代理在 runner 上不可用，会导致 `java.net.ConnectException: Connection refused`。Release 工作流会在构建 APK 前临时移除 `android/gradle.properties` 里的 Gradle 代理配置，把 Gradle JVM heap 调整为 `-Xmx4096M`，并把 `android/gradle/wrapper/gradle-wrapper.properties` 中的 Gradle 分发地址切换为 `https://services.gradle.org/distributions/gradle-8.11.1-all.zip`，这些修改只发生在 CI 工作区，不会提交回仓库。
 
