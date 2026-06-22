@@ -2,7 +2,8 @@ import 'package:fluro/fluro.dart';
 import 'package:flutter/material.dart';
 import 'package:oolaf_flutted/components/fluro_detail/index.dart';
 import 'package:oolaf_flutted/layouts/app_wrap/index.dart';
-import 'package:oolaf_flutted/pages/auth/login_page.dart';
+import 'package:oolaf_flutted/pages/auth/auth_demo_pages.dart';
+import 'package:oolaf_flutted/pages/auth/index.dart';
 import 'package:oolaf_flutted/pages/component_demo/app_asset_icon_demo_page.dart';
 import 'package:oolaf_flutted/pages/component_demo/app_action_sheet_demo_page.dart';
 import 'package:oolaf_flutted/pages/component_demo/app_button_demo_page.dart';
@@ -40,6 +41,7 @@ import 'package:oolaf_flutted/pages/fluro/index.dart';
 import 'package:oolaf_flutted/pages/home/index.dart';
 import 'package:oolaf_flutted/pages/tetris_game/index.dart';
 import 'package:oolaf_flutted/pages/hupu/index.dart';
+import 'package:oolaf_flutted/pages/hupu/hupu_login_page.dart';
 import 'package:oolaf_flutted/pages/hupu/hupu_post_detail_page.dart';
 import 'package:oolaf_flutted/pages/oolaf_dynamic_audio/index.dart';
 import 'package:oolaf_flutted/pages/profile/index.dart';
@@ -165,12 +167,201 @@ var shortVideoRouteHandler = Handler(
   },
 );
 
+var authRouteHandler = Handler(
+  handlerFunc: (
+    BuildContext? context,
+    Map<String, List<String>> params,
+  ) {
+    return const AuthPage();
+  },
+);
+
+var authSplashGateRouteHandler = Handler(
+  handlerFunc: (
+    BuildContext? context,
+    Map<String, List<String>> params,
+  ) {
+    return const AuthSplashGatePage();
+  },
+);
+
 var authLoginRouteHandler = Handler(
   handlerFunc: (
     BuildContext? context,
     Map<String, List<String>> params,
   ) {
     return const AuthLoginPage();
+  },
+);
+
+var authRegisterRouteHandler = Handler(
+  handlerFunc: (
+    BuildContext? context,
+    Map<String, List<String>> params,
+  ) {
+    return const AuthRegisterPage();
+  },
+);
+
+var authOtpRouteHandler = Handler(
+  handlerFunc: (
+    BuildContext? context,
+    Map<String, List<String>> params,
+  ) {
+    return const AuthOtpPage();
+  },
+);
+
+var authForgotPasswordRouteHandler = Handler(
+  handlerFunc: (
+    BuildContext? context,
+    Map<String, List<String>> params,
+  ) {
+    return const AuthPasswordFlowPage(mode: AuthPasswordFlowMode.forgot);
+  },
+);
+
+var authResetPasswordRouteHandler = Handler(
+  handlerFunc: (
+    BuildContext? context,
+    Map<String, List<String>> params,
+  ) {
+    return const AuthPasswordFlowPage(mode: AuthPasswordFlowMode.reset);
+  },
+);
+
+var authChangePasswordRouteHandler = Handler(
+  handlerFunc: (
+    BuildContext? context,
+    Map<String, List<String>> params,
+  ) {
+    return const AuthPasswordFlowPage(mode: AuthPasswordFlowMode.change);
+  },
+);
+
+var authBindingRouteHandler = Handler(
+  handlerFunc: (
+    BuildContext? context,
+    Map<String, List<String>> params,
+  ) {
+    return const AuthBindingPage(unbindMode: false);
+  },
+);
+
+var authUnbindingRouteHandler = Handler(
+  handlerFunc: (
+    BuildContext? context,
+    Map<String, List<String>> params,
+  ) {
+    return const AuthBindingPage(unbindMode: true);
+  },
+);
+
+var authCompleteProfileRouteHandler = Handler(
+  handlerFunc: (
+    BuildContext? context,
+    Map<String, List<String>> params,
+  ) {
+    return const AuthProfileCompletionPage();
+  },
+);
+
+var authPermissionIntroRouteHandler = Handler(
+  handlerFunc: (
+    BuildContext? context,
+    Map<String, List<String>> params,
+  ) {
+    return const AuthPermissionIntroPage();
+  },
+);
+
+var authVerificationStatusRouteHandler = Handler(
+  handlerFunc: (
+    BuildContext? context,
+    Map<String, List<String>> params,
+  ) {
+    return const AuthVerificationStatusPage();
+  },
+);
+
+var authMfaRouteHandler = Handler(
+  handlerFunc: (
+    BuildContext? context,
+    Map<String, List<String>> params,
+  ) {
+    return const AuthMfaPage();
+  },
+);
+
+var authSessionExpiredRouteHandler = Handler(
+  handlerFunc: (
+    BuildContext? context,
+    Map<String, List<String>> params,
+  ) {
+    return const AuthSessionExpiredPage();
+  },
+);
+
+var authAccountSecurityRouteHandler = Handler(
+  handlerFunc: (
+    BuildContext? context,
+    Map<String, List<String>> params,
+  ) {
+    return const AuthAccountSecurityPage();
+  },
+);
+
+var authDevicesRouteHandler = Handler(
+  handlerFunc: (
+    BuildContext? context,
+    Map<String, List<String>> params,
+  ) {
+    return const AuthDeviceManagementPage();
+  },
+);
+
+var authDeleteRouteHandler = Handler(
+  handlerFunc: (
+    BuildContext? context,
+    Map<String, List<String>> params,
+  ) {
+    return const AuthDeleteAccountPage();
+  },
+);
+
+var authTermsRouteHandler = Handler(
+  handlerFunc: (
+    BuildContext? context,
+    Map<String, List<String>> params,
+  ) {
+    return const AuthTermsPage();
+  },
+);
+
+var authPrivacyRouteHandler = Handler(
+  handlerFunc: (
+    BuildContext? context,
+    Map<String, List<String>> params,
+  ) {
+    return const AuthTermsPage(privacy: true);
+  },
+);
+
+var authThirdPartyCallbackRouteHandler = Handler(
+  handlerFunc: (
+    BuildContext? context,
+    Map<String, List<String>> params,
+  ) {
+    return const AuthThirdPartyCallbackPage();
+  },
+);
+
+var authExceptionRouteHandler = Handler(
+  handlerFunc: (
+    BuildContext? context,
+    Map<String, List<String>> params,
+  ) {
+    return const AuthExceptionStatePage();
   },
 );
 
@@ -567,6 +758,14 @@ var hupuRouteHandler = Handler(
     Map<String, List<String>> params,
   ) {
     return const HupuPage();
+  },
+);
+var hupuLoginRouteHandler = Handler(
+  handlerFunc: (
+    BuildContext? context,
+    Map<String, List<String>> params,
+  ) {
+    return const HupuLoginPage();
   },
 );
 var tetrisRouteHandler = Handler(

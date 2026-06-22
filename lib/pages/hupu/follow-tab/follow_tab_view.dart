@@ -172,7 +172,7 @@ class _HupuFollowTabViewState extends State<HupuFollowTabView>
             SliverToBoxAdapter(
               child: _FollowLoginPrompt(
                 onTapLogin: () {
-                  Application.router.navigateTo(context, Routes.authLogin);
+                  Application.router.navigateTo(context, Routes.hupuLogin);
                 },
               ),
             ),

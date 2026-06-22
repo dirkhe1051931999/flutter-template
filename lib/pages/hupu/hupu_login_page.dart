@@ -4,14 +4,14 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:oolaf_flutted/components/app_toast/index.dart';
 
-class AuthLoginPage extends StatefulWidget {
-  const AuthLoginPage({super.key});
+class HupuLoginPage extends StatefulWidget {
+  const HupuLoginPage({super.key});
 
   @override
-  State<AuthLoginPage> createState() => _AuthLoginPageState();
+  State<HupuLoginPage> createState() => _HupuLoginPageState();
 }
 
-class _AuthLoginPageState extends State<AuthLoginPage> {
+class _HupuLoginPageState extends State<HupuLoginPage> {
   static const int _smsCountdownSeconds = 60;
 
   final TextEditingController _mobileController = TextEditingController();
@@ -181,12 +181,12 @@ class _AuthLoginPageState extends State<AuthLoginPage> {
       backgroundColor: CupertinoColors.white,
       child: Stack(
         children: [
-          const Positioned.fill(child: _AuthLoginBackground()),
+          const Positioned.fill(child: _HupuLoginBackground()),
           SafeArea(
             bottom: false,
             child: Column(
               children: [
-                _AuthLoginNavigationBar(
+                _HupuLoginNavigationBar(
                     onBack: () => Navigator.of(context).pop()),
                 Expanded(
                   child: SingleChildScrollView(
@@ -200,7 +200,7 @@ class _AuthLoginPageState extends State<AuthLoginPage> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             const Text(
-                              '手机快捷登录',
+                              '虎扑手机快捷登录',
                               style: TextStyle(
                                 color: Color(0xFF202127),
                                 fontSize: 27,
@@ -210,7 +210,7 @@ class _AuthLoginPageState extends State<AuthLoginPage> {
                             ),
                             const SizedBox(height: 10),
                             const Text(
-                              '未注册的手机号验证通过后将自动注册',
+                              '用于登录虎扑关注、推荐和互动相关能力',
                               style: TextStyle(
                                 color: Color(0xFFBBC1CC),
                                 fontSize: 14,
@@ -279,8 +279,8 @@ class _AuthLoginPageState extends State<AuthLoginPage> {
   }
 }
 
-class _AuthLoginBackground extends StatelessWidget {
-  const _AuthLoginBackground();
+class _HupuLoginBackground extends StatelessWidget {
+  const _HupuLoginBackground();
 
   @override
   Widget build(BuildContext context) {
@@ -337,8 +337,8 @@ class _SoftCircle extends StatelessWidget {
   }
 }
 
-class _AuthLoginNavigationBar extends StatelessWidget {
-  const _AuthLoginNavigationBar({required this.onBack});
+class _HupuLoginNavigationBar extends StatelessWidget {
+  const _HupuLoginNavigationBar({required this.onBack});
 
   final VoidCallback onBack;
 

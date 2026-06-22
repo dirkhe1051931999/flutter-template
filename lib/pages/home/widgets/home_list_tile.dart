@@ -59,11 +59,12 @@ class HomeListTile extends StatelessWidget {
                       const SizedBox(height: 4),
                       Text(
                         item.subtitle,
-                        maxLines: 1,
+                        maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
                           color: Color(0xFF8A92A0),
                           fontSize: 12,
+                          height: 1.35,
                         ),
                       ),
                     ],

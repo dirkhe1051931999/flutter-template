@@ -13,7 +13,28 @@ class Routes {
   static const request = "/request";
   static const oolafDynamicAudio = "/oolaf-dynamic-audio";
   static const shortVideo = "/short-video";
+  static const auth = "/auth";
+  static const authSplashGate = "/auth/splash-gate";
   static const authLogin = "/auth/login";
+  static const authRegister = "/auth/register";
+  static const authOtp = "/auth/otp";
+  static const authForgotPassword = "/auth/forgot-password";
+  static const authResetPassword = "/auth/reset-password";
+  static const authChangePassword = "/auth/change-password";
+  static const authBinding = "/auth/binding";
+  static const authUnbinding = "/auth/unbinding";
+  static const authCompleteProfile = "/auth/complete-profile";
+  static const authPermissionIntro = "/auth/permission-intro";
+  static const authVerificationStatus = "/auth/verification-status";
+  static const authMfa = "/auth/mfa";
+  static const authSessionExpired = "/auth/session-expired";
+  static const authAccountSecurity = "/auth/account-security";
+  static const authDevices = "/auth/devices";
+  static const authDelete = "/auth/delete";
+  static const authTerms = "/auth/terms";
+  static const authPrivacy = "/auth/privacy";
+  static const authThirdPartyCallback = "/auth/third-party-callback";
+  static const authException = "/auth/exception";
   static const profile = "/profile";
   static const scrollableTabs = "/scrollable-tabs";
   static const networkImageDemo = "/network-image-demo";
@@ -51,6 +72,7 @@ class Routes {
   static const routePageHeaderDemo = "/route-page-header-demo";
   static const weather = "/weather";
   static const hupu = "/hupu";
+  static const hupuLogin = "/hupu/login";
   static const tetris = "/tetris";
   static const hupuPostDetail = "/hupu/post_detail";
 
@@ -74,7 +96,37 @@ class Routes {
     router.define(request, handler: requestRouteHandler);
     router.define(oolafDynamicAudio, handler: oolafDynamicAudioRouteHandler);
     router.define(shortVideo, handler: shortVideoRouteHandler);
+    router.define(auth, handler: authRouteHandler);
+    router.define(authSplashGate, handler: authSplashGateRouteHandler);
     router.define(authLogin, handler: authLoginRouteHandler);
+    router.define(authRegister, handler: authRegisterRouteHandler);
+    router.define(authOtp, handler: authOtpRouteHandler);
+    router.define(authForgotPassword, handler: authForgotPasswordRouteHandler);
+    router.define(authResetPassword, handler: authResetPasswordRouteHandler);
+    router.define(authChangePassword, handler: authChangePasswordRouteHandler);
+    router.define(authBinding, handler: authBindingRouteHandler);
+    router.define(authUnbinding, handler: authUnbindingRouteHandler);
+    router.define(authCompleteProfile,
+        handler: authCompleteProfileRouteHandler);
+    router.define(authPermissionIntro,
+        handler: authPermissionIntroRouteHandler);
+    router.define(
+      authVerificationStatus,
+      handler: authVerificationStatusRouteHandler,
+    );
+    router.define(authMfa, handler: authMfaRouteHandler);
+    router.define(authSessionExpired, handler: authSessionExpiredRouteHandler);
+    router.define(authAccountSecurity,
+        handler: authAccountSecurityRouteHandler);
+    router.define(authDevices, handler: authDevicesRouteHandler);
+    router.define(authDelete, handler: authDeleteRouteHandler);
+    router.define(authTerms, handler: authTermsRouteHandler);
+    router.define(authPrivacy, handler: authPrivacyRouteHandler);
+    router.define(
+      authThirdPartyCallback,
+      handler: authThirdPartyCallbackRouteHandler,
+    );
+    router.define(authException, handler: authExceptionRouteHandler);
     router.define(
       profile,
       handler: profileRouteHandler,
@@ -222,6 +274,10 @@ class Routes {
     router.define(
       hupu,
       handler: hupuRouteHandler,
+    );
+    router.define(
+      hupuLogin,
+      handler: hupuLoginRouteHandler,
     );
     router.define(
       tetris,
