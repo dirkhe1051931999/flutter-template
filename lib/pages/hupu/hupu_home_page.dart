@@ -1,5 +1,6 @@
 import 'package:fluro/fluro.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:oolaf_flutted/pages/hupu/follow-tab/follow_tab_view.dart';
 import 'package:oolaf_flutted/pages/hupu/hupu_search_page.dart';
 import 'package:oolaf_flutted/pages/hupu/recommend-tabs/recommend_tab_view.dart';
 import 'package:oolaf_flutted/pages/hupu/sports-tabs/sports_tab_view.dart';
@@ -16,10 +17,7 @@ class HupuHomePage extends StatefulWidget {
 class _HupuHomePageState extends State<HupuHomePage> {
   static const List<String> _topTabs = <String>['关注', '推荐', '赛事'];
   static const List<Widget> _topTabPages = <Widget>[
-    _HupuHomePlaceholder(
-      title: '关注',
-      description: '关注流内容后续再接，这里先保留一级 tab 占位。',
-    ),
+    HupuFollowTabView(),
     HupuRecommendTabView(),
     HupuSportsTabView(),
   ];
@@ -173,51 +171,6 @@ class _HupuHomeHeader extends StatelessWidget {
           ),
           const SizedBox(width: 8),
         ],
-      ),
-    );
-  }
-}
-
-class _HupuHomePlaceholder extends StatelessWidget {
-  const _HupuHomePlaceholder({
-    required this.title,
-    required this.description,
-  });
-
-  final String title;
-  final String description;
-
-  @override
-  Widget build(BuildContext context) {
-    return ColoredBox(
-      color: CupertinoColors.white,
-      child: Center(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 32),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                title,
-                style: const TextStyle(
-                  color: Color(0xFF202127),
-                  fontSize: 28,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                description,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: Color(0xFF8E8E93),
-                  fontSize: 15,
-                  height: 1.5,
-                ),
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }

@@ -6,7 +6,6 @@ import 'package:oolaf_flutted/components/app_notice_bar/index.dart';
 import 'package:oolaf_flutted/pages/home/widgets/background_orb.dart';
 import 'package:oolaf_flutted/pages/home/widgets/home_entry.dart';
 import 'package:oolaf_flutted/pages/home/widgets/home_entry_group.dart';
-import 'package:oolaf_flutted/pages/home/widgets/home_hero.dart';
 import 'package:oolaf_flutted/pages/home/widgets/home_list_tile.dart';
 import 'package:oolaf_flutted/pages/home/widgets/section_panel.dart';
 import 'package:oolaf_flutted/router/config.dart';
@@ -357,6 +356,12 @@ class _HomePageState extends State<HomePage> {
 
     final businessItems = <HomeEntry>[
       const HomeEntry(
+        title: 'Auth 登录',
+        subtitle: '手机号验证码、协议勾选、倒计时',
+        routeKey: 'auth/login',
+        icon: CupertinoIcons.lock_shield,
+      ),
+      const HomeEntry(
         title: '短视频',
         subtitle: '视频流、搜索、评论、设置',
         routeKey: 'short-video',
@@ -424,8 +429,6 @@ class _HomePageState extends State<HomePage> {
               child: ListView(
                 padding: const EdgeInsets.fromLTRB(14, 12, 14, 24),
                 children: [
-                  const HomeHero(),
-                  const SizedBox(height: 14),
                   SectionPanel(
                     title: '基础示例',
                     subtitle: '更适合看交互和组件，默认收起',
@@ -471,6 +474,7 @@ class _HomePageState extends State<HomePage> {
                         .toList(growable: false),
                   ),
                   const SizedBox(height: 12),
+                  const _OolafDynamicAudioNowPlayingBanner(),
                   SectionPanel(
                     title: '业务模块',
                     subtitle: '默认展开，方便直接进入主要能力',
@@ -483,8 +487,6 @@ class _HomePageState extends State<HomePage> {
                     },
                     children: [
                       for (final item in businessItems) ...[
-                        if (item.routeKey == 'oolaf-dynamic-audio')
-                          const _OolafDynamicAudioNowPlayingBanner(),
                         HomeListTile(
                           item: item,
                           onTap: () => _openRoute(item.routeKey),
@@ -564,7 +566,7 @@ class _OolafDynamicAudioNowPlayingBanner extends StatelessWidget {
             : '正在播放：$trackTitle    下一首：$nextTrackTitle';
 
         return Padding(
-          padding: const EdgeInsets.fromLTRB(0, 0, 0, 8),
+          padding: const EdgeInsets.fromLTRB(0, 0, 0, 12),
           child: SizedBox(
             height: 18,
             child: AppNoticeBar(

@@ -1,4 +1,6 @@
+export 'cba_news.dart';
 export 'feed.dart';
+export 'follow.dart';
 export 'home_team.dart';
 export 'hot_rank.dart';
 export 'nba_match_detail.dart';
@@ -10,6 +12,7 @@ export 'nba_schedule.dart';
 export 'nba_top_tab.dart';
 export 'post_detail.dart';
 export 'search.dart';
+export 'sports_news.dart';
 export 'tag_detail.dart';
 export 'topic.dart';
 export 'topic_detail.dart';

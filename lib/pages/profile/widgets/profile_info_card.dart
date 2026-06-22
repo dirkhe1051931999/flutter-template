@@ -1,13 +1,17 @@
 import 'package:flutter/cupertino.dart';
+import 'package:oolaf_flutted/components/app_field/app_field_types.dart';
+import 'package:oolaf_flutted/components/app_field/index.dart';
 import 'package:oolaf_flutted/pages/profile/profile_view_data.dart';
 
 class ProfileInfoCard extends StatelessWidget {
   const ProfileInfoCard({
     required this.items,
+    required this.onItemChanged,
     super.key,
   });
 
   final List<ProfileInfoItem> items;
+  final void Function(ProfileInfoItem item, String value) onItemChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -34,9 +38,9 @@ class ProfileInfoCard extends StatelessWidget {
             ...items.map(
               (item) => Padding(
                 padding: const EdgeInsets.only(bottom: 10),
-                child: ProfileInfoRow(
-                  label: item.label,
-                  value: item.value,
+                child: ProfileInfoField(
+                  item: item,
+                  onChanged: (value) => onItemChanged(item, value),
                 ),
               ),
             ),
@@ -47,53 +51,30 @@ class ProfileInfoCard extends StatelessWidget {
   }
 }
 
-class ProfileInfoRow extends StatelessWidget {
-  const ProfileInfoRow({
-    required this.label,
-    required this.value,
+class ProfileInfoField extends StatelessWidget {
+  const ProfileInfoField({
+    required this.item,
+    required this.onChanged,
     super.key,
   });
 
-  final String label;
-  final String value;
+  final ProfileInfoItem item;
+  final ValueChanged<String> onChanged;
 
   @override
   Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: const Color(0xF7FFFFFF),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0x12000000)),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
-        child: Row(
-          children: [
-            Expanded(
-              child: Text(
-                label,
-                style: const TextStyle(
-                  color: Color(0xFF8A92A0),
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Flexible(
-              child: Text(
-                value.isEmpty ? '--' : value,
-                textAlign: TextAlign.right,
-                style: const TextStyle(
-                  color: Color(0xFF1F2329),
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
+    return AppField(
+      value: item.value,
+      label: item.label,
+      type: item.key == 'age' ? AppFieldType.digit : AppFieldType.text,
+      placeholder: '请输入${item.label}',
+      clearable: true,
+      clearTrigger: AppFieldClearTrigger.always,
+      maxLength: item.key == 'age' ? 2 : null,
+      border: false,
+      labelWidth: 130,
+      inputAlign: AppFieldTextAlign.left,
+      onChanged: onChanged,
     );
   }
 }

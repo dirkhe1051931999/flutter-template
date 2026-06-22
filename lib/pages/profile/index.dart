@@ -1,10 +1,10 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_redux/flutter_redux.dart';
-import 'package:oolaf_flutted/pages/profile/profile_age_edit_dialog.dart';
 import 'package:oolaf_flutted/pages/profile/profile_view_data.dart';
 import 'package:oolaf_flutted/pages/profile/widgets/profile_hero.dart';
 import 'package:oolaf_flutted/pages/profile/widgets/profile_info_card.dart';
 import 'package:oolaf_flutted/store/index.dart';
+import 'package:oolaf_flutted/store/user/type.dart';
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
@@ -26,24 +26,41 @@ class ProfilePage extends StatelessWidget {
                 username: viewData.username,
               ),
               const SizedBox(height: 14),
-              ProfileInfoCard(items: viewData.infoItems),
-              const SizedBox(height: 14),
-              CupertinoButton.filled(
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                borderRadius: BorderRadius.circular(18),
-                onPressed: () => showProfileAgeEditDialog(context),
-                child: const Text(
-                  '修改用户年龄',
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
+              ProfileInfoCard(
+                items: viewData.infoItems,
+                onItemChanged: (item, value) {
+                  final store = StoreProvider.of<AppState>(
+                    context,
+                    listen: false,
+                  );
+                  store.dispatch(_createUpdateAction(item.key, value));
+                },
               ),
             ],
           );
         },
       ),
     );
+  }
+
+  UpdateUserInfoAction _createUpdateAction(String key, String value) {
+    switch (key) {
+      case 'name':
+        return UpdateUserInfoAction(name: value);
+      case 'age':
+        return UpdateUserInfoAction(age: int.tryParse(value) ?? -1);
+      case 'username':
+        return UpdateUserInfoAction(username: value);
+      case 'password':
+        return UpdateUserInfoAction(password: value);
+      case 'token':
+        return UpdateUserInfoAction(token: value);
+      case 'email':
+        return UpdateUserInfoAction(email: value);
+      case 'phone':
+        return UpdateUserInfoAction(phone: value);
+      default:
+        return const UpdateUserInfoAction();
+    }
   }
 }

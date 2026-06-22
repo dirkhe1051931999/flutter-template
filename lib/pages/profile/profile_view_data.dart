@@ -16,13 +16,25 @@ class ProfileViewData {
       age: userInfo.age,
       username: userInfo.username,
       infoItems: [
-        ProfileInfoItem(label: 'name', value: userInfo.name),
-        ProfileInfoItem(label: 'age', value: '${userInfo.age}'),
-        ProfileInfoItem(label: 'username', value: userInfo.username),
-        ProfileInfoItem(label: 'password', value: userInfo.password),
-        ProfileInfoItem(label: 'token', value: userInfo.token),
-        ProfileInfoItem(label: 'email', value: userInfo.email),
-        ProfileInfoItem(label: 'phone', value: userInfo.phone),
+        ProfileInfoItem(key: 'name', label: 'name', value: userInfo.name),
+        ProfileInfoItem(
+          key: 'age',
+          label: 'age',
+          value: userInfo.age < 0 ? '' : '${userInfo.age}',
+        ),
+        ProfileInfoItem(
+          key: 'username',
+          label: 'username',
+          value: userInfo.username,
+        ),
+        ProfileInfoItem(
+          key: 'password',
+          label: 'password',
+          value: userInfo.password,
+        ),
+        ProfileInfoItem(key: 'token', label: 'token', value: userInfo.token),
+        ProfileInfoItem(key: 'email', label: 'email', value: userInfo.email),
+        ProfileInfoItem(key: 'phone', label: 'phone', value: userInfo.phone),
       ],
     );
   }
@@ -30,10 +42,12 @@ class ProfileViewData {
 
 class ProfileInfoItem {
   const ProfileInfoItem({
+    required this.key,
     required this.label,
     required this.value,
   });
 
+  final String key;
   final String label;
   final String value;
 }

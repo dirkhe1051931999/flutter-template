@@ -13,6 +13,7 @@ class Routes {
   static const request = "/request";
   static const oolafDynamicAudio = "/oolaf-dynamic-audio";
   static const shortVideo = "/short-video";
+  static const authLogin = "/auth/login";
   static const profile = "/profile";
   static const scrollableTabs = "/scrollable-tabs";
   static const networkImageDemo = "/network-image-demo";
@@ -73,6 +74,7 @@ class Routes {
     router.define(request, handler: requestRouteHandler);
     router.define(oolafDynamicAudio, handler: oolafDynamicAudioRouteHandler);
     router.define(shortVideo, handler: shortVideoRouteHandler);
+    router.define(authLogin, handler: authLoginRouteHandler);
     router.define(
       profile,
       handler: profileRouteHandler,

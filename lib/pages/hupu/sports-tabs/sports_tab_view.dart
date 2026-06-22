@@ -2,7 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:oolaf_flutted/components/linked_tab_view/index.dart';
 import 'package:oolaf_flutted/pages/hupu/hupu_home_team_page.dart';
 import 'package:oolaf_flutted/pages/hupu/sports-tabs/nba-news-tab.dart';
-import 'package:oolaf_flutted/pages/hupu/sports-tabs/placeholder-tab.dart';
+import 'package:oolaf_flutted/pages/hupu/sports-tabs/sports-news-tab.dart';
 
 class HupuSportsTabView extends StatelessWidget {
   const HupuSportsTabView({super.key});
@@ -22,33 +22,60 @@ class HupuSportsTabView extends StatelessWidget {
     LinkedTabItem(
       id: 'china-basketball',
       label: '中国篮球',
-      child: HupuSportsPlaceholderTab(
-        title: '中国篮球',
-        description: '中国篮球页先占位，后续再接实际内容。',
+      child: HupuSportsNewsTab(
+        config: HupuSportsNewsConfig(
+          title: '中国篮球',
+          categoryCode: 'basketball',
+          tagCode: 'cba',
+          pinnedSubtitle: 'CBA 焦点动态',
+          hotSubtitle: '实时更新热门资讯',
+        ),
       ),
     ),
     LinkedTabItem(
       id: 'international-football',
       label: '国际足球',
-      child: HupuSportsPlaceholderTab(
-        title: '国际足球',
-        description: '国际足球页先占位，后续再接实际内容。',
+      child: HupuSportsNewsTab(
+        config: HupuSportsNewsConfig(
+          title: '国际足球',
+          categoryCode: 'football',
+          tagCode: 'fifa',
+          pinnedSubtitle: 'FIFA 焦点动态',
+          hotSubtitle: '实时更新热门资讯',
+        ),
       ),
     ),
     LinkedTabItem(
       id: 'china-football',
       label: '中国足球',
-      child: HupuSportsPlaceholderTab(
-        title: '中国足球',
-        description: '中国足球页先占位，后续再接实际内容。',
+      child: HupuSportsNewsTab(
+        config: HupuSportsNewsConfig(
+          title: '中国足球',
+          categoryCode: 'football',
+          tagCode: 'csl',
+          pinnedSubtitle: '',
+          hotSubtitle: '',
+          showPinned: false,
+          showHot: false,
+          showNewsFeed: true,
+          showTopics: true,
+        ),
       ),
     ),
     LinkedTabItem(
       id: 'league-of-legends',
       label: '英雄联盟',
-      child: HupuSportsPlaceholderTab(
-        title: '英雄联盟',
-        description: '英雄联盟页先占位，后续再接实际内容。',
+      child: HupuSportsNewsTab(
+        config: HupuSportsNewsConfig(
+          title: '英雄联盟',
+          categoryCode: 'esports',
+          tagCode: 'lol',
+          pinnedSubtitle: '',
+          hotSubtitle: '',
+          showPinned: false,
+          showHot: false,
+          showNewsFeed: true,
+        ),
       ),
     ),
   ];

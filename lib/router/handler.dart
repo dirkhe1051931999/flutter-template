@@ -2,6 +2,7 @@ import 'package:fluro/fluro.dart';
 import 'package:flutter/material.dart';
 import 'package:oolaf_flutted/components/fluro_detail/index.dart';
 import 'package:oolaf_flutted/layouts/app_wrap/index.dart';
+import 'package:oolaf_flutted/pages/auth/login_page.dart';
 import 'package:oolaf_flutted/pages/component_demo/app_asset_icon_demo_page.dart';
 import 'package:oolaf_flutted/pages/component_demo/app_action_sheet_demo_page.dart';
 import 'package:oolaf_flutted/pages/component_demo/app_button_demo_page.dart';
@@ -161,6 +162,15 @@ var shortVideoRouteHandler = Handler(
     Map<String, List<String>> params,
   ) {
     return const ShortVideoPage();
+  },
+);
+
+var authLoginRouteHandler = Handler(
+  handlerFunc: (
+    BuildContext? context,
+    Map<String, List<String>> params,
+  ) {
+    return const AuthLoginPage();
   },
 );
 
