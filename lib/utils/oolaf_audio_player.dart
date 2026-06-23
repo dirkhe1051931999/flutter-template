@@ -51,6 +51,7 @@ class OolafAudioPlayer {
   StreamSubscription<AudioInterruptionEvent>? _interruptionSub;
   StreamSubscription<void>? _noisySub;
   StreamSubscription<AudioDevicesChangedEvent>? _devicesSub;
+  static const Duration _setUrlTimeout = Duration(seconds: 12);
   bool _sessionConfigured = false;
   bool _hasStarted = false;
   bool _isDisposed = false;
@@ -185,6 +186,29 @@ class OolafAudioPlayer {
     return headers;
   }
 
+  Future<void> _setRemoteUrlWithTimeout(
+    String url, {
+    required String source,
+    Map<String, String>? headers,
+  }) async {
+    customLogger.log('audio setUrl start: source=$source url=$url');
+    await _player
+        .setUrl(
+      url,
+      headers: headers,
+    )
+        .timeout(
+      _setUrlTimeout,
+      onTimeout: () {
+        throw TimeoutException(
+          'audio setUrl timeout after ${_setUrlTimeout.inSeconds}s '
+          '(source=$source, url=$url)',
+        );
+      },
+    );
+    customLogger.log('audio setUrl ready: source=$source url=$url');
+  }
+
   Future<void> prefetchUrl(String url) async {
     if (_isDisposed) {
       return;
@@ -260,8 +284,10 @@ class OolafAudioPlayer {
     _currentUrl = url;
 
     if (shouldProxyUrl(url)) {
-      await _player.setUrl(
-        buildProxyUrl(method: 'get', targetUrl: url),
+      final proxyUrl = buildProxyUrl(method: 'get', targetUrl: url);
+      await _setRemoteUrlWithTimeout(
+        proxyUrl,
+        source: 'remote-proxy',
         headers: buildProxyHeaders(),
       );
       return;
@@ -269,8 +295,9 @@ class OolafAudioPlayer {
 
     if (Platform.isIOS) {
       try {
-        await _player.setUrl(
+        await _setRemoteUrlWithTimeout(
           url,
+          source: 'ios-direct',
           headers: _remoteAudioHeaders(url),
         );
         return;
@@ -282,7 +309,10 @@ class OolafAudioPlayer {
 
       try {
         final proxyUri = await _playableUriFor(url);
-        await _player.setUrl(proxyUri.toString());
+        await _setRemoteUrlWithTimeout(
+          proxyUri.toString(),
+          source: 'ios-localhost-proxy',
+        );
         return;
       } catch (error, stackTrace) {
         customLogger.log('setUrl via iOS local proxy failed: $error');
@@ -306,22 +336,27 @@ class OolafAudioPlayer {
 
       try {
         final proxyUri = await _playableUriFor(url);
-        await _player.setUrl(proxyUri.toString());
+        await _setRemoteUrlWithTimeout(
+          proxyUri.toString(),
+          source: 'local-cache-proxy',
+        );
         return;
       } catch (error, stackTrace) {
         customLogger
             .log('setUrl via local proxy failed, fallback direct url: $error');
         customLogger.log(stackTrace);
-        await _player.setUrl(
+        await _setRemoteUrlWithTimeout(
           url,
+          source: 'direct-fallback',
           headers: _remoteAudioHeaders(url),
         );
         return;
       }
     }
 
-    await _player.setUrl(
+    await _setRemoteUrlWithTimeout(
       url,
+      source: 'direct',
       headers: _remoteAudioHeaders(url),
     );
   }

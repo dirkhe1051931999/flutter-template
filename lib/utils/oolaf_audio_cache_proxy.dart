@@ -5,6 +5,8 @@ import 'dart:io';
 import 'package:crypto/crypto.dart';
 import 'package:path_provider/path_provider.dart';
 
+import 'package:oolaf_flutted/utils/helper.dart';
+
 class OolafAudioCacheProxy {
   OolafAudioCacheProxy._();
 
@@ -106,6 +108,11 @@ class OolafAudioCacheProxy {
       await request.response.close();
       return;
     }
+    customLogger.log(
+      'audio cache proxy request: method=${request.method} '
+      'range=${request.headers.value(HttpHeaders.rangeHeader) ?? '-'} '
+      'url=$remoteUrl',
+    );
 
     final cacheFile = await _cacheFile(remoteUrl);
     final partFile = File('${cacheFile.path}.part');
@@ -238,6 +245,12 @@ class OolafAudioCacheProxy {
 
       final upstreamResp = await upstream.close();
       final status = upstreamResp.statusCode;
+      customLogger.log(
+        'audio cache proxy upstream: status=$status '
+        'length=${upstreamResp.contentLength} '
+        'range=${upstreamResp.headers.value(HttpHeaders.contentRangeHeader) ?? '-'} '
+        'url=$remoteUrl',
+      );
       if (status != HttpStatus.ok && status != HttpStatus.partialContent) {
         request.response.statusCode = status;
         await request.response.close();
