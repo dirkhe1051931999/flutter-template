@@ -62,8 +62,7 @@ class OolafAudioPlaybackController {
         return;
       }
       final targetUrl = snapshot.nowPlaying!.cdnUrl;
-      final isSameTrackAlive =
-          oolafAudioPlayer.currentUrl == targetUrl &&
+      final isSameTrackAlive = oolafAudioPlayer.currentUrl == targetUrl &&
           oolafAudioPlayer.playbackState != OolafPlaybackState.disposed &&
           oolafAudioPlayer.playbackState != OolafPlaybackState.idle;
 
@@ -108,11 +107,11 @@ class OolafAudioPlaybackController {
     }
     _lastPersistKey = key;
     _persistDebounce?.cancel();
+    if (music.nowPlaying == null && music.queue.isEmpty) {
+      OolafPlaybackPersistence.clear();
+      return;
+    }
     _persistDebounce = Timer(const Duration(milliseconds: 250), () {
-      if (music.nowPlaying == null && music.queue.isEmpty) {
-        OolafPlaybackPersistence.clear();
-        return;
-      }
       OolafPlaybackPersistence.save(
         queue: music.queue,
         queueIndex: music.queueIndex,

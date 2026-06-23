@@ -10,7 +10,8 @@ class OolafAudioCacheProxy {
 
   static final OolafAudioCacheProxy instance = OolafAudioCacheProxy._();
 
-  final Map<String, Completer<void>> _downloadLocks = <String, Completer<void>>{};
+  final Map<String, Completer<void>> _downloadLocks =
+      <String, Completer<void>>{};
 
   HttpServer? _server;
   int? _port;
@@ -214,8 +215,23 @@ class OolafAudioCacheProxy {
         }
       }
 
-      final upstream = await client.getUrl(Uri.parse(remoteUrl));
-      upstream.headers.set(HttpHeaders.userAgentHeader, 'oolaf-audio-proxy');
+      final upstreamUri = Uri.parse(remoteUrl);
+      final upstream = await client.getUrl(upstreamUri);
+      upstream.headers.set(
+        HttpHeaders.userAgentHeader,
+        'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) '
+        'AppleWebKit/605.1.15 (KHTML, like Gecko) '
+        'Version/17.0 Mobile/15E148 Safari/604.1',
+      );
+      upstream.headers.set(HttpHeaders.acceptHeader, '*/*');
+      upstream.headers.set(
+        HttpHeaders.acceptLanguageHeader,
+        'zh-CN,zh;q=0.9,en;q=0.8',
+      );
+      upstream.headers.set(
+        HttpHeaders.refererHeader,
+        '${upstreamUri.scheme}://${upstreamUri.host}/',
+      );
       if (isSeekRange) {
         upstream.headers.set(HttpHeaders.rangeHeader, range!.toHeaderValue());
       }
@@ -241,8 +257,7 @@ class OolafAudioCacheProxy {
         if (upstreamLen >= 0) {
           request.response.contentLength = upstreamLen;
         }
-        final cr =
-            upstreamResp.headers.value(HttpHeaders.contentRangeHeader);
+        final cr = upstreamResp.headers.value(HttpHeaders.contentRangeHeader);
         if (cr != null) {
           request.response.headers.set(HttpHeaders.contentRangeHeader, cr);
         }

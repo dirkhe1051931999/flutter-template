@@ -169,6 +169,22 @@ class OolafAudioPlayer {
     return OolafAudioCacheProxy.instance.proxyUriFor(remoteUrl);
   }
 
+  Map<String, String> _remoteAudioHeaders(String url) {
+    final uri = Uri.tryParse(url);
+    final headers = <String, String>{
+      HttpHeaders.userAgentHeader:
+          'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) '
+              'AppleWebKit/605.1.15 (KHTML, like Gecko) '
+              'Version/17.0 Mobile/15E148 Safari/604.1',
+      HttpHeaders.acceptHeader: '*/*',
+      HttpHeaders.acceptLanguageHeader: 'zh-CN,zh;q=0.9,en;q=0.8',
+    };
+    if (uri != null && uri.hasScheme && uri.host.isNotEmpty) {
+      headers[HttpHeaders.refererHeader] = '${uri.scheme}://${uri.host}/';
+    }
+    return headers;
+  }
+
   Future<void> prefetchUrl(String url) async {
     if (_isDisposed) {
       return;
@@ -239,7 +255,6 @@ class OolafAudioPlayer {
 
   Future<void> setUrl(String url) async {
     await _ensureAudioSession();
-    await _ensureAudioCacheProxy();
     _lastProcessingState = ProcessingState.idle;
     _hasStarted = false;
     _currentUrl = url;
@@ -252,8 +267,33 @@ class OolafAudioPlayer {
       return;
     }
 
-    if (Platform.isAndroid || Platform.isIOS || Platform.isMacOS) {
+    if (Platform.isIOS) {
       try {
+        await _player.setUrl(
+          url,
+          headers: _remoteAudioHeaders(url),
+        );
+        return;
+      } catch (error, stackTrace) {
+        customLogger
+            .log('setUrl direct iOS url failed, fallback cache proxy: $error');
+        customLogger.log(stackTrace);
+      }
+
+      try {
+        final proxyUri = await _playableUriFor(url);
+        await _player.setUrl(proxyUri.toString());
+        return;
+      } catch (error, stackTrace) {
+        customLogger.log('setUrl via iOS local proxy failed: $error');
+        customLogger.log(stackTrace);
+        rethrow;
+      }
+    }
+
+    if (Platform.isAndroid || Platform.isMacOS) {
+      try {
+        await _ensureAudioCacheProxy();
         final cached = await OolafAudioCacheProxy.instance.getCachedFile(url);
         if (cached != null) {
           await _player.setFilePath(cached.path);
@@ -272,12 +312,18 @@ class OolafAudioPlayer {
         customLogger
             .log('setUrl via local proxy failed, fallback direct url: $error');
         customLogger.log(stackTrace);
-        await _player.setUrl(url);
+        await _player.setUrl(
+          url,
+          headers: _remoteAudioHeaders(url),
+        );
         return;
       }
     }
 
-    await _player.setUrl(url);
+    await _player.setUrl(
+      url,
+      headers: _remoteAudioHeaders(url),
+    );
   }
 
   Future<void> playUrl(String url) async {

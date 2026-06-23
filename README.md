@@ -1063,6 +1063,8 @@ GitHub Actions 的海外 runner 访问腾讯云 Gradle 镜像可能出现网络�
 - 修改 `pubspec.yaml` 后需要执行 `flutter pub get`。
 - 修改 Android Gradle 配置后建议执行 `flutter clean`。
 - iOS/macOS 视频播放使用 `media_kit_video` 的默认 `libmpv` 输出配置，不要复用 Android 的 `gpu` 输出配置；远程视频会附带移动端 `User-Agent`、`Accept-Language` 和 `Referer` 请求头，便于兼容虎扑、凤凰短视频等媒体源。
+- iOS 动感音频播放优先直连远程 HTTPS 音频，并附带移动端浏览器请求头；本地缓存代理只作为失败后的兜底，避免 iPhone 因 localhost 代理链路异常导致无声或一直缓冲。
+- 动感音频没有当前播放内容且队列为空时，应立即清理播放持久化数据，不要启动延迟保存 timer，避免页面销毁或测试结束后仍有挂起任务。
 - 如果遇到下载超时，优先检查镜像配置和 `FLUTTER_STORAGE_BASE_URL`。
 - 如果遇到 Gradle 锁占用，先停止 Gradle daemon。
 - Web 平台下 Cookie 持久化逻辑需要单独适配。
