@@ -220,6 +220,26 @@ java.net.ConnectException: Connection timed out
 distributionUrl=https\://mirrors.cloud.tencent.com/gradle/gradle-8.11.1-all.zip
 ```
 
+## Oolaf 音频播放补充说明
+
+`2026-06-23` 对 Oolaf 音频播放链路做了一次 iOS 真机兼容修复，重点是 `lib/utils/oolaf_audio_player.dart` 与 `lib/utils/oolaf_audio_cache_proxy.dart`。
+
+- 点击音乐列表项后的调用链为 `lib/components/oolaf_music/music_list.dart -> lib/utils/oolaf_audio_player.dart`。
+- iOS 下如果 `just_audio.setUrl()` 直连远端 FLAC 超时，不再继续把同一条 FLAC URL 交给本地 `localhost` HTTP 代理播放。
+- 新逻辑会先把远端音频完整下载到应用缓存目录，再通过 `setFilePath()` 播放本地文件。
+- 如果 iOS 首次装载音频仍然卡死，播放器会自动销毁旧的 `AudioPlayer` 实例并重建后重试一次，覆盖冷启动首播偶发失败场景。
+- 这样可以规避 iOS 真机上远端 FLAC URL 长时间 loading、点击后一直转圈、最终播放失败的问题。
+
+影响范围：
+
+- iOS Oolaf 音乐播放失败回退路径。
+- 音频缓存代理新增“下载到本地缓存文件”的复用能力。
+
+平台说明：
+
+- Android / macOS 仍保持原有缓存代理与直连回退逻辑。
+- Web 不走这个本地缓存文件回退。
+
 ### Maven 依赖下载超时
 
 本项目已经在 `android/build.gradle` 和 `android/settings.gradle` 中加入阿里云 Maven 镜像：

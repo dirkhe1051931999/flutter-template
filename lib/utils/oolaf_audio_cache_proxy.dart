@@ -65,6 +65,29 @@ class OolafAudioCacheProxy {
     return null;
   }
 
+  Future<File> cacheRemoteFile(String remoteUrl) async {
+    final existing = await getCachedFile(remoteUrl);
+    if (existing != null) {
+      return existing;
+    }
+
+    final cacheFile = await _cacheFile(remoteUrl);
+    final partFile = File('${cacheFile.path}.part');
+
+    final existingLock = _downloadLocks[remoteUrl];
+    if (existingLock != null) {
+      await existingLock.future;
+      final downloaded = await getCachedFile(remoteUrl);
+      if (downloaded != null) {
+        return downloaded;
+      }
+    }
+
+    await partFile.create(recursive: true);
+    await _downloadFully(remoteUrl, partFile, finalFile: cacheFile);
+    return cacheFile;
+  }
+
   Future<void> dispose() async {
     final server = _server;
     _server = null;
@@ -332,6 +355,95 @@ class OolafAudioCacheProxy {
         await cacheWriter?.close();
       } catch (_) {}
       if (!streamSucceeded) {
+        try {
+          if (await partFile.exists()) {
+            await partFile.delete();
+          }
+        } catch (_) {}
+      }
+      if (createdLock && lockCompleter != null) {
+        if (identical(_downloadLocks[remoteUrl], lockCompleter)) {
+          _downloadLocks.remove(remoteUrl);
+        }
+        if (!lockCompleter.isCompleted) {
+          lockCompleter.complete();
+        }
+      }
+      client.close(force: true);
+    }
+  }
+
+  Future<void> _downloadFully(
+    String remoteUrl,
+    File partFile, {
+    required File finalFile,
+  }) async {
+    final client = HttpClient();
+    Completer<void>? lockCompleter;
+    var createdLock = false;
+    IOSink? sink;
+    var downloadSucceeded = false;
+    try {
+      if (_downloadLocks.containsKey(remoteUrl)) {
+        lockCompleter = _downloadLocks[remoteUrl];
+      } else {
+        lockCompleter = Completer<void>();
+        _downloadLocks[remoteUrl] = lockCompleter;
+        createdLock = true;
+      }
+
+      if (!createdLock) {
+        await lockCompleter!.future;
+        if (await finalFile.exists()) {
+          return;
+        }
+        throw StateError('audio cache file missing after concurrent download');
+      }
+
+      final upstreamUri = Uri.parse(remoteUrl);
+      final upstream = await client.getUrl(upstreamUri);
+      upstream.headers.set(
+        HttpHeaders.userAgentHeader,
+        'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) '
+        'AppleWebKit/605.1.15 (KHTML, like Gecko) '
+        'Version/17.0 Mobile/15E148 Safari/604.1',
+      );
+      upstream.headers.set(HttpHeaders.acceptHeader, '*/*');
+      upstream.headers.set(
+        HttpHeaders.acceptLanguageHeader,
+        'zh-CN,zh;q=0.9,en;q=0.8',
+      );
+      upstream.headers.set(
+        HttpHeaders.refererHeader,
+        '${upstreamUri.scheme}://${upstreamUri.host}/',
+      );
+
+      final upstreamResp = await upstream.close();
+      if (upstreamResp.statusCode != HttpStatus.ok) {
+        throw HttpException(
+          'audio cache download failed: status=${upstreamResp.statusCode}',
+          uri: upstreamUri,
+        );
+      }
+
+      sink = partFile.openWrite(mode: FileMode.write);
+      await upstreamResp.pipe(sink);
+      await sink.flush();
+      downloadSucceeded = true;
+      sink = null;
+
+      if (!await finalFile.exists()) {
+        await partFile.rename(finalFile.path);
+      }
+      customLogger.log('audio cache download ready: url=$remoteUrl');
+    } finally {
+      try {
+        await sink?.flush();
+      } catch (_) {}
+      try {
+        await sink?.close();
+      } catch (_) {}
+      if (!downloadSucceeded) {
         try {
           if (await partFile.exists()) {
             await partFile.delete();

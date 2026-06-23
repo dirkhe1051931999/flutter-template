@@ -25,8 +25,8 @@ enum OolafPlaybackState {
 }
 
 class OolafAudioPlayer {
-  OolafAudioPlayer() : _player = AudioPlayer() {
-    _playerStateSub = _player.playerStateStream.listen(_handlePlayerState);
+  OolafAudioPlayer() {
+    _bindPlayer(AudioPlayer());
   }
 
   bool _isHeadsetOrBluetoothOutput(AudioDevice device) {
@@ -42,7 +42,7 @@ class OolafAudioPlayer {
         typeName.endsWith('.headsetMic');
   }
 
-  final AudioPlayer _player;
+  late AudioPlayer _player;
   final StreamController<OolafPlaybackState> _playbackStateController =
       StreamController<OolafPlaybackState>.broadcast();
   final StreamController<OolafFocusEvent> _focusEventController =
@@ -82,6 +82,56 @@ class OolafAudioPlayer {
 
   void markPlaybackIntent() {
     _playbackIntentVersion += 1;
+  }
+
+  void _bindPlayer(AudioPlayer player) {
+    _player = player;
+    _playerStateSub?.cancel();
+    _playerStateSub = _player.playerStateStream.listen(_handlePlayerState);
+  }
+
+  Future<void> _recreatePlayer({required String reason}) async {
+    if (_isDisposed) {
+      return;
+    }
+
+    final previousPlayer = _player;
+    final previousLoopMode = previousPlayer.loopMode;
+    customLogger.log('audio recreate player start: reason=$reason');
+
+    _hasStarted = false;
+    _lastProcessingState = ProcessingState.idle;
+    _emitPlaybackState(OolafPlaybackState.idle);
+
+    await _playerStateSub?.cancel();
+    _playerStateSub = null;
+    try {
+      await previousPlayer.stop();
+    } catch (_) {}
+    try {
+      await previousPlayer.dispose();
+    } catch (_) {}
+
+    final nextPlayer = AudioPlayer();
+    _bindPlayer(nextPlayer);
+    try {
+      await nextPlayer.setLoopMode(previousLoopMode);
+    } catch (_) {}
+    customLogger.log('audio recreate player ready: reason=$reason');
+  }
+
+  Future<void> _runWithSingleRetry(
+    Future<void> Function() action, {
+    required String reason,
+  }) async {
+    try {
+      await action();
+    } catch (error, stackTrace) {
+      customLogger.log('audio operation failed, retry after recreate: $error');
+      customLogger.log(stackTrace);
+      await _recreatePlayer(reason: reason);
+      await action();
+    }
   }
 
   Future<void> _ensureAudioSession() async {
@@ -163,6 +213,23 @@ class OolafAudioPlayer {
       return;
     }
     await OolafAudioCacheProxy.instance.ensureStarted();
+  }
+
+  Future<void> _setLocalFileWithTimeout(
+    String filePath, {
+    required String source,
+  }) async {
+    customLogger.log('audio setFilePath start: source=$source path=$filePath');
+    await _player.setFilePath(filePath).timeout(
+      _setUrlTimeout,
+      onTimeout: () {
+        throw TimeoutException(
+          'audio setFilePath timeout after ${_setUrlTimeout.inSeconds}s '
+          '(source=$source, path=$filePath)',
+        );
+      },
+    );
+    customLogger.log('audio setFilePath ready: source=$source path=$filePath');
   }
 
   Future<Uri> _playableUriFor(String remoteUrl) async {
@@ -294,31 +361,33 @@ class OolafAudioPlayer {
     }
 
     if (Platform.isIOS) {
-      try {
-        await _setRemoteUrlWithTimeout(
-          url,
-          source: 'ios-direct',
-          headers: _remoteAudioHeaders(url),
-        );
-        return;
-      } catch (error, stackTrace) {
-        customLogger
-            .log('setUrl direct iOS url failed, fallback cache proxy: $error');
-        customLogger.log(stackTrace);
-      }
+      await _runWithSingleRetry(
+        () async {
+          try {
+            await _setRemoteUrlWithTimeout(
+              url,
+              source: 'ios-direct',
+              headers: _remoteAudioHeaders(url),
+            );
+            return;
+          } catch (error, stackTrace) {
+            customLogger.log(
+              'setUrl direct iOS url failed, fallback cached file: $error',
+            );
+            customLogger.log(stackTrace);
+          }
 
-      try {
-        final proxyUri = await _playableUriFor(url);
-        await _setRemoteUrlWithTimeout(
-          proxyUri.toString(),
-          source: 'ios-localhost-proxy',
-        );
-        return;
-      } catch (error, stackTrace) {
-        customLogger.log('setUrl via iOS local proxy failed: $error');
-        customLogger.log(stackTrace);
-        rethrow;
-      }
+          await _ensureAudioCacheProxy();
+          final cached =
+              await OolafAudioCacheProxy.instance.cacheRemoteFile(url);
+          await _setLocalFileWithTimeout(
+            cached.path,
+            source: 'ios-cached-file',
+          );
+        },
+        reason: 'ios_set_url_retry',
+      );
+      return;
     }
 
     if (Platform.isAndroid || Platform.isMacOS) {
