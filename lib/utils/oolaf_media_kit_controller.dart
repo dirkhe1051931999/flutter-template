@@ -5,6 +5,7 @@ import 'package:flutter/widgets.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 
+import 'package:oolaf_flutted/tools/developer_tools_center.dart';
 import 'package:oolaf_flutted/utils/oolaf_video_controller.dart';
 
 class OolafMediaKitController implements OolafVideoController {
@@ -73,11 +74,26 @@ class OolafMediaKitController implements OolafVideoController {
       );
     }
 
-    return const VideoControllerConfiguration(
-      vo: 'gpu',
-      hwdec: 'auto-safe',
-      enableHardwareAcceleration: true,
-    );
+    return const VideoControllerConfiguration();
+  }
+
+  static Map<String, String>? _createHttpHeaders(String url) {
+    final uri = Uri.tryParse(url);
+    if (uri == null || !uri.hasScheme || uri.host.isEmpty) {
+      return null;
+    }
+    if (uri.scheme != 'http' && uri.scheme != 'https') {
+      return null;
+    }
+
+    return <String, String>{
+      'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) '
+          'AppleWebKit/605.1.15 (KHTML, like Gecko) '
+          'Version/17.0 Mobile/15E148 Safari/604.1',
+      'Accept': '*/*',
+      'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
+      'Referer': '${uri.scheme}://${uri.host}/',
+    };
   }
 
   static Future<OolafMediaKitController> fromUrl(String url) async {
@@ -113,7 +129,13 @@ class OolafMediaKitController implements OolafVideoController {
     if (!_isAlive) {
       return;
     }
-    await _player.open(Media(url), play: false);
+    await _player.open(
+      Media(
+        url,
+        httpHeaders: _createHttpHeaders(url),
+      ),
+      play: false,
+    );
   }
 
   @override
@@ -285,10 +307,15 @@ class OolafMediaKitController implements OolafVideoController {
       _videoOutputStatus.value = OolafVideoOutputStatus.normal;
       _cancelBlackScreenTimer();
     });
-    _errorSub = _player.stream.error.listen((_) {
+    _errorSub = _player.stream.error.listen((error) {
       if (!_isAlive) {
         return;
       }
+      debugPrint('media_kit video playback error: $error');
+      DeveloperToolsCenter.instance.recordError(
+        source: 'media_kit_video',
+        error: error,
+      );
       _cancelBufferingTimeoutTimer();
       _videoOutputStatus.value = OolafVideoOutputStatus.loadFailed;
     });

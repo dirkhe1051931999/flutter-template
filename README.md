@@ -1017,7 +1017,7 @@ Web Pages 发布：
 .github/workflows/flutter-web-publish.yml
 ```
 
-该工作流会在 `main-v2` 分支收到 push 后自动执行，也可以在 GitHub Actions 页面手动触发。它会执行带 Pages 子路径和 Web 代理参数的 Web 构建，并将产物发布到：
+该工作流只会在 `main-v2` 分支收到 push 且本次提交包含 `.run-release` 文件改动时自动执行，也可以在 GitHub Actions 页面手动触发。它会执行带 Pages 子路径和 Web 代理参数的 Web 构建，并将产物发布到：
 
 ```text
 dirkhe1051931999/dirkhe1051931999.github.io/flutter-template
@@ -1029,7 +1029,16 @@ Release 打包发布：
 .github/workflows/flutter-release.yml
 ```
 
-该工作流会在 `main-v2` 分支收到 push 后自动执行，也可以在 GitHub Actions 页面手动触发。
+该工作流只会在 `main-v2` 分支收到 push 且本次提交包含 `.run-release` 文件改动时自动执行，也可以在 GitHub Actions 页面手动触发。普通代码提交不会触发 Release 打包。
+
+需要触发自动发布时，修改 `.run-release` 的内容并提交，例如写入版本号、时间或发布说明：
+
+```bash
+echo "release 2026-06-23 15:30" > .run-release
+git add .run-release
+git commit -m "chore: trigger release build"
+git push
+```
 
 自动发布流程：
 
@@ -1042,7 +1051,7 @@ Release 打包发布：
 - 创建 GitHub Release
 - 上传 APK、Web zip 包和 Windows zip 包
 
-tag 自增规则会优先读取仓库里最新的 `vX.Y.Z` tag，并将 patch 版本加一。例如最新 tag 是 `v1.0.3`，下一次 `main-v2` 提交成功构建后会发布 `v1.0.4`。如果仓库还没有符合规则的 tag，则从 `pubspec.yaml` 的 `version` 起步。
+tag 自增规则会优先读取仓库里最新的 `vX.Y.Z` tag，并将 patch 版本加一。例如最新 tag 是 `v1.0.3`，下一次 `.run-release` 触发的 `main-v2` 提交成功构建后会发布 `v1.0.4`。如果仓库还没有符合规则的 tag，则从 `pubspec.yaml` 的 `version` 起步。
 
 该工作流会分别在 Ubuntu runner 打 APK/Web 包、在 Windows runner 打 Windows 桌面包，不带 `--dart-define`、`--base-href` 或其他构建参数。
 
@@ -1053,6 +1062,7 @@ GitHub Actions 的海外 runner 访问腾讯云 Gradle 镜像可能出现网络�
 - 不要随意升级或降级 Flutter、Gradle、AGP、Kotlin 和 Android 插件依赖。
 - 修改 `pubspec.yaml` 后需要执行 `flutter pub get`。
 - 修改 Android Gradle 配置后建议执行 `flutter clean`。
+- iOS/macOS 视频播放使用 `media_kit_video` 的默认 `libmpv` 输出配置，不要复用 Android 的 `gpu` 输出配置；远程视频会附带移动端 `User-Agent`、`Accept-Language` 和 `Referer` 请求头，便于兼容虎扑、凤凰短视频等媒体源。
 - 如果遇到下载超时，优先检查镜像配置和 `FLUTTER_STORAGE_BASE_URL`。
 - 如果遇到 Gradle 锁占用，先停止 Gradle daemon。
 - Web 平台下 Cookie 持久化逻辑需要单独适配。

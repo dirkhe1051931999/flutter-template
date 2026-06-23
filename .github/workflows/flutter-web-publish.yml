@@ -4,6 +4,8 @@ on:
   workflow_dispatch:
   push:
     branches: ["main-v2"]
+    paths:
+      - ".run-release"
 
 concurrency:
   group: flutter-web-publish-${{ github.ref }}
