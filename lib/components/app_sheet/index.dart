@@ -59,9 +59,9 @@ class AppSheet extends StatelessWidget {
     this.maxHeightFactor,
     this.padding,
     this.backgroundColor = Colors.white,
-  this.enableBlur = false,
-  this.edgeToEdge = false,
-  this.showHandle = true,
+    this.enableBlur = false,
+    this.edgeToEdge = false,
+    this.showHandle = true,
   });
 
   final Widget child;
@@ -88,6 +88,9 @@ class AppSheet extends StatelessWidget {
       AppSheetPosition.bottom => Alignment.bottomCenter,
     };
     final safeBottom = MediaQuery.of(context).padding.bottom;
+    final keyboardInset = position == AppSheetPosition.bottom
+        ? MediaQuery.of(context).viewInsets.bottom
+        : 0.0;
 
     final content = Material(
       color: backgroundColor,
@@ -95,7 +98,8 @@ class AppSheet extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       child: ConstrainedBox(
         constraints: BoxConstraints(
-          maxHeight: MediaQuery.of(context).size.height * (maxHeightFactor ?? 0.9),
+          maxHeight:
+              MediaQuery.of(context).size.height * (maxHeightFactor ?? 0.9),
         ),
         child: Padding(
           padding: padding ??
@@ -123,34 +127,39 @@ class AppSheet extends StatelessWidget {
       ),
     );
 
-    return SafeArea(
-      top: position == AppSheetPosition.top,
-      bottom: position == AppSheetPosition.bottom,
-      child: Align(
-        alignment: alignment,
-        child: Container(
-          width: double.infinity,
-          margin: edgeToEdge
-              ? EdgeInsets.zero
-              : const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-          decoration: BoxDecoration(
-            borderRadius: borderRadius,
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x1A000000),
-                blurRadius: 28,
-                offset: Offset(0, 14),
+    return AnimatedPadding(
+      duration: const Duration(milliseconds: 180),
+      curve: Curves.easeOutCubic,
+      padding: EdgeInsets.only(bottom: keyboardInset),
+      child: SafeArea(
+        top: position == AppSheetPosition.top,
+        bottom: position == AppSheetPosition.bottom,
+        child: Align(
+          alignment: alignment,
+          child: Container(
+            width: double.infinity,
+            margin: edgeToEdge
+                ? EdgeInsets.zero
+                : const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+            decoration: BoxDecoration(
+              borderRadius: borderRadius,
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x1A000000),
+                  blurRadius: 28,
+                  offset: Offset(0, 14),
+                ),
+              ],
+            ),
+            child: ClipRRect(
+              borderRadius: borderRadius,
+              child: BackdropFilter(
+                filter: ImageFilter.blur(
+                  sigmaX: enableBlur ? 18 : 0,
+                  sigmaY: enableBlur ? 18 : 0,
+                ),
+                child: content,
               ),
-            ],
-          ),
-          child: ClipRRect(
-            borderRadius: borderRadius,
-            child: BackdropFilter(
-              filter: ImageFilter.blur(
-                sigmaX: enableBlur ? 18 : 0,
-                sigmaY: enableBlur ? 18 : 0,
-              ),
-              child: content,
             ),
           ),
         ),

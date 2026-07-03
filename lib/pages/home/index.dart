@@ -3,6 +3,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter_redux/flutter_redux.dart';
 import 'package:oolaf_flutted/components/app_notice_bar/app_notice_bar_types.dart';
 import 'package:oolaf_flutted/components/app_notice_bar/index.dart';
+import 'package:oolaf_flutted/components/app_toast/index.dart';
 import 'package:oolaf_flutted/pages/home/widgets/background_orb.dart';
 import 'package:oolaf_flutted/pages/home/widgets/home_entry.dart';
 import 'package:oolaf_flutted/pages/home/widgets/home_entry_group.dart';
@@ -11,6 +12,7 @@ import 'package:oolaf_flutted/pages/home/widgets/section_panel.dart';
 import 'package:oolaf_flutted/router/config.dart';
 import 'package:oolaf_flutted/store/index.dart';
 import 'package:oolaf_flutted/store/oolaf_music/state.dart';
+import 'package:oolaf_flutted/utils/aphelios_client_api_key_storage.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -34,6 +36,32 @@ class _HomePageState extends State<HomePage> {
       '/$key',
       transition: transition,
     );
+  }
+
+  Future<void> _confirmClearApheliosClientApiKey() async {
+    final confirmed = await showCupertinoDialog<bool>(
+      context: context,
+      builder: (dialogContext) => CupertinoAlertDialog(
+        title: const Text('清除 Client API Key？'),
+        content: const Text('清除后进入动态页和新增动态页需要重新输入。'),
+        actions: [
+          CupertinoDialogAction(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('取消'),
+          ),
+          CupertinoDialogAction(
+            isDestructiveAction: true,
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('清除'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) {
+      return;
+    }
+    await ApheliosClientApiKeyStorage.clear();
+    AppToast.showSuccess('已清除 Client API Key');
   }
 
   @override
@@ -512,6 +540,9 @@ class _HomePageState extends State<HomePage> {
                         HomeListTile(
                           item: item,
                           onTap: () => _openRoute(item.routeKey),
+                          onLongPress: item.routeKey == 'client-post-feed'
+                              ? _confirmClearApheliosClientApiKey
+                              : null,
                         ),
                       ],
                     ],

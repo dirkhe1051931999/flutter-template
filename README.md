@@ -13,6 +13,11 @@ Flutter Template 是一个用于快速启动 Flutter 应用开发的项目模板
 
 ## 更改记录
 
+2026-07-04 00:08:00
+
+1. Home 页「动态」入口支持长按二次确认清除本地保存的 Client API Key。
+2. `AppSheet` 增加键盘避让，修复移动端新增动态外链弹层被键盘遮挡的问题。
+
 2026-07-03 23:55:00
 
 1. 移除 `AppConfig.apheliosClientApiKey` 中硬编码的 Aphelios Client API Key。

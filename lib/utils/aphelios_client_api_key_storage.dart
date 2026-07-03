@@ -12,4 +12,9 @@ class ApheliosClientApiKeyStorage {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_key, value.trim());
   }
+
+  static Future<void> clear() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_key);
+  }
 }
