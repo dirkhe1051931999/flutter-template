@@ -372,6 +372,18 @@ class _HomePageState extends State<HomePage> {
         icon: CupertinoIcons.lock_shield,
       ),
       const HomeEntry(
+        title: '动态',
+        subtitle: '朋友圈式动态流',
+        routeKey: 'client-post-feed',
+        icon: CupertinoIcons.bubble_left_bubble_right,
+      ),
+      const HomeEntry(
+        title: '新增动态',
+        subtitle: '发布文字、图片、视频和外链动态',
+        routeKey: 'client-post-editor',
+        icon: CupertinoIcons.add_circled,
+      ),
+      const HomeEntry(
         title: '短视频',
         subtitle: '视频流、搜索、评论、设置',
         routeKey: 'short-video',

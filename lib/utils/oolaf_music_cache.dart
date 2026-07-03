@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class OolafMusicCache {
-  static const _key = 'oolaf_music_index_v1';
+  static const _key = 'oolaf_music_index_v2';
 
   static Future<Map<String, dynamic>?> readRaw() async {
     final prefs = await SharedPreferences.getInstance();

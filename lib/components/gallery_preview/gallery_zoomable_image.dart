@@ -1,6 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/gestures.dart';
-import 'package:oolaf_flutted/components/network_img/index.dart';
+import 'package:oolaf_flutted/components/gallery_preview/gallery_image_provider.dart';
 
 class GalleryZoomableImage extends StatefulWidget {
   const GalleryZoomableImage({
@@ -87,7 +87,7 @@ class _GalleryZoomableImageState extends State<GalleryZoomableImage>
       _imageStream?.removeListener(imageStreamListener);
     }
 
-    final provider = NetworkImage(widget.imageUrl);
+    final provider = resolveGalleryImageProvider(widget.imageUrl);
     final stream = provider.resolve(const ImageConfiguration());
     _imageStream = stream;
     _imageStreamListener = ImageStreamListener((image, _) {
@@ -113,6 +113,20 @@ class _GalleryZoomableImageState extends State<GalleryZoomableImage>
       }
     });
     stream.addListener(_imageStreamListener!);
+  }
+
+  void _markImageFrameReady() {
+    if (_hasImageFrame) {
+      return;
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _hasImageFrame) {
+        return;
+      }
+      setState(() {
+        _hasImageFrame = true;
+      });
+    });
   }
 
   void _notifyInteractionState() {
@@ -369,40 +383,19 @@ class _GalleryZoomableImageState extends State<GalleryZoomableImage>
             child: SizedBox(
               width: contentSize.width,
               height: contentSize.height,
-              child: CustomNetworkImage(
-                widget.imageUrl,
+              child: Image(
+                image: resolveGalleryImageProvider(widget.imageUrl),
                 fit: BoxFit.contain,
                 filterQuality: FilterQuality.high,
-                frameBuilder: (
-                  context,
-                  child,
-                  frame,
-                  wasSynchronouslyLoaded,
-                ) {
+                frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
                   if (wasSynchronouslyLoaded || frame != null) {
-                    if (!_hasImageFrame) {
-                      WidgetsBinding.instance.addPostFrameCallback((_) {
-                        if (!mounted) {
-                          return;
-                        }
-                        setState(() {
-                          _hasImageFrame = true;
-                        });
-                      });
-                    }
+                    _markImageFrameReady();
                   }
                   return child;
                 },
                 errorBuilder: (_, __, ___) {
                   if (!_hasImageFrame) {
-                    WidgetsBinding.instance.addPostFrameCallback((_) {
-                      if (!mounted) {
-                        return;
-                      }
-                      setState(() {
-                        _hasImageFrame = true;
-                      });
-                    });
+                    _markImageFrameReady();
                   }
                   return const Padding(
                     padding: EdgeInsets.symmetric(horizontal: 24),

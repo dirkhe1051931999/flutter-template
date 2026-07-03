@@ -2,6 +2,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:oolaf_flutted/pages/tetris_game/controller/tetris_game_controller.dart';
 import 'package:oolaf_flutted/pages/tetris_game/widgets/tetris_board.dart';
 import 'package:oolaf_flutted/pages/tetris_game/widgets/tetris_side_panel.dart';
+import 'package:oolaf_flutted/router/config.dart';
+import 'package:oolaf_flutted/router/routes.dart';
 
 class TetrisGamePage extends StatefulWidget {
   const TetrisGamePage({super.key});
@@ -65,13 +67,19 @@ class _TetrisGamePageState extends State<TetrisGamePage> {
                     const topPadding = 12.0;
                     const bottomPadding = 16.0;
                     const panelGap = 18.0;
+                    const entryHeight = 44.0;
+                    const entryGap = 12.0;
                     const boardAspectRatio =
                         tetrisBoardColumns / tetrisBoardRows;
 
                     final contentWidth =
                         constraints.maxWidth - (horizontalPadding * 2);
                     final contentHeight =
-                        constraints.maxHeight - topPadding - bottomPadding;
+                        constraints.maxHeight -
+                            topPadding -
+                            bottomPadding -
+                            entryHeight -
+                            entryGap;
                     final preferredPanelWidth = contentWidth.clamp(
                       188.0,
                       320.0,
@@ -116,23 +124,41 @@ class _TetrisGamePageState extends State<TetrisGamePage> {
                           bottomPadding,
                         ),
                         child: Center(
-                          child: ConstrainedBox(
-                            constraints: const BoxConstraints(maxWidth: 1180),
-                            child: canUseRowLayout
-                                ? _WideTetrisLayout(
-                                    availableWidth: contentWidth,
-                                    availableHeight: contentHeight,
-                                    sidePanel: sidePanel,
-                                    board: board,
-                                  )
-                                : _CompactTetrisLayout(
-                                    availableHeight: contentHeight,
-                                    sidePanel: sidePanel,
-                                    board: board,
+                            child: ConstrainedBox(
+                              constraints: const BoxConstraints(maxWidth: 1180),
+                              child: Column(
+                                children: [
+                                  SizedBox(
+                                    height: entryHeight,
+                                    child: _CreatePostEntry(
+                                      onPressed: () {
+                                        Application.router.navigateTo(
+                                          context,
+                                          Routes.clientPostEditor,
+                                        );
+                                      },
+                                    ),
                                   ),
+                                  const SizedBox(height: entryGap),
+                                  Expanded(
+                                    child: canUseRowLayout
+                                        ? _WideTetrisLayout(
+                                            availableWidth: contentWidth,
+                                            availableHeight: contentHeight,
+                                            sidePanel: sidePanel,
+                                            board: board,
+                                          )
+                                        : _CompactTetrisLayout(
+                                            availableHeight: contentHeight,
+                                            sidePanel: sidePanel,
+                                            board: board,
+                                          ),
+                                  ),
+                                ],
+                              ),
+                            ),
                           ),
                         ),
-                      ),
                     );
                   },
                 ),
@@ -140,6 +166,30 @@ class _TetrisGamePageState extends State<TetrisGamePage> {
             },
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _CreatePostEntry extends StatelessWidget {
+  const _CreatePostEntry({required this.onPressed});
+
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return CupertinoButton(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      borderRadius: BorderRadius.circular(16),
+      color: const Color(0xFF25406A),
+      onPressed: onPressed,
+      child: const Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(CupertinoIcons.add_circled, size: 18, color: CupertinoColors.white),
+          SizedBox(width: 8),
+          Text('新增动态', style: TextStyle(color: CupertinoColors.white, fontWeight: FontWeight.w700)),
+        ],
       ),
     );
   }

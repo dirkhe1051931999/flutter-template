@@ -3,7 +3,7 @@ name: Publish Flutter Web
 on:
   workflow_dispatch:
   push:
-    branches: ["main-v2"]
+    branches: ["faker"]
     paths:
       - ".run-release"
 

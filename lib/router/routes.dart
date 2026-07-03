@@ -74,6 +74,8 @@ class Routes {
   static const hupu = "/hupu";
   static const hupuLogin = "/hupu/login";
   static const tetris = "/tetris";
+  static const clientPostFeed = "/client-post-feed";
+  static const clientPostEditor = "/client-post-editor";
   static const hupuPostDetail = "/hupu/post_detail";
 
   static void configureRoutes(FluroRouter router) {
@@ -282,6 +284,14 @@ class Routes {
     router.define(
       tetris,
       handler: tetrisRouteHandler,
+    );
+    router.define(
+      clientPostFeed,
+      handler: clientPostFeedRouteHandler,
+    );
+    router.define(
+      clientPostEditor,
+      handler: clientPostEditorRouteHandler,
     );
     router.define(
       hupuPostDetail,

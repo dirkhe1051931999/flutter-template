@@ -1,4 +1,5 @@
 import 'package:flutter/cupertino.dart';
+import 'package:oolaf_flutted/components/gallery_preview/gallery_image_provider.dart';
 import 'package:oolaf_flutted/components/gallery_preview/gallery_preview_navigation.dart';
 import 'package:oolaf_flutted/components/network_img/index.dart';
 
@@ -31,13 +32,21 @@ class GalleryPreviewImage extends StatelessWidget {
     final hasExplicitSize = width != null || height != null;
     final image = ClipRRect(
       borderRadius: borderRadius,
-      child: CustomNetworkImage(
-        normalizedUrl,
-        width: width,
-        height: height,
-        fit: fit,
-        errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-      ),
+      child: isGalleryNetworkImage(normalizedUrl)
+          ? CustomNetworkImage(
+              normalizedUrl,
+              width: width,
+              height: height,
+              fit: fit,
+              errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+            )
+          : Image(
+              image: resolveGalleryImageProvider(normalizedUrl),
+              width: width,
+              height: height,
+              fit: fit,
+              errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+            ),
     );
 
     return GestureDetector(

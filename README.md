@@ -11,6 +11,14 @@ Flutter Template 是一个用于快速启动 Flutter 应用开发的项目模板
 - 修改完成后需要运行测试。
 - 每次修改、编辑、新增或删除时，需要同步更新 `README.md`。
 
+## 更改记录
+
+2026-07-03 23:55:00
+
+1. 移除 `AppConfig.apheliosClientApiKey` 中硬编码的 Aphelios Client API Key。
+2. 动态列表页和新增动态页进入前会要求输入 Client API Key，使用 `AppField` 输入并保存到本地。
+3. 客户端动态和音乐请求改为从本地读取 `x-oolaf-client-key`，未保存 key 时不发起对应请求。
+
 ## 平台支持
 
 - Android
@@ -1090,3 +1098,10 @@ GitHub Actions 的海外 runner 访问腾讯云 Gradle 镜像可能出现网络�
 - 如果遇到 Gradle 锁占用，先停止 Gradle daemon。
 - Web 平台下 Cookie 持久化逻辑需要单独适配。
 - 修改 `lib/model/` 下带 JSON 序列化注解的模型后，需要重新执行 `build_runner`。
+
+# 更改记录
+2026-07-03 00:00:00
+1. 修复动态流正文和链接文字继承异常主题色导致显示为红色的问题。
+2. 修复动态流首条内容被固定导航栏遮住的问题。
+3. 将动态流刷新控件改为支持 Windows 鼠标拖拽的刷新实现。
+4. 清理动态模块 `CupertinoButton.minSize` 弃用警告和缺失 `const` 提示。

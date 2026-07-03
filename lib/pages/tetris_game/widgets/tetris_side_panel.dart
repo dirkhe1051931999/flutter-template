@@ -216,7 +216,7 @@ class _CompactSidePanel extends StatelessWidget {
         children: [
           Expanded(
             child: SizedBox(
-              height: 104,
+              height: 124,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.center,
