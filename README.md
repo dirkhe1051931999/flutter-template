@@ -13,6 +13,10 @@ Flutter Template 是一个用于快速启动 Flutter 应用开发的项目模板
 
 ## 更改记录
 
+2026-07-04 00:22:00
+
+1. iOS CocoaPods 构建关闭 `ENABLE_MODULE_VERIFIER`，规避 `media_kit_libs_ios_video` 在真机 Release 构建中校验模块时找不到 `Flutter` module 的问题。
+
 2026-07-04 00:08:00
 
 1. Home 页「动态」入口支持长按二次确认清除本地保存的 Client API Key。
